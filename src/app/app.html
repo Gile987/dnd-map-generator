@@ -59,7 +59,7 @@
                 type="button"
                 aria-label="Fewer rooms"
                 (click)="stepRooms(-1)"
-                [disabled]="+rooms() <= 4"
+                [disabled]="atMinRooms()"
               >
                 <forge-icon name="minus" />
               </button>
@@ -79,7 +79,7 @@
                 type="button"
                 aria-label="More rooms"
                 (click)="stepRooms(1)"
-                [disabled]="+rooms() >= 8"
+                [disabled]="atMaxRooms()"
               >
                 <forge-icon name="plus" />
               </button>
