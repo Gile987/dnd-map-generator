@@ -6,6 +6,7 @@ import { validateSettings } from './engine/validation';
 import { downloadPng } from './rendering/export';
 import { Icon } from './icon';
 import { Preview } from './preview/preview';
+import { ROOM_DEFAULT, ROOM_MAX, ROOM_MIN, normalizeRoomCount, stepRoomCount } from './room-count';
 
 function initialMap(): Dungeon {
   const result = generateDungeon({ seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced' });
@@ -23,7 +24,7 @@ function initialMap(): Dungeon {
 export class App {
   protected readonly map = signal(initialMap());
   protected readonly seed = signal('mosslit-sanctum');
-  protected readonly rooms = signal('6');
+  protected readonly rooms = signal(ROOM_DEFAULT);
   protected readonly grid = signal(true);
   protected readonly busy = signal<'generation' | 'details' | 'export' | null>(null);
   protected readonly error = signal('');
@@ -41,8 +42,13 @@ export class App {
   protected readonly invalidRooms = computed(
     () =>
       this.attempted() &&
-      (!/^\d+$/.test(this.rooms()) || Number(this.rooms()) < 4 || Number(this.rooms()) > 8),
+      (!/^\d+$/.test(this.rooms()) ||
+        Number(this.rooms()) < ROOM_MIN ||
+        Number(this.rooms()) > ROOM_MAX),
   );
+  protected readonly roomDraft = computed(() => normalizeRoomCount(this.rooms()));
+  protected readonly atMinRooms = computed(() => this.roomDraft() <= ROOM_MIN);
+  protected readonly atMaxRooms = computed(() => this.roomDraft() >= ROOM_MAX);
   protected readonly densityDescription = computed(
     () =>
       ({
@@ -61,15 +67,7 @@ export class App {
   }
 
   protected stepRooms(delta: number): void {
-    const current = Number(this.rooms());
-    this.rooms.set(
-      String(
-        Math.max(
-          4,
-          Math.min(8, (Number.isFinite(current) && current >= 4 ? Math.floor(current) : 6) + delta),
-        ),
-      ),
-    );
+    this.rooms.set(stepRoomCount(this.rooms(), delta));
   }
 
   protected submit(event: SubmitEvent): void {

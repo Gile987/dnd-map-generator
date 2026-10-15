@@ -81,6 +81,42 @@ test('invalid drafts keep the last map, corrected input succeeds, and new seed g
   await expect(page.locator('#map-summary')).not.toContainText('recovery-test');
 });
 
+test('room stepper normalizes drafts so its buttons agree with the value they set', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const rooms = page.getByRole('spinbutton', { name: 'Rooms' });
+  const fewer = page.getByRole('button', { name: 'Fewer rooms' });
+  const more = page.getByRole('button', { name: 'More rooms' });
+
+  await rooms.fill('');
+  await expect(fewer).toBeEnabled();
+  await expect(more).toBeEnabled();
+  await more.click();
+  await expect(rooms).toHaveValue('7');
+  await fewer.click();
+  await expect(rooms).toHaveValue('6');
+
+  await rooms.fill('');
+  await fewer.click();
+  await expect(rooms).toHaveValue('5');
+
+  await rooms.fill('4.5');
+  await expect(fewer).toBeDisabled();
+  await expect(more).toBeEnabled();
+  await more.click();
+  await expect(rooms).toHaveValue('5');
+
+  await rooms.fill('4');
+  await expect(fewer).toBeDisabled();
+  await expect(more).toBeEnabled();
+  await rooms.fill('8');
+  await expect(more).toBeDisabled();
+  await expect(fewer).toBeEnabled();
+  await fewer.click();
+  await expect(rooms).toHaveValue('7');
+});
+
 test('grid, pointer pan, keyboard zoom, ordinary scrolling and responsive resize', async ({
   page,
 }) => {

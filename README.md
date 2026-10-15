@@ -29,7 +29,7 @@ Angular 22 requires Node `^22.22.3`, `^24.15.0`, or `>=26.0.0` and TypeScript `>
 ## Using the workbench
 
 - **World seed:** a trimmed string of 1–64 characters. Edit the seed or room count, then choose **Generate dungeon** to apply the layout settings and reset the detail revision. A pending-settings message distinguishes the draft from the generated map.
-- **Rooms:** choose an integer from 4–8. The map always contains 40 columns × 30 rows.
+- **Rooms:** choose an integer from 4–8. The map always contains 40 columns × 30 rows. The stepper normalizes the draft first — blank or non-numeric becomes 6, a fraction rounds down — then clamps to 4–8, so its buttons always agree with the value they set.
 - **New seed:** uses browser cryptographic randomness and generates immediately using the draft room count.
 - **Decoration:** Sparse, Balanced and Cluttered apply immediately to the current layout, with conservative blocking-prop budgets of 5%, 10% and 15% of room floor area. The engine may place fewer props to protect access.
 - **Shuffle details:** advances the displayed detail revision, changing props and accents while preserving every tile, connection, threshold, landmark and floor texture.
