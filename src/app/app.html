@@ -1,0 +1,200 @@
+<header class="site-header">
+  <a class="brand" href="./" aria-label="Encounter Map Forge home">
+    <span class="brand-mark"><forge-icon name="dice" /></span>
+    <span>Encounter<span class="brand-subtitle">MAP FORGE</span></span>
+  </a>
+  <div class="header-note">
+    <span class="small-star">✦</span> A little world. A great adventure.
+  </div>
+  <span class="local-badge"><span></span>CRAFTED IN YOUR BROWSER</span>
+</header>
+
+<main>
+  <section class="intro" aria-labelledby="page-title">
+    <div>
+      <p class="eyebrow"><span></span>THE GAME MASTER’S WORKBENCH</p>
+      <h1 id="page-title">Unwritten stories start here.</h1>
+      <p class="intro-copy">Generate a dungeon, shuffle its details, and export a battle map.</p>
+    </div>
+    <div class="edition">
+      <forge-icon name="compass" /><span
+        >THE MOSSLIT COLLECTION<small>Stone dungeons · Vol. 01</small></span
+      >
+    </div>
+  </section>
+
+  <div class="workbench" [attr.aria-busy]="busy() !== null">
+    <aside class="settings-panel" aria-label="Dungeon settings">
+      <div class="panel-heading">
+        <span class="section-number">01</span>
+        <h2>Shape your dungeon</h2>
+      </div>
+      <form (submit)="submit($event)" novalidate>
+        <fieldset [disabled]="busy() !== null">
+          <legend class="sr-only">Dungeon generation settings</legend>
+          <div class="field seed-field">
+            <label for="seed">World seed <span>YOUR MAP’S FINGERPRINT</span></label>
+            <input
+              id="seed"
+              type="text"
+              [value]="seed()"
+              (input)="editSeed($event)"
+              maxlength="64"
+              autocomplete="off"
+              spellcheck="false"
+              [attr.aria-invalid]="invalidSeed()"
+              aria-describedby="seed-hint settings-error"
+            />
+            <div class="field-bottom">
+              <span id="seed-hint">Same seed. Same adventure.</span
+              ><button class="text-button" type="button" (click)="newSeed()">
+                <forge-icon name="shuffle" />New seed
+              </button>
+            </div>
+          </div>
+          <div class="field room-field">
+            <label for="rooms">Rooms <span>4–8 CHAMBERS</span></label>
+            <div class="room-stepper">
+              <button
+                type="button"
+                aria-label="Fewer rooms"
+                (click)="stepRooms(-1)"
+                [disabled]="+rooms() <= 4"
+              >
+                <forge-icon name="minus" />
+              </button>
+              <input
+                id="rooms"
+                type="number"
+                min="4"
+                max="8"
+                step="1"
+                inputmode="numeric"
+                [value]="rooms()"
+                (input)="editRooms($event)"
+                [attr.aria-invalid]="invalidRooms()"
+                aria-describedby="room-hint settings-error"
+              />
+              <button
+                type="button"
+                aria-label="More rooms"
+                (click)="stepRooms(1)"
+                [disabled]="+rooms() >= 8"
+              >
+                <forge-icon name="plus" />
+              </button>
+            </div>
+            <p class="field-hint" id="room-hint">Connected chambers. Unexpected turns.</p>
+          </div>
+          <fieldset class="density-field">
+            <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
+            <div class="density-options">
+              @for (density of densities; track density) {
+              <label [class.selected]="map().decoration.density === density"
+                ><input
+                  type="radio"
+                  name="density"
+                  [value]="density"
+                  [checked]="map().decoration.density === density"
+                  (change)="selectDensity(density)"
+                /><span>{{ density }}</span></label
+              >
+              }
+            </div>
+            <p class="field-hint">{{ densityDescription() }}</p>
+          </fieldset>
+          @if (pending()) {
+          <p class="pending"><span></span>Layout edits ready. Generate to apply.</p>
+          }
+          <button class="generate-button" type="submit">
+            <forge-icon name="spark" />{{ busy() === 'generation' ? 'Forging your dungeon…' :
+            'Generate dungeon' }}<forge-icon class="generate-arrow" name="arrow" />
+          </button>
+          <p class="generate-note">A new layout, with a story of its own.</p>
+        </fieldset>
+      </form>
+      <div class="details-section">
+        <div class="panel-heading">
+          <span class="section-number">02</span>
+          <h2>Make it feel lived in</h2>
+        </div>
+        <p>Love the layout? Give its rooms a different kind of character.</p>
+        <button
+          class="shuffle-button"
+          type="button"
+          (click)="shuffle()"
+          [disabled]="busy() !== null"
+        >
+          <forge-icon name="shuffle" />Shuffle details<span>↗</span>
+        </button>
+        <span class="preserve-note"><forge-icon name="lock" />Your rooms and paths stay put.</span>
+      </div>
+      <div class="style-note">
+        <span class="style-swatch"></span>
+        <div>
+          <strong>Mosslit stone</strong>
+          <p>Cool slate. Soft moss. A warm glow.</p>
+        </div>
+      </div>
+    </aside>
+
+    <section class="map-panel" aria-labelledby="map-title">
+      <div class="map-toolbar">
+        <div class="map-heading">
+          <span class="map-icon"><forge-icon name="layers" /></span>
+          <div>
+            <h2 id="map-title">The mosslit sanctum</h2>
+            <span>STONE DUNGEON <b> / </b> 40 × 30 TILES</span>
+          </div>
+        </div>
+        <label class="grid-toggle"
+          ><input
+            type="checkbox"
+            [checked]="grid()"
+            (change)="grid.set(!grid())"
+            [disabled]="busy() !== null" /><forge-icon name="grid" /><span>Grid</span
+          ><span class="toggle-track" aria-hidden="true"><span></span></span
+        ></label>
+      </div>
+      <forge-preview [map]="map()" [grid]="grid()" />
+      <div class="map-meta" id="map-summary">
+        <div><span>GENERATED SEED</span><strong class="seed-summary">{{ map().seed }}</strong></div>
+        <div><span>ROOMS</span><strong>{{ map().layout.rooms.length }} connected</strong></div>
+        <div>
+          <span>DETAILS</span
+          ><strong
+            >{{ map().decoration.density }}
+            <span class="revision">r{{ map().decoration.revision }}</span></strong
+          >
+        </div>
+        <div class="map-size"><span>MAP SIZE</span><strong>40 × 30 tiles</strong></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="export-row">
+    <div class="legend">
+      <span><forge-icon name="stairs" />Entrance stairs</span
+      ><span><span class="objective-symbol"></span>Objective dais</span
+      ><span class="legend-divider"></span><span class="scale-note">1 square = 5 feet</span>
+    </div>
+    <div class="export-action">
+      <span>Ready for your table.<small>PNG · 2560 × 1920 px</small></span
+      ><button class="export-button" type="button" (click)="export()" [disabled]="busy() !== null">
+        <forge-icon name="download" />{{ busy() === 'export' ? 'Preparing PNG…' : 'Export PNG'
+        }}<forge-icon name="arrow" />
+      </button>
+    </div>
+  </div>
+  <div class="message-row">
+    <p id="settings-error" class="error" role="alert">{{ error() }}</p>
+    <p class="status" role="status" aria-live="polite">
+      @if (!error()) { <forge-icon name="check" />{{ status() }} }
+    </p>
+  </div>
+</main>
+
+<footer>
+  <span>FOR THE WORLDS YOU HAVEN’T FOUND YET.</span
+  ><span>No accounts. No saving. Just a little imagination.</span>
+</footer>

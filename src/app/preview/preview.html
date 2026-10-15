@@ -1,0 +1,41 @@
+<div class="viewport" #frame>
+  <canvas
+    #canvas
+    tabindex="0"
+    [class.dragging]="dragging()"
+    (pointerdown)="startPan($event)"
+    (pointermove)="movePan($event)"
+    (pointerup)="endPan($event)"
+    (pointercancel)="endPan($event)"
+    (lostpointercapture)="endPan($event)"
+    (wheel)="wheel($event)"
+    (keydown)="keyboard($event)"
+    [attr.aria-label]="'Dungeon map for seed ' + map().seed + ', ' + map().layout.rooms.length + ' connected rooms. Stairs mark the entrance; a circular stone dais marks the objective. Use arrow keys to pan, plus and minus to zoom, Home to fit.'"
+    aria-describedby="map-summary"
+  ></canvas>
+  <span class="north" aria-hidden="true"
+    ><span>N</span
+    ><svg viewBox="0 0 32 40">
+      <path d="m16 3 10 28-10-7-10 7Z" fill="none" stroke="currentColor" />
+      <path d="M16 3v21l10 7Z" fill="currentColor" opacity=".6" /></svg
+  ></span>
+  <span class="scale" aria-hidden="true"><span></span>5 ft / square</span>
+</div>
+<div class="view-controls">
+  <span class="pan-hint"
+    ><forge-icon name="hand" />Drag to explore<span class="wheel-hint">
+      · Ctrl + scroll to zoom</span
+    ></span
+  >
+  <div class="zoom-controls" aria-label="Map viewport controls">
+    <button type="button" (click)="zoomBy(0.8)" [disabled]="zoom() <= 0.5" aria-label="Zoom out">
+      <forge-icon name="minus" />
+    </button>
+    <output aria-label="Zoom level">{{ (zoom() * 100).toFixed(0) }}%</output>
+    <button type="button" (click)="zoomBy(1.25)" [disabled]="zoom() >= 4" aria-label="Zoom in">
+      <forge-icon name="plus" />
+    </button>
+    <span class="separator"></span>
+    <button type="button" class="fit" (click)="fit()"><forge-icon name="fit" />Fit</button>
+  </div>
+</div>
