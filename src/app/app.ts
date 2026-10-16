@@ -4,6 +4,7 @@ import { changeDensity, shuffleDetails } from './engine/decoration';
 import type { Density, Dungeon, Settings } from './engine/model';
 import { validateSettings } from './engine/validation';
 import { downloadPng } from './rendering/export';
+import { EXPORT_HEIGHT, EXPORT_WIDTH } from './rendering/resolution';
 import { Icon } from './icon';
 import { Preview } from './preview/preview';
 import { ROOM_DEFAULT, ROOM_MAX, ROOM_MIN, normalizeRoomCount, stepRoomCount } from './room-count';
@@ -31,6 +32,7 @@ export class App {
   protected readonly status = signal('Your dungeon is ready.');
   protected readonly attempted = signal(false);
   protected readonly densities: readonly Density[] = ['Sparse', 'Balanced', 'Cluttered'];
+  protected readonly exportSize = `${EXPORT_WIDTH} × ${EXPORT_HEIGHT} px`;
   protected readonly pending = computed(
     () =>
       this.seed().trim() !== this.map().seed ||
@@ -102,7 +104,9 @@ export class App {
   protected async export(): Promise<void> {
     await this.run('export', async () => {
       await downloadPng(this.map(), this.grid());
-      this.status.set('Your 2560 × 1920 PNG is ready. Check your downloads.');
+      this.status.set(
+        `Your ${EXPORT_WIDTH} × ${EXPORT_HEIGHT} PNG is ready. Check your downloads.`,
+      );
     });
   }
 

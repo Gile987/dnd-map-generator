@@ -12,6 +12,7 @@ import {
 import { HEIGHT, WIDTH } from '../engine/model';
 import type { Dungeon } from '../engine/model';
 import { renderDungeon } from '../rendering/dungeon-renderer';
+import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from '../rendering/resolution';
 import { Icon } from '../icon';
 
 @Component({
@@ -39,10 +40,10 @@ export class Preview {
       const map = this.map();
       const grid = this.grid();
       this.image = document.createElement('canvas');
-      this.image.width = WIDTH * 64;
-      this.image.height = HEIGHT * 64;
+      this.image.width = EXPORT_WIDTH;
+      this.image.height = EXPORT_HEIGHT;
       const context = this.image.getContext('2d');
-      if (context) renderDungeon(context, map, { grid, pixelsPerTile: 64 });
+      if (context) renderDungeon(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
       untracked(() => this.paint());
     });
     afterNextRender({
