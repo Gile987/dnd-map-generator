@@ -37,7 +37,7 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await page.getByRole('button', { name: 'Export PNG' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
-    'encounter-mosslit-sanctum-mosslit-cluttered-r1-v2.0.0.png',
+    'encounter-mosslit-sanctum-mosslit-cluttered-r1-v3.0.0.png',
   );
   await download.saveAs('artifacts/browser-export.png');
   const png = await PNG.read('artifacts/browser-export.png');
@@ -199,7 +199,7 @@ test('preset selection applies immediately, interacts with pending drafts, and a
   await page.getByRole('button', { name: 'Export PNG' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
-    'encounter-mosslit-sanctum-storehouse-cluttered-r1-v2.0.0.png',
+    'encounter-mosslit-sanctum-storehouse-cluttered-r1-v3.0.0.png',
   );
 });
 
@@ -220,4 +220,41 @@ test('export failure is reported and controls recover', async ({ page }) => {
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   await expect(page.locator('#settings-error')).toBeEmpty();
+});
+
+test('map-type selector switches between dungeon and forest, preserves per-type maps', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
+  await expect(page.locator('#map-summary')).toContainText('connected');
+  await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeVisible();
+
+  await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await expect(page.locator('#map-summary')).toContainText('Crypt');
+
+  await page.getByRole('button', { name: 'Shuffle details' }).click();
+  await expect(page.locator('#map-summary')).toContainText('r1');
+  await expect(page.locator('#map-summary')).toContainText('Crypt');
+
+  await page.getByRole('radio', { name: 'Forest' }).check();
+  await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
+  await expect(page.locator('#map-summary')).toContainText('Open clearing');
+  await expect(page.getByRole('button', { name: 'Generate forest' })).toBeVisible();
+  await expect(page.locator('#map-summary')).not.toContainText('connected');
+
+  await page.getByRole('button', { name: 'Shuffle details' }).click();
+  await expect(page.locator('#map-summary')).toContainText('r1');
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export PNG' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^encounter-mosslit-sanctum-forest-/);
+  expect(download.suggestedFilename()).toMatch(/v3\.0\.0\.png$/);
+
+  await page.getByRole('radio', { name: 'Dungeon' }).check();
+  await expect(page.locator('#map-summary')).toContainText('connected');
+  await expect(page.locator('#map-summary')).toContainText('r1');
+  await expect(page.locator('#map-summary')).toContainText('Crypt');
+  await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeVisible();
 });

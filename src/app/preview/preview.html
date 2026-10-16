@@ -10,7 +10,7 @@
     (lostpointercapture)="endPan($event)"
     (wheel)="wheel($event)"
     (keydown)="keyboard($event)"
-    [attr.aria-label]="'Dungeon map for seed ' + map().seed + ', ' + map().layout.rooms.length + ' connected rooms. Stairs mark the entrance; a circular stone dais marks the objective. Use arrow keys to pan, plus and minus to zoom, Home to fit.'"
+    [attr.aria-label]="ariaLabel()"
     aria-describedby="map-summary"
   ></canvas>
   <span class="north" aria-hidden="true"

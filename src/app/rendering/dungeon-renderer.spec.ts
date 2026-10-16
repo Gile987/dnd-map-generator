@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
 import { changePreset } from '../engine/decoration';
 import { showcaseDungeon } from '../engine/showcase';
-import type { Dungeon, Settings } from '../engine/model';
+import type { Dungeon, DungeonSettings } from '../engine/model';
 import { renderDungeon } from './dungeon-renderer';
 import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from './resolution';
 
@@ -13,7 +13,7 @@ function exportPng(map: Dungeon, grid: boolean): Buffer {
   return canvas.toBuffer('image/png');
 }
 
-function generatedMap(settings: Settings): Dungeon {
+function generatedMap(settings: DungeonSettings): Dungeon {
   const result = generateDungeon(settings);
   if (!result.ok) throw new Error(`${settings.seed}: ${result.error}`);
   return result.map;

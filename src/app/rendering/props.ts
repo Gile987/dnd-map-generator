@@ -1,4 +1,4 @@
-import type { Prop } from '../engine/model';
+import type { Prop, PropKind } from '../engine/model';
 
 export type DrawingContext = Pick<
   CanvasRenderingContext2D,
@@ -26,6 +26,7 @@ export type DrawingContext = Pick<
   | 'setTransform'
   | 'createRadialGradient'
   | 'createLinearGradient'
+  | 'quadraticCurveTo'
 >;
 
 export function path(
@@ -50,7 +51,10 @@ export function path(
 
 export function drawProp(ctx: DrawingContext, prop: Prop): void {
   ctx.save();
-  ctx.translate(prop.x + 0.5, prop.y + (prop.kind === 'sconce' ? 0.18 : 0.5));
+  ctx.translate(
+    prop.x + 0.5,
+    prop.y + (prop.kind === 'sconce' ? 0.18 : prop.kind === 'tree' ? 0.5 : 0.5),
+  );
   ctx.lineWidth = 0.025;
   const v = prop.variation;
   if (prop.kind === 'crate') {
@@ -326,6 +330,22 @@ export function drawProp(ctx: DrawingContext, prop: Prop): void {
     ctx.lineTo(0.18, -0.1);
     ctx.closePath();
     ctx.fill();
+  } else if (prop.kind === 'tree') {
+    drawTree(ctx, prop);
+  } else if (prop.kind === 'boulder') {
+    drawBoulder(ctx, prop);
+  } else if (prop.kind === 'fern') {
+    drawFern(ctx, prop);
+  } else if (prop.kind === 'mushroom') {
+    drawMushroom(ctx, prop);
+  } else if (prop.kind === 'bush') {
+    drawBush(ctx, prop);
+  } else if (prop.kind === 'log') {
+    drawLog(ctx, prop);
+  } else if (prop.kind === 'stump') {
+    drawStump(ctx, prop);
+  } else if (prop.kind === 'flower') {
+    drawFlower(ctx, prop);
   } else {
     ctx.fillStyle = '#26373b';
     ctx.fillRect(-0.11, -0.14, 0.23, 0.36);
@@ -353,4 +373,294 @@ export function drawProp(ctx: DrawingContext, prop: Prop): void {
     );
   }
   ctx.restore();
+}
+
+function drawTree(ctx: DrawingContext, prop: Prop): void {
+  const v = prop.variation;
+  const treeType = v < 0.35 ? 'oak' : v < 0.65 ? 'pine' : 'broad';
+
+  ctx.fillStyle = '#0a1a0a60';
+  ctx.beginPath();
+  ctx.ellipse(0.06, 0.1, 0.52, 0.44, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#3a2a18';
+  ctx.fillRect(-0.06, 0.05, 0.12, 0.35);
+
+  if (treeType === 'oak') {
+    const canopyLayers = [
+      { dx: -0.08, dy: -0.06, rx: 0.38, ry: 0.32, color: '#2a5a2a' },
+      { dx: 0.06, dy: -0.12, rx: 0.34, ry: 0.28, color: '#326832' },
+      { dx: -0.02, dy: -0.18, rx: 0.3, ry: 0.26, color: '#3a7a3a' },
+    ];
+    for (const layer of canopyLayers) {
+      ctx.fillStyle = layer.color;
+      ctx.beginPath();
+      ctx.ellipse(layer.dx, layer.dy, layer.rx, layer.ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = '#4a9a4a50';
+    ctx.lineWidth = 0.02;
+    ctx.beginPath();
+    ctx.arc(-0.06, -0.2, 0.18, Math.PI * 1.1, Math.PI * 1.6);
+    ctx.stroke();
+    for (let i = 0; i < 6; i++) {
+      const angle = v * 10 + i * 1.1;
+      const dx = Math.cos(angle) * 0.22;
+      const dy = Math.sin(angle) * 0.18 - 0.1;
+      ctx.fillStyle = i % 2 ? '#4a8a4a60' : '#2a6a2a40';
+      ctx.beginPath();
+      ctx.ellipse(dx, dy, 0.06, 0.04, angle, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (treeType === 'pine') {
+    const layers = 4;
+    for (let i = 0; i < layers; i++) {
+      const y = -0.05 - i * 0.14;
+      const w = 0.35 - i * 0.06;
+      const shade = 35 + i * 10;
+      ctx.fillStyle = `rgb(${shade} ${shade + 45} ${shade})`;
+      ctx.beginPath();
+      ctx.moveTo(0, y - 0.14);
+      ctx.lineTo(-w, y + 0.04);
+      ctx.lineTo(w, y + 0.04);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.strokeStyle = '#5aa05a30';
+    ctx.lineWidth = 0.015;
+    ctx.beginPath();
+    ctx.moveTo(-0.15, -0.15);
+    ctx.lineTo(0, -0.58);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = '#2e6e2e';
+    ctx.beginPath();
+    ctx.ellipse(0, -0.1, 0.4, 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#3a8a3a';
+    ctx.beginPath();
+    ctx.ellipse(-0.04, -0.16, 0.3, 0.26, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#5aaa5a40';
+    ctx.lineWidth = 0.02;
+    ctx.beginPath();
+    ctx.arc(-0.08, -0.2, 0.15, Math.PI * 1.15, Math.PI * 1.55);
+    ctx.stroke();
+    for (let i = 0; i < 4; i++) {
+      const angle = v * 8 + i * 1.6;
+      const dx = Math.cos(angle) * 0.18;
+      const dy = Math.sin(angle) * 0.14 - 0.1;
+      ctx.fillStyle = '#4a9a4a50';
+      ctx.beginPath();
+      ctx.ellipse(dx, dy, 0.05, 0.035, angle, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+function drawBoulder(ctx: DrawingContext, prop: Prop): void {
+  const v = prop.variation;
+  ctx.fillStyle = '#1a2a1a80';
+  ctx.beginPath();
+  ctx.ellipse(0.04, 0.06, 0.36, 0.3, v * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#5a6a5e';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 0.34, 0.28, v * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#728278';
+  ctx.beginPath();
+  ctx.ellipse(-0.03, -0.04, 0.24, 0.2, v * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#8a9a8e';
+  ctx.lineWidth = 0.018;
+  ctx.beginPath();
+  ctx.arc(-0.05, -0.06, 0.16, Math.PI * 1.1, Math.PI * 1.6);
+  ctx.stroke();
+  ctx.strokeStyle = '#4a5a4e';
+  ctx.lineWidth = 0.015;
+  ctx.beginPath();
+  ctx.moveTo(-0.1, 0.05);
+  ctx.lineTo(0.08, 0.1);
+  ctx.stroke();
+}
+
+function drawFern(ctx: DrawingContext, prop: Prop): void {
+  const v = prop.variation;
+  const fronds = 4 + Math.floor(v * 3);
+  for (let i = 0; i < fronds; i++) {
+    const angle = (i / fronds) * Math.PI * 2 + v * 2;
+    const len = 0.2 + (i % 3) * 0.06;
+    ctx.save();
+    ctx.rotate(angle);
+    ctx.strokeStyle = i % 2 ? '#4a8a3a' : '#5a9a4a';
+    ctx.lineWidth = 0.018;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(len * 0.5, -0.04, len, -0.02);
+    ctx.stroke();
+    for (let j = 0; j < 3; j++) {
+      const t = 0.3 + j * 0.25;
+      const lx = len * t;
+      ctx.fillStyle = '#5aaa4a80';
+      ctx.beginPath();
+      ctx.ellipse(lx, -0.02, 0.03, 0.015, angle * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(lx, 0.02, 0.03, 0.015, -angle * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function drawMushroom(ctx: DrawingContext, prop: Prop): void {
+  const v = prop.variation;
+  const count = 2 + Math.floor(v * 2);
+  for (let i = 0; i < count; i++) {
+    const dx = (i - count / 2) * 0.12 + (v - 0.5) * 0.1;
+    const dy = (i % 2) * 0.08;
+    const size = 0.08 + (i % 2) * 0.04;
+    ctx.fillStyle = '#8a7060';
+    ctx.fillRect(dx - 0.015, dy, 0.03, size * 1.2);
+    const capColor = i % 3 === 0 ? '#c85040' : i % 3 === 1 ? '#b87050' : '#d09060';
+    ctx.fillStyle = capColor;
+    ctx.beginPath();
+    ctx.ellipse(dx, dy, size, size * 0.6, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff50';
+    ctx.beginPath();
+    ctx.ellipse(dx - size * 0.2, dy - size * 0.2, size * 0.15, size * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawBush(ctx: DrawingContext, prop: Prop): void {
+  const v = prop.variation;
+  ctx.fillStyle = '#0a2a0a40';
+  ctx.beginPath();
+  ctx.ellipse(0.03, 0.06, 0.34, 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const clumps = [
+    { dx: -0.08, dy: -0.02, r: 0.2 },
+    { dx: 0.08, dy: -0.04, r: 0.18 },
+    { dx: 0, dy: -0.1, r: 0.22 },
+  ];
+  for (const clump of clumps) {
+    ctx.fillStyle = v > 0.5 ? '#3a7a3a' : '#2e6e2e';
+    ctx.beginPath();
+    ctx.ellipse(clump.dx, clump.dy, clump.r, clump.r * 0.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = '#5aaa5a40';
+  ctx.lineWidth = 0.015;
+  ctx.beginPath();
+  ctx.arc(-0.04, -0.12, 0.1, Math.PI * 1.2, Math.PI * 1.6);
+  ctx.stroke();
+  for (let i = 0; i < 4; i++) {
+    const angle = v * 6 + i * 1.5;
+    const dx = Math.cos(angle) * 0.12;
+    const dy = Math.sin(angle) * 0.08 - 0.05;
+    ctx.fillStyle = '#5aaa4a50';
+    ctx.beginPath();
+    ctx.ellipse(dx, dy, 0.04, 0.025, angle, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawLog(ctx: DrawingContext, prop: Prop): void {
+  const v = prop.variation;
+  ctx.rotate((v - 0.5) * 0.8);
+  ctx.fillStyle = '#0a1a0a60';
+  ctx.fillRect(-0.42, -0.08, 0.88, 0.28);
+  ctx.fillStyle = '#5a4020';
+  ctx.fillRect(-0.46, -0.14, 0.88, 0.28);
+  ctx.fillStyle = '#7a5a30';
+  ctx.fillRect(-0.42, -0.1, 0.8, 0.2);
+  ctx.strokeStyle = '#3a2a15';
+  ctx.lineWidth = 0.02;
+  ctx.strokeRect(-0.46, -0.14, 0.88, 0.28);
+  ctx.strokeStyle = '#8a6a40';
+  ctx.lineWidth = 0.012;
+  for (let x = -0.3; x < 0.35; x += 0.12) {
+    ctx.beginPath();
+    ctx.moveTo(x, -0.08);
+    ctx.lineTo(x, 0.08);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#6a4a28';
+  ctx.beginPath();
+  ctx.ellipse(-0.46, 0, 0.1, 0.14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#8a6a40';
+  ctx.lineWidth = 0.015;
+  ctx.beginPath();
+  ctx.arc(-0.46, 0, 0.06, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = '#4a9a4a50';
+  ctx.beginPath();
+  ctx.ellipse(0.1, -0.12, 0.06, 0.03, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawStump(ctx: DrawingContext, prop: Prop): void {
+  const v = prop.variation;
+  ctx.fillStyle = '#0a1a0a50';
+  ctx.beginPath();
+  ctx.ellipse(0.03, 0.06, 0.28, 0.22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#5a4020';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 0.26, 0.22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#8a6a40';
+  ctx.beginPath();
+  ctx.ellipse(0, -0.02, 0.22, 0.18, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#aa8a50';
+  ctx.lineWidth = 0.012;
+  ctx.beginPath();
+  ctx.arc(0, -0.02, 0.12, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, -0.02, 0.06, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = '#4a3018';
+  ctx.lineWidth = 0.015;
+  ctx.beginPath();
+  ctx.moveTo(-0.08, -0.12);
+  ctx.lineTo(0.06, 0.1);
+  ctx.stroke();
+  if (v > 0.5) {
+    ctx.fillStyle = '#5a9a4a70';
+    ctx.beginPath();
+    ctx.ellipse(0.08, -0.08, 0.04, 0.025, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawFlower(ctx: DrawingContext, prop: Prop): void {
+  const v = prop.variation;
+  const colors = ['#d06080', '#e0a040', '#a060c0', '#e0e060', '#e07070'] as const;
+  const color = colors[Math.floor(v * colors.length)] ?? colors[0];
+  const stems = 2 + Math.floor(v * 3);
+  for (let i = 0; i < stems; i++) {
+    const dx = (i - stems / 2) * 0.1 + (v - 0.5) * 0.06;
+    const dy = (i % 2) * 0.06;
+    ctx.strokeStyle = '#4a8a3a';
+    ctx.lineWidth = 0.012;
+    ctx.beginPath();
+    ctx.moveTo(dx, dy + 0.1);
+    ctx.quadraticCurveTo(dx + 0.02, dy, dx, dy - 0.05);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(dx, dy - 0.06, 0.04, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e0e080';
+    ctx.beginPath();
+    ctx.arc(dx, dy - 0.06, 0.015, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }

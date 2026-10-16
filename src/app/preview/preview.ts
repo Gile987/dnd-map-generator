@@ -4,6 +4,7 @@ import {
   DestroyRef,
   ElementRef,
   afterNextRender,
+  computed,
   effect,
   inject,
   input,
@@ -12,8 +13,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { HEIGHT, WIDTH } from '../engine/model';
-import type { Dungeon } from '../engine/model';
+import type { GeneratedMap } from '../engine/model';
 import { renderDungeon } from '../rendering/dungeon-renderer';
+import { renderForest } from '../rendering/forest-renderer';
 import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from '../rendering/resolution';
 import { Icon } from '../icon';
 
@@ -25,10 +27,27 @@ import { Icon } from '../icon';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Preview {
-  readonly map = input.required<Dungeon>();
+  readonly map = input.required<GeneratedMap>();
   readonly grid = input(true);
   protected readonly zoom = signal(1);
   protected readonly dragging = signal(false);
+  protected readonly ariaLabel = computed(() => {
+    const m = this.map();
+    if (m.type === 'dungeon') {
+      return (
+        'Dungeon map for seed ' +
+        m.seed +
+        ', ' +
+        m.layout.rooms.length +
+        ' connected rooms. Stairs mark the entrance; a circular stone dais marks the objective. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
+      );
+    }
+    return (
+      'Forest clearing for seed ' +
+      m.seed +
+      '. A path connects two map edges through the clearing. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
+    );
+  });
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly frame = viewChild.required<ElementRef<HTMLElement>>('frame');
   private image: HTMLCanvasElement | undefined;
@@ -46,7 +65,13 @@ export class Preview {
       this.image.width = EXPORT_WIDTH;
       this.image.height = EXPORT_HEIGHT;
       const context = this.image.getContext('2d');
-      if (context) renderDungeon(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
+      if (context) {
+        if (map.type === 'dungeon') {
+          renderDungeon(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
+        } else {
+          renderForest(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
+        }
+      }
       untracked(() => this.paint());
     });
     afterNextRender({

@@ -1,6 +1,8 @@
 export const WIDTH = 40;
 export const HEIGHT = 30;
-export const GENERATOR_VERSION = '2.0.0';
+export const GENERATOR_VERSION = '3.0.0';
+
+export type MapType = 'dungeon' | 'forest';
 
 export interface Point {
   readonly x: number;
@@ -51,24 +53,43 @@ export const ALL_PRESETS: readonly DecorationPreset[] = [
   'Sanctuary',
 ];
 
-export interface Settings {
+export interface DungeonSettings {
   readonly seed: string;
   readonly roomCount: number;
   readonly density: Density;
   readonly preset: DecorationPreset;
 }
 
+export interface ForestSettings {
+  readonly seed: string;
+  readonly density: Density;
+}
+
+export type MapSettings =
+  | (DungeonSettings & { readonly mapType: 'dungeon' })
+  | (ForestSettings & { readonly mapType: 'forest' });
+
+export type PropKind =
+  | 'crate'
+  | 'barrel'
+  | 'rubble'
+  | 'rug'
+  | 'sconce'
+  | 'moss'
+  | 'sarcophagus'
+  | 'vine'
+  | 'broken_column'
+  | 'tree'
+  | 'boulder'
+  | 'fern'
+  | 'mushroom'
+  | 'bush'
+  | 'log'
+  | 'stump'
+  | 'flower';
+
 export interface Prop extends Point {
-  readonly kind:
-    | 'crate'
-    | 'barrel'
-    | 'rubble'
-    | 'rug'
-    | 'sconce'
-    | 'moss'
-    | 'sarcophagus'
-    | 'vine'
-    | 'broken_column';
+  readonly kind: PropKind;
   readonly blocking: boolean;
   readonly variation: number;
 }
@@ -80,7 +101,21 @@ export interface Decoration {
   readonly revision: number;
 }
 
+export interface ForestDecoration {
+  readonly props: readonly Prop[];
+  readonly density: Density;
+  readonly revision: number;
+}
+
+export interface ForestLayout {
+  readonly tiles: readonly boolean[];
+  readonly route: readonly number[];
+  readonly pathStart: Point;
+  readonly pathEnd: Point;
+}
+
 export interface Dungeon {
+  readonly type: 'dungeon';
   readonly version: string;
   readonly seed: string;
   readonly layout: Layout;
@@ -88,12 +123,31 @@ export interface Dungeon {
   readonly surfaceSeed: number;
 }
 
+export interface ForestClearing {
+  readonly type: 'forest';
+  readonly version: string;
+  readonly seed: string;
+  readonly layout: ForestLayout;
+  readonly decoration: ForestDecoration;
+  readonly surfaceSeed: number;
+}
+
+export type GeneratedMap = Dungeon | ForestClearing;
+
 export type GenerationResult =
   { readonly ok: true; readonly map: Dungeon } | { readonly ok: false; readonly error: string };
+
+export type ForestGenerationResult =
+  | { readonly ok: true; readonly map: ForestClearing }
+  | { readonly ok: false; readonly error: string };
 
 export const indexOf = (x: number, y: number): number => y * WIDTH + x;
 
 export function isFloor(layout: Pick<Layout, 'tiles'>, x: number, y: number): boolean {
+  return x >= 0 && y >= 0 && x < WIDTH && y < HEIGHT && layout.tiles[indexOf(x, y)] === true;
+}
+
+export function isWalkable(layout: Pick<ForestLayout, 'tiles'>, x: number, y: number): boolean {
   return x >= 0 && y >= 0 && x < WIDTH && y < HEIGHT && layout.tiles[indexOf(x, y)] === true;
 }
 
@@ -106,16 +160,44 @@ export function contains(room: Room, point: Point): boolean {
   );
 }
 
-export function isBlockingProp(kind: Prop['kind']): boolean {
+export function isBlockingProp(kind: PropKind): boolean {
   return (
     kind === 'crate' ||
     kind === 'barrel' ||
     kind === 'rubble' ||
     kind === 'sarcophagus' ||
-    kind === 'broken_column'
+    kind === 'broken_column' ||
+    kind === 'boulder' ||
+    kind === 'log' ||
+    kind === 'stump'
+  );
+}
+
+export function isForestProp(kind: PropKind): boolean {
+  return (
+    kind === 'tree' ||
+    kind === 'boulder' ||
+    kind === 'fern' ||
+    kind === 'mushroom' ||
+    kind === 'bush' ||
+    kind === 'log' ||
+    kind === 'stump' ||
+    kind === 'flower'
   );
 }
 
 export function center(room: Room): Point {
   return { x: room.x + Math.floor(room.width / 2), y: room.y + Math.floor(room.height / 2) };
+}
+
+export function isDungeon(map: GeneratedMap): map is Dungeon {
+  return map.type === 'dungeon';
+}
+
+export function isForest(map: GeneratedMap): map is ForestClearing {
+  return map.type === 'forest';
+}
+
+export function mapDensity(map: GeneratedMap): Density {
+  return map.decoration.density;
 }

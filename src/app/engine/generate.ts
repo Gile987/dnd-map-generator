@@ -1,5 +1,5 @@
 import { GENERATOR_VERSION, HEIGHT, WIDTH, center, indexOf } from './model';
-import type { Connection, GenerationResult, Room, Settings } from './model';
+import type { Connection, DungeonSettings, GenerationResult, Room } from './model';
 import { Random, streamSeed } from './random';
 import { createLayout, distances } from './topology';
 import { decorate } from './decoration';
@@ -71,7 +71,7 @@ function connectRooms(rooms: readonly Room[], random: Random): Connection[] {
 }
 
 export function generateDungeon(
-  settings: Settings,
+  settings: DungeonSettings,
   limits: GenerationLimits = DEFAULT_LIMITS,
 ): GenerationResult {
   const settingsError = validateSettings(settings);
@@ -126,6 +126,7 @@ export function generateDungeon(
     }
     if (validateLayout(layout, settings.roomCount)) continue;
     const map = {
+      type: 'dungeon' as const,
       version: GENERATOR_VERSION,
       seed,
       layout,

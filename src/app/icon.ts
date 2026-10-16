@@ -17,6 +17,7 @@ const paths = {
   lock: 'M6 10h12v11H6V10Zm3 0V6a3 3 0 0 1 6 0v4',
   stairs: 'M3 20h6v-5h5v-5h5V4h3',
   hand: 'M7 11V5a2 2 0 0 1 4 0v6-8a2 2 0 0 1 4 0v8-5a2 2 0 0 1 4 0v6-3a2 2 0 0 1 4 0v7c0 5-3 7-7 7h-1c-3 0-5-2-7-5l-4-6a2 2 0 0 1 3-2l4 4',
+  tree: 'M12 21v-6m-4 0h8m-8 0-4 4m12-4 4 4M12 3c-3 0-6 2-6 5 0 2 1.5 3 3 3.5C7.5 12.5 6 13.5 6 15c0 2 2.5 3 6 3s6-1 6-3c0-1.5-1.5-2.5-3-3.5 1.5-.5 3-1.5 3-3.5 0-3-3-5-6-5Z',
 } as const;
 
 export type IconName = keyof typeof paths;

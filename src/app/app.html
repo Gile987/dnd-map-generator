@@ -12,28 +12,51 @@
 <main>
   <section class="intro" aria-labelledby="page-title">
     <div>
-      <p class="eyebrow"><span></span>THE GAME MASTER’S WORKBENCH</p>
+      <p class="eyebrow"><span></span>THE GAME MASTER'S WORKBENCH</p>
       <h1 id="page-title">Unwritten stories start here.</h1>
-      <p class="intro-copy">Generate a dungeon, shuffle its details, and export a battle map.</p>
+      <p class="intro-copy">
+        Generate a dungeon or forest clearing, shuffle details, and export a battle map.
+      </p>
     </div>
     <div class="edition">
       <forge-icon name="compass" /><span
-        >THE MOSSLIT COLLECTION<small>Stone dungeons · Vol. 01</small></span
+        >THE MOSSLIT COLLECTION<small>Stone dungeons & forest clearings · Vol. 01</small></span
       >
     </div>
   </section>
 
   <div class="workbench" [attr.aria-busy]="busy() !== null">
-    <aside class="settings-panel" aria-label="Dungeon settings">
+    <aside class="settings-panel" aria-label="Map settings">
       <div class="panel-heading">
         <span class="section-number">01</span>
-        <h2>Shape your dungeon</h2>
+        <h2>{{ mapType() === 'dungeon' ? 'Shape your dungeon' : 'Shape your clearing' }}</h2>
       </div>
+
+      <fieldset class="map-type-field" [disabled]="busy() !== null">
+        <legend class="sr-only">Map type</legend>
+        <div class="map-type-options">
+          @for (type of mapTypes; track type) {
+          <label [class.selected]="mapType() === type"
+            ><input
+              type="radio"
+              name="mapType"
+              [value]="type"
+              [checked]="mapType() === type"
+              (change)="selectMapType(type)"
+              [disabled]="busy() !== null"
+            /><forge-icon [name]="type === 'dungeon' ? 'layers' : 'tree'" /><span
+              >{{ type === 'dungeon' ? 'Dungeon' : 'Forest' }}</span
+            ></label
+          >
+          }
+        </div>
+      </fieldset>
+
       <form (submit)="submit($event)" novalidate>
         <fieldset [disabled]="busy() !== null">
-          <legend class="sr-only">Dungeon generation settings</legend>
+          <legend class="sr-only">Map generation settings</legend>
           <div class="field seed-field">
-            <label for="seed">World seed <span>YOUR MAP’S FINGERPRINT</span></label>
+            <label for="seed">World seed <span>YOUR MAP'S FINGERPRINT</span></label>
             <input
               id="seed"
               type="text"
@@ -52,6 +75,7 @@
               </button>
             </div>
           </div>
+          @if (mapType() === 'dungeon') {
           <div class="field room-field">
             <label for="rooms">Rooms <span>4–8 CHAMBERS</span></label>
             <div class="room-stepper">
@@ -88,7 +112,7 @@
           </div>
           <fieldset class="preset-field">
             <legend>Character <span>THE DUNGEON'S IDENTITY</span></legend>
-            @let selectedPreset = map().decoration.preset;
+            @let selectedPreset = currentPreset();
             <div class="preset-options">
               @for (preset of presets; track preset) {
               <label [class.selected]="selectedPreset === preset"
@@ -104,6 +128,7 @@
             </div>
             <p class="field-hint">{{ presetDescription() }}</p>
           </fieldset>
+          }
           <fieldset class="density-field">
             <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
             @let selectedDensity = map().decoration.density;
@@ -126,10 +151,15 @@
           <p class="pending"><span></span>Layout edits ready. Generate to apply.</p>
           }
           <button class="generate-button" type="submit">
-            <forge-icon name="spark" />{{ busy() === 'generation' ? 'Forging your dungeon…' :
-            'Generate dungeon' }}<forge-icon class="generate-arrow" name="arrow" />
+            <forge-icon [name]="mapType() === 'dungeon' ? 'spark' : 'tree'" />{{ busy() ===
+            'generation' ? mapType() === 'dungeon' ? 'Forging your dungeon…' : 'Growing your
+            clearing…' : mapType() === 'dungeon' ? 'Generate dungeon' : 'Generate forest'
+            }}<forge-icon class="generate-arrow" name="arrow" />
           </button>
-          <p class="generate-note">A new layout, with a story of its own.</p>
+          <p class="generate-note">
+            {{ mapType() === 'dungeon' ? 'A new layout, with a story of its own.' : 'A woodland path
+            through the trees.' }}
+          </p>
         </fieldset>
       </form>
       <div class="details-section">
@@ -137,7 +167,10 @@
           <span class="section-number">02</span>
           <h2>Make it feel lived in</h2>
         </div>
-        <p>Love the layout? Give its rooms a different kind of character.</p>
+        <p>
+          {{ mapType() === 'dungeon' ? 'Love the layout? Give its rooms a different kind of
+          character.' : 'Love the clearing? Change its props and undergrowth.' }}
+        </p>
         <button
           class="shuffle-button"
           type="button"
@@ -146,8 +179,12 @@
         >
           <forge-icon name="shuffle" />Shuffle details<span>↗</span>
         </button>
-        <span class="preserve-note"><forge-icon name="lock" />Your rooms and paths stay put.</span>
+        <span class="preserve-note"
+          ><forge-icon name="lock" />{{ mapType() === 'dungeon' ? 'Your rooms and paths stay put.' :
+          'Your clearing and path stay put.' }}</span
+        >
       </div>
+      @if (mapType() === 'dungeon') {
       <div class="style-note">
         <span class="style-swatch"></span>
         <div>
@@ -155,15 +192,18 @@
           <p>{{ presetDescription() }}</p>
         </div>
       </div>
+      }
     </aside>
 
     <section class="map-panel" aria-labelledby="map-title">
       <div class="map-toolbar">
         <div class="map-heading">
-          <span class="map-icon"><forge-icon name="layers" /></span>
+          <span class="map-icon"
+            ><forge-icon [name]="map().type === 'dungeon' ? 'layers' : 'tree'"
+          /></span>
           <div>
-            <h2 id="map-title">{{ presetLabel() }}</h2>
-            <span>STONE DUNGEON <b> / </b> 40 × 30 TILES</span>
+            <h2 id="map-title">{{ mapTypeLabel() }}</h2>
+            <span>{{ mapSummary().type }} <b> / </b> 40 × 30 TILES</span>
           </div>
         </div>
         <label class="grid-toggle"
@@ -178,17 +218,14 @@
       </div>
       <forge-preview [map]="map()" [grid]="grid()" />
       <div class="map-meta" id="map-summary">
-        <div><span>GENERATED SEED</span><strong class="seed-summary">{{ map().seed }}</strong></div>
-        <div><span>ROOMS</span><strong>{{ map().layout.rooms.length }} connected</strong></div>
         <div>
-          @let currentDensity = map().decoration.density; @let currentPreset =
-          map().decoration.preset;
-          <span>DETAILS</span
-          ><strong
-            >{{ currentPreset }} · {{ currentDensity }}
-            <span class="revision">r{{ map().decoration.revision }}</span></strong
-          >
+          <span>GENERATED SEED</span><strong class="seed-summary">{{ mapSummary().seed }}</strong>
         </div>
+        <div>
+          <span>{{ map().type === 'dungeon' ? 'ROOMS' : 'CLEARING' }}</span
+          ><strong>{{ mapSummary().rooms }}</strong>
+        </div>
+        <div><span>DETAILS</span><strong>{{ mapSummary().details }}</strong></div>
         <div class="map-size"><span>MAP SIZE</span><strong>40 × 30 tiles</strong></div>
       </div>
     </section>
@@ -196,9 +233,13 @@
 
   <div class="export-row">
     <div class="legend">
+      @if (map().type === 'dungeon') {
       <span><forge-icon name="stairs" />Entrance stairs</span
-      ><span><span class="objective-symbol"></span>Objective dais</span
-      ><span class="legend-divider"></span><span class="scale-note">1 square = 5 feet</span>
+      ><span><span class="objective-symbol"></span>Objective dais</span>
+      } @else {
+      <span><forge-icon name="tree" />Forest trees</span>
+      }
+      <span class="legend-divider"></span><span class="scale-note">1 square = 5 feet</span>
     </div>
     <div class="export-action">
       <span>Ready for your table.<small>PNG · {{ exportSize }}</small></span
@@ -217,6 +258,6 @@
 </main>
 
 <footer>
-  <span>FOR THE WORLDS YOU HAVEN’T FOUND YET.</span
+  <span>FOR THE WORLDS YOU HAVEN'T FOUND YET.</span
   ><span>No accounts. No saving. Just a little imagination.</span>
 </footer>
