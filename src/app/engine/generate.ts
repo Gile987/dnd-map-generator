@@ -1,6 +1,6 @@
 import { GENERATOR_VERSION, HEIGHT, WIDTH, center, indexOf } from './model';
 import type { Connection, GenerationResult, Room, Settings } from './model';
-import { Random, hashSeed } from './random';
+import { Random, streamSeed } from './random';
 import { createLayout, distances } from './topology';
 import { decorate } from './decoration';
 import { validateDungeon, validateLayout, validateSettings } from './validation';
@@ -90,9 +90,7 @@ export function generateDungeon(
     };
   const seed = settings.seed.trim();
   for (let retry = 0; retry < limits.retries; retry++) {
-    const random = new Random(
-      hashSeed(`${GENERATOR_VERSION}:${seed}:layout:${settings.roomCount}:${retry}`),
-    );
+    const random = new Random(streamSeed(seed, 'layout', settings.roomCount, retry));
     const rooms = placeRooms(settings.roomCount, random, limits.placementAttempts);
     if (rooms.length !== settings.roomCount) continue;
     const connections = connectRooms(rooms, random);
@@ -131,7 +129,7 @@ export function generateDungeon(
       version: GENERATOR_VERSION,
       seed,
       layout,
-      surfaceSeed: hashSeed(`${GENERATOR_VERSION}:${seed}:surface`),
+      surfaceSeed: streamSeed(seed, 'surface'),
       decoration: decorate(layout, seed, settings.density, 0),
     };
     const error = validateDungeon(map);

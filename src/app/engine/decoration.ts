@@ -1,6 +1,6 @@
-import { GENERATOR_VERSION, center, indexOf, isFloor } from './model';
+import { center, indexOf, isFloor } from './model';
 import type { Decoration, Density, Dungeon, Layout, Prop } from './model';
-import { Random, hashSeed } from './random';
+import { Random, streamSeed } from './random';
 import { isTraversable, reservedTiles } from './validation';
 
 const budgets: Readonly<Record<Density, number>> = { Sparse: 0.05, Balanced: 0.1, Cluttered: 0.15 };
@@ -11,9 +11,7 @@ export function decorate(
   density: Density,
   revision: number,
 ): Decoration {
-  const random = new Random(
-    hashSeed(`${GENERATOR_VERSION}:${seed}:decoration:${density}:${revision}`),
-  );
+  const random = new Random(streamSeed(seed, 'decoration', density, revision));
   const props: Prop[] = [];
   const blocked = new Set<number>();
   const reserved = reservedTiles(layout);
