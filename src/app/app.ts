@@ -9,6 +9,8 @@ import { Icon } from './icon';
 import { Preview } from './preview/preview';
 import { ROOM_DEFAULT, ROOM_MAX, ROOM_MIN, normalizeRoomCount, stepRoomCount } from './room-count';
 
+type Operation = 'generation' | 'details' | 'export';
+
 function initialMap(): Dungeon {
   const result = generateDungeon({ seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced' });
   if (!result.ok) throw new Error(result.error);
@@ -33,7 +35,7 @@ export class App {
   protected readonly seed = signal('mosslit-sanctum');
   protected readonly rooms = signal(ROOM_DEFAULT);
   protected readonly grid = signal(true);
-  protected readonly busy = signal<'generation' | 'details' | 'export' | null>(null);
+  protected readonly busy = signal<Operation | null>(null);
   protected readonly error = signal('');
   protected readonly status = signal('Your dungeon is ready.');
   protected readonly attempted = signal(false);
@@ -140,10 +142,7 @@ export class App {
     });
   }
 
-  private async run(
-    kind: 'generation' | 'details' | 'export',
-    action: () => void | Promise<void>,
-  ): Promise<void> {
+  private async run(kind: Operation, action: () => void | Promise<void>): Promise<void> {
     if (this.busy()) return;
     this.busy.set(kind);
     this.error.set('');
