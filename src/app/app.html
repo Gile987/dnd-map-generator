@@ -88,14 +88,15 @@
           </div>
           <fieldset class="density-field">
             <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
+            @let selectedDensity = map().decoration.density;
             <div class="density-options">
               @for (density of densities; track density) {
-              <label [class.selected]="map().decoration.density === density"
+              <label [class.selected]="selectedDensity === density"
                 ><input
                   type="radio"
                   name="density"
                   [value]="density"
-                  [checked]="map().decoration.density === density"
+                  [checked]="selectedDensity === density"
                   (change)="selectDensity(density)"
                 /><span>{{ density }}</span></label
               >
@@ -162,9 +163,10 @@
         <div><span>GENERATED SEED</span><strong class="seed-summary">{{ map().seed }}</strong></div>
         <div><span>ROOMS</span><strong>{{ map().layout.rooms.length }} connected</strong></div>
         <div>
+          @let currentDensity = map().decoration.density;
           <span>DETAILS</span
           ><strong
-            >{{ map().decoration.density }}
+            >{{ currentDensity }}
             <span class="revision">r{{ map().decoration.revision }}</span></strong
           >
         </div>
