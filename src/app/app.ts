@@ -15,6 +15,12 @@ function initialMap(): Dungeon {
   return result.map;
 }
 
+function yieldForUi(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
 @Component({
   selector: 'app-root',
   imports: [Icon, Preview],
@@ -141,7 +147,7 @@ export class App {
     if (this.busy()) return;
     this.busy.set(kind);
     this.error.set('');
-    await new Promise<void>((resolve) => setTimeout(resolve, 16));
+    await yieldForUi();
     try {
       await action();
     } catch (error: unknown) {
