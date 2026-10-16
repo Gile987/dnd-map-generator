@@ -1,9 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   afterNextRender,
   effect,
+  inject,
   input,
   signal,
   untracked,
@@ -36,6 +38,7 @@ export class Preview {
   private pointer: { id: number; x: number; y: number } | undefined;
 
   constructor() {
+    const destroyRef = inject(DestroyRef);
     effect(() => {
       const map = this.map();
       const grid = this.grid();
@@ -51,15 +54,9 @@ export class Preview {
         const observer = new ResizeObserver(() => this.resize());
         observer.observe(this.frame().nativeElement);
         this.resize();
-        this.observer = observer;
+        destroyRef.onDestroy(() => observer.disconnect());
       },
     });
-  }
-
-  private observer: ResizeObserver | undefined;
-
-  ngOnDestroy(): void {
-    this.observer?.disconnect();
   }
 
   protected fit(): void {
