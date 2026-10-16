@@ -179,7 +179,7 @@
       ><span class="legend-divider"></span><span class="scale-note">1 square = 5 feet</span>
     </div>
     <div class="export-action">
-      <span>Ready for your table.<small>PNG · 2560 × 1920 px</small></span
+      <span>Ready for your table.<small>PNG · {{ exportSize }}</small></span
       ><button class="export-button" type="button" (click)="export()" [disabled]="busy() !== null">
         <forge-icon name="download" />{{ busy() === 'export' ? 'Preparing PNG…' : 'Export PNG'
         }}<forge-icon name="arrow" />

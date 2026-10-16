@@ -1,4 +1,5 @@
 import { renderDungeon } from './dungeon-renderer';
+import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from './resolution';
 import type { Dungeon } from '../engine/model';
 
 export function exportFilename(map: Dungeon): string {
@@ -13,12 +14,12 @@ export function exportFilename(map: Dungeon): string {
 
 export async function createPng(map: Dungeon, grid: boolean): Promise<Blob> {
   const canvas = document.createElement('canvas');
-  canvas.width = 2560;
-  canvas.height = 1920;
+  canvas.width = EXPORT_WIDTH;
+  canvas.height = EXPORT_HEIGHT;
   const context = canvas.getContext('2d');
   if (!context)
     throw new Error('PNG export is unavailable because a drawing surface could not be created.');
-  renderDungeon(context, map, { grid, pixelsPerTile: 64 });
+  renderDungeon(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
