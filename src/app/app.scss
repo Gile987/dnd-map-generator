@@ -808,12 +808,12 @@ footer {
     margin: 22px -17px 0;
     padding: 17px;
   }
-  .map-size {
-    display: none !important;
-  }
   .map-meta {
     grid-template-columns: minmax(0, 1.5fr) 1fr 1fr;
     padding: 20px 17px;
+    > .map-size {
+      display: none;
+    }
   }
   .map-toolbar {
     padding: 18px 17px;
@@ -899,11 +899,11 @@ footer {
     align-self: end;
     min-height: 65px;
   }
-  .map-size {
-    display: flex !important;
-  }
   .map-meta {
     grid-template-columns: minmax(0, 1.5fr) 1fr 1fr 1fr;
+    > .map-size {
+      display: flex;
+    }
   }
   .export-action > span {
     display: none;
@@ -950,13 +950,13 @@ footer {
     border-radius: 0 0 9px 9px;
     background: #f0f2e6;
   }
-  .map-size {
-    display: none !important;
-  }
   .map-meta {
     grid-template-columns: minmax(0, 1.3fr) 0.9fr 1fr;
     padding: 16px 12px;
     gap: 8px;
+    > .map-size {
+      display: none;
+    }
     > div > strong,
     > div .seed-summary {
       font-size: 10px;
