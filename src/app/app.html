@@ -149,9 +149,10 @@
         </div>
         <label class="grid-toggle"
           ><input
+            #gridToggle
             type="checkbox"
             [checked]="grid()"
-            (change)="grid.set(!grid())"
+            (change)="grid.set(gridToggle.checked)"
             [disabled]="busy() !== null" /><forge-icon name="grid" /><span>Grid</span
           ><span class="toggle-track" aria-hidden="true"><span></span></span
         ></label>
