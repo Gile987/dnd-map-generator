@@ -1,6 +1,6 @@
 import { HEIGHT, WIDTH, isFloor } from '../engine/model';
 import type { Dungeon, Layout, Point } from '../engine/model';
-import { Random, hashSeed } from '../engine/random';
+import { Random, deriveSeed } from '../engine/random';
 import { drawProp, path } from './props';
 import type { DrawingContext } from './props';
 
@@ -68,7 +68,7 @@ function floors(ctx: DrawingContext, map: Dungeon): void {
   for (let y = 0; y < HEIGHT; y++) {
     for (let x = 0; x < WIDTH; x++) {
       if (!isFloor(map.layout, x, y)) continue;
-      const rng = new Random(hashSeed(`${map.surfaceSeed}:${x}:${y}`));
+      const rng = new Random(deriveSeed(map.surfaceSeed, x, y));
       const tone = rng.int(-8, 9);
       ctx.fillStyle = `rgb(${115 + tone} ${135 + tone} ${140 + tone})`;
       ctx.fillRect(x, y, 1, 1);

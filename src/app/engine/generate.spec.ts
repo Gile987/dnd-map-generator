@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { createHash } from 'node:crypto';
 import { generateDungeon } from './generate';
 import { changeDensity, shuffleDetails } from './decoration';
 import { HEIGHT, WIDTH, indexOf } from './model';
@@ -10,6 +11,10 @@ function validMap(settings: Settings): Dungeon {
   const result = generateDungeon(settings);
   if (!result.ok) throw new Error(`${settings.seed}: ${result.error}`);
   return result.map;
+}
+
+function digest(map: Dungeon): string {
+  return createHash('sha256').update(JSON.stringify(map)).digest('hex').slice(0, 16);
 }
 
 const settings: Settings = { seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced' };
@@ -24,6 +29,25 @@ describe('deterministic dungeon generation', () => {
     shuffleDetails(first);
     changeDensity(first, 'Cluttered');
     expect(first).toEqual(snapshot);
+  });
+
+  test('pins representative generated models to a recorded baseline', () => {
+    const cases: readonly Settings[] = [
+      { seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced' },
+      { seed: 'amber-vault', roomCount: 4, density: 'Sparse' },
+      { seed: 'forgotten-library', roomCount: 8, density: 'Cluttered' },
+      { seed: 'lantern-watch', roomCount: 7, density: 'Sparse' },
+      { seed: 'moss-and-memory', roomCount: 5, density: 'Cluttered' },
+      { seed: 'silver-crypt', roomCount: 8, density: 'Balanced' },
+    ];
+    expect(cases.map((entry) => `${entry.seed}:${digest(validMap(entry))}`)).toEqual([
+      'mosslit-sanctum:3d1aaad4c6a88f73',
+      'amber-vault:a5074a047b6f05b0',
+      'forgotten-library:d7a004eb69d49933',
+      'lantern-watch:f0aab59055a89df0',
+      'moss-and-memory:47c08761eb57584d',
+      'silver-crypt:0f53ed0b356b9955',
+    ]);
   });
 
   test('satisfies topology and decoration invariants across 45 seeds and every room count', () => {
