@@ -14,6 +14,7 @@ export function showcaseDungeon(): Dungeon {
     { from: 1, to: 2, bend: 'horizontal' },
   ];
   return {
+    type: 'dungeon' as const,
     version: GENERATOR_VERSION,
     seed: 'showcase',
     surfaceSeed: hashSeed('showcase:surface'),

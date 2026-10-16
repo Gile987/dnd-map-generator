@@ -1,8 +1,8 @@
 import { HEIGHT, WIDTH, contains, indexOf, isBlockingProp, isFloor } from './model';
-import type { Dungeon, Layout, Point, Room, Settings } from './model';
+import type { Dungeon, DungeonSettings, Layout, Point, Room } from './model';
 import { distances } from './topology';
 
-export function validateSettings(settings: Settings): string | undefined {
+export function validateSettings(settings: DungeonSettings): string | undefined {
   if (!settings.seed.trim() || settings.seed.trim().length > 64)
     return 'Enter a seed between 1 and 64 characters.';
   if (!Number.isInteger(settings.roomCount) || settings.roomCount < 4 || settings.roomCount > 8)

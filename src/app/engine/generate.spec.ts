@@ -3,11 +3,11 @@ import { createHash } from 'node:crypto';
 import { generateDungeon } from './generate';
 import { changeDensity, changePreset, shuffleDetails } from './decoration';
 import { HEIGHT, WIDTH, center, indexOf } from './model';
-import type { DecorationPreset, Density, Dungeon, Settings } from './model';
+import type { DecorationPreset, Density, Dungeon, DungeonSettings } from './model';
 import { carveLayout, distances } from './topology';
 import { reservedTiles, validateDungeon } from './validation';
 
-function validMap(settings: Settings): Dungeon {
+function validMap(settings: DungeonSettings): Dungeon {
   const result = generateDungeon(settings);
   if (!result.ok) throw new Error(`${settings.seed}: ${result.error}`);
   return result.map;
@@ -17,7 +17,7 @@ function digest(map: Dungeon): string {
   return createHash('sha256').update(JSON.stringify(map)).digest('hex').slice(0, 16);
 }
 
-const settings: Settings = {
+const settings: DungeonSettings = {
   seed: 'mosslit-sanctum',
   roomCount: 6,
   density: 'Balanced',
@@ -37,7 +37,7 @@ describe('deterministic dungeon generation', () => {
   });
 
   test('pins representative generated models to a recorded baseline', () => {
-    const cases: readonly Settings[] = [
+    const cases: readonly DungeonSettings[] = [
       { seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced', preset: 'Mosslit' },
       { seed: 'amber-vault', roomCount: 4, density: 'Sparse', preset: 'Mosslit' },
       { seed: 'forgotten-library', roomCount: 8, density: 'Cluttered', preset: 'Mosslit' },
@@ -51,15 +51,15 @@ describe('deterministic dungeon generation', () => {
     expect(
       cases.map((entry) => `${entry.seed}:${entry.preset}:${digest(validMap(entry))}`),
     ).toEqual([
-      'mosslit-sanctum:Mosslit:98ea0456edc39183',
-      'amber-vault:Mosslit:9e1e07c5c14b8295',
-      'forgotten-library:Mosslit:62377dddbbddc387',
-      'lantern-watch:Mosslit:32cbfcca0598728b',
-      'moss-and-memory:Mosslit:9013a57d319492ac',
-      'silver-crypt:Mosslit:515494aff2d383fd',
-      'amber-vault:Crypt:87862478829bf7d2',
-      'forgotten-library:Storehouse:dc3a0745a0d5a396',
-      'lantern-watch:Sanctuary:ff1f06c72013193a',
+      'mosslit-sanctum:Mosslit:dd379eb6529ef04a',
+      'amber-vault:Mosslit:9e81d6718f2729a7',
+      'forgotten-library:Mosslit:cda8ee97437e19fd',
+      'lantern-watch:Mosslit:d2c0b30fbe3a0f50',
+      'moss-and-memory:Mosslit:e1b3d5e3d1f0a35c',
+      'silver-crypt:Mosslit:7bcd96a9d0da5ade',
+      'amber-vault:Crypt:36cc65b8d2e9f911',
+      'forgotten-library:Storehouse:1bdc093c31c24b08',
+      'lantern-watch:Sanctuary:10bd2a562b030cfd',
     ]);
   });
 
@@ -167,7 +167,14 @@ describe('deterministic dungeon generation', () => {
   test('trims seeds and keeps view settings outside the generation model', () => {
     const map = validMap(settings);
     expect(validMap({ ...settings, seed: `  ${settings.seed}  ` })).toEqual(map);
-    expect(Object.keys(map)).toEqual(['version', 'seed', 'layout', 'surfaceSeed', 'decoration']);
+    expect(Object.keys(map)).toEqual([
+      'type',
+      'version',
+      'seed',
+      'layout',
+      'surfaceSeed',
+      'decoration',
+    ]);
     expect(changeDensity(map, 'Sparse').layout).toEqual(
       validMap({ ...settings, density: 'Sparse' }).layout,
     );

@@ -1,26 +1,43 @@
 import { renderDungeon } from './dungeon-renderer';
+import { renderForest } from './forest-renderer';
 import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from './resolution';
-import type { Dungeon } from '../engine/model';
+import type { Dungeon, ForestClearing, GeneratedMap } from '../engine/model';
 
-export function exportFilename(map: Dungeon): string {
+export function exportFilename(map: GeneratedMap): string {
   const seed =
     map.seed
       .normalize('NFKD')
       .replace(/[^a-zA-Z0-9_-]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 64) || 'dungeon';
-  const preset = map.decoration.preset.toLowerCase();
-  return `encounter-${seed}-${preset}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+  const type = map.type;
+  if (type === 'dungeon') {
+    const preset = map.decoration.preset.toLowerCase();
+    return `encounter-${seed}-${preset}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+  }
+  return `encounter-${seed}-forest-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
 }
 
-export async function createPng(map: Dungeon, grid: boolean): Promise<Blob> {
+function renderMapToCanvas(
+  context: CanvasRenderingContext2D,
+  map: GeneratedMap,
+  grid: boolean,
+): void {
+  if (map.type === 'dungeon') {
+    renderDungeon(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
+  } else {
+    renderForest(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
+  }
+}
+
+export async function createPng(map: GeneratedMap, grid: boolean): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = EXPORT_WIDTH;
   canvas.height = EXPORT_HEIGHT;
   const context = canvas.getContext('2d');
   if (!context)
     throw new Error('PNG export is unavailable because a drawing surface could not be created.');
-  renderDungeon(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
+  renderMapToCanvas(context, map, grid);
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
@@ -29,7 +46,7 @@ export async function createPng(map: Dungeon, grid: boolean): Promise<Blob> {
   );
 }
 
-export async function downloadPng(map: Dungeon, grid: boolean): Promise<void> {
+export async function downloadPng(map: GeneratedMap, grid: boolean): Promise<void> {
   const blob = await createPng(map, grid);
   const url = URL.createObjectURL(blob);
   try {
