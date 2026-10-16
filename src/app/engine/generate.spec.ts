@@ -2,9 +2,9 @@ import { describe, expect, test } from 'vitest';
 import { createHash } from 'node:crypto';
 import { generateDungeon } from './generate';
 import { changeDensity, shuffleDetails } from './decoration';
-import { HEIGHT, WIDTH, indexOf } from './model';
+import { HEIGHT, WIDTH, center, indexOf } from './model';
 import type { Density, Dungeon, Settings } from './model';
-import { distances } from './topology';
+import { carveLayout, distances } from './topology';
 import { reservedTiles, validateDungeon } from './validation';
 
 function validMap(settings: Settings): Dungeon {
@@ -84,6 +84,32 @@ describe('deterministic dungeon generation', () => {
     }
   });
 
+  test('adds the optional extra connection only for seeds with a useful shortcut', () => {
+    const shortcut = validMap({ seed: 'batch-1', roomCount: 5, density: 'Balanced' });
+    expect(shortcut.layout.connections).toHaveLength(shortcut.layout.rooms.length);
+    const pairs = shortcut.layout.connections.map(
+      (link) => `${Math.min(link.from, link.to)}~${Math.max(link.from, link.to)}`,
+    );
+    expect(new Set(pairs).size).toBe(shortcut.layout.connections.length);
+    const spanningTree = shortcut.layout.connections.slice(0, -1);
+    const extra = shortcut.layout.connections.at(-1);
+    const from = shortcut.layout.rooms.find((room) => room.id === extra?.from);
+    const to = shortcut.layout.rooms.find((room) => room.id === extra?.to);
+    if (!extra || !from || !to) throw new Error('the extra connection is missing');
+    const ac = center(from);
+    const bc = center(to);
+    const target = indexOf(bc.x, bc.y);
+    const detour = distances(carveLayout(shortcut.layout.rooms, spanningTree), ac).get(target);
+    const improved = distances(shortcut.layout.tiles, ac).get(target);
+    if (detour === undefined || improved === undefined)
+      throw new Error('the shortcut endpoints are unreachable');
+    expect(detour - improved).toBeGreaterThanOrEqual(10);
+    const spanningTreeOnly = validMap(settings);
+    expect(spanningTreeOnly.layout.connections).toHaveLength(
+      spanningTreeOnly.layout.rooms.length - 1,
+    );
+  });
+
   test('detail shuffling and density changes preserve all topology and surface data', () => {
     const original = validMap(settings);
     const shuffled = shuffleDetails(original);
@@ -108,6 +134,12 @@ describe('deterministic dungeon generation', () => {
       expect(generateDungeon({ ...settings, seed }).ok).toBe(false);
     for (const roomCount of [0, 3, 9, 4.5, NaN, Infinity])
       expect(generateDungeon({ ...settings, roomCount }).ok).toBe(false);
+    const invalidDensities: readonly string[] = ['Dense', 'balanced', ''];
+    for (const density of invalidDensities)
+      expect(generateDungeon({ ...settings, density: density as Density })).toEqual({
+        ok: false,
+        error: 'Choose a valid decoration density.',
+      });
     const failure = generateDungeon(settings, { retries: 1, placementAttempts: 1 });
     expect(failure.ok).toBe(false);
     if (!failure.ok) expect(failure.error).toContain('generation limit');
