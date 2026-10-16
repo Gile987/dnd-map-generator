@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { generateDungeon } from './engine/generate';
-import { changeDensity, shuffleDetails } from './engine/decoration';
-import type { Density, Dungeon, Settings } from './engine/model';
+import { changeDensity, changePreset, shuffleDetails } from './engine/decoration';
+import { ALL_PRESETS, DEFAULT_PRESET } from './engine/model';
+import type { DecorationPreset, Density, Dungeon, Settings } from './engine/model';
 import { validateSettings } from './engine/validation';
 import { downloadPng } from './rendering/export';
 import { EXPORT_HEIGHT, EXPORT_WIDTH } from './rendering/resolution';
@@ -12,7 +13,12 @@ import { ROOM_DEFAULT, ROOM_MAX, ROOM_MIN, normalizeRoomCount, stepRoomCount } f
 type Operation = 'generation' | 'details' | 'export';
 
 function initialMap(): Dungeon {
-  const result = generateDungeon({ seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced' });
+  const result = generateDungeon({
+    seed: 'mosslit-sanctum',
+    roomCount: 6,
+    density: 'Balanced',
+    preset: DEFAULT_PRESET,
+  });
   if (!result.ok) throw new Error(result.error);
   return result.map;
 }
@@ -40,6 +46,7 @@ export class App {
   protected readonly status = signal('Your dungeon is ready.');
   protected readonly attempted = signal(false);
   protected readonly densities: readonly Density[] = ['Sparse', 'Balanced', 'Cluttered'];
+  protected readonly presets: readonly DecorationPreset[] = ALL_PRESETS;
   protected readonly exportSize = `${EXPORT_WIDTH} × ${EXPORT_HEIGHT} px`;
   protected readonly pending = computed(
     () =>
@@ -66,6 +73,24 @@ export class App {
         Balanced: 'A little character. Plenty of space.',
         Cluttered: 'Storied rooms, with paths kept clear.',
       })[this.map().decoration.density],
+  );
+  protected readonly presetDescription = computed(
+    () =>
+      ({
+        Mosslit: 'Cool slate. Soft moss. A warm glow.',
+        Crypt: 'Stone sarcophagi and subdued lantern light.',
+        Storehouse: 'Crates, barrels, and worn runners.',
+        Sanctuary: 'Moss, vines, and broken architecture.',
+      })[this.map().decoration.preset],
+  );
+  protected readonly presetLabel = computed(
+    () =>
+      ({
+        Mosslit: 'Mosslit stone',
+        Crypt: 'Ancient crypt',
+        Storehouse: 'Abandoned storehouse',
+        Sanctuary: 'Overgrown sanctuary',
+      })[this.map().decoration.preset],
   );
 
   protected editSeed(event: Event): void {
@@ -109,6 +134,14 @@ export class App {
     });
   }
 
+  protected async selectPreset(preset: DecorationPreset): Promise<void> {
+    if (preset === this.map().decoration.preset) return;
+    await this.run('details', () => {
+      this.map.update((map) => changePreset(map, preset));
+      this.status.set(`${preset} character applied. Your layout is preserved.`);
+    });
+  }
+
   protected async export(): Promise<void> {
     await this.run('export', async () => {
       await downloadPng(this.map(), this.grid());
@@ -125,6 +158,7 @@ export class App {
       seed: this.seed(),
       roomCount: Number(this.rooms()),
       density: this.map().decoration.density,
+      preset: this.map().decoration.preset,
     };
     const validation = validateSettings(settings);
     if (validation || !/^\d+$/.test(this.rooms())) {

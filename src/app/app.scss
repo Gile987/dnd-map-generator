@@ -187,8 +187,15 @@ form {
 .field {
   margin-bottom: 26px;
 }
+.preset-field {
+  margin-bottom: 10px;
+}
+.density-field {
+  margin-top: 20px;
+}
 .field label,
-.density-field legend {
+.density-field legend,
+.preset-field legend {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -305,6 +312,46 @@ form {
   color: #88927e;
   margin: 9px 0 0;
   line-height: 1.5;
+}
+.preset-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid #d9ddce;
+  border-radius: 5px;
+  padding: 3px;
+  background: #f0f1e6;
+  gap: 2px;
+  label {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    min-height: 32px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #7e8973;
+    &.selected {
+      background: #fffef7;
+      color: #3d5d41;
+      box-shadow: 0 1px 3px #1a3d2610;
+      border-color: #d6dec8;
+    }
+    &:has(input:focus-visible) {
+      outline: 2px solid #a17e3c;
+      outline-offset: 2px;
+    }
+    input {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      inset: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+  }
 }
 .density-options {
   display: flex;

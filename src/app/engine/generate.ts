@@ -130,7 +130,7 @@ export function generateDungeon(
       seed,
       layout,
       surfaceSeed: streamSeed(seed, 'surface'),
-      decoration: decorate(layout, seed, settings.density, 0),
+      decoration: decorate(layout, seed, settings.density, settings.preset, 0),
     };
     const error = validateDungeon(map);
     if (!error) return { ok: true, map };

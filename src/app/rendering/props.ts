@@ -221,6 +221,111 @@ export function drawProp(ctx: DrawingContext, prop: Prop): void {
       ctx.lineTo(x + 0.08, y - 0.1);
       ctx.stroke();
     }
+  } else if (prop.kind === 'sarcophagus') {
+    ctx.rotate((v - 0.5) * 0.12);
+    ctx.fillStyle = '#1a282bb0';
+    ctx.fillRect(-0.42, -0.22, 0.88, 0.62);
+    ctx.fillStyle = '#5a6870';
+    ctx.fillRect(-0.46, -0.28, 0.88, 0.62);
+    ctx.fillStyle = '#7d8e8a';
+    ctx.fillRect(-0.42, -0.24, 0.8, 0.54);
+    ctx.strokeStyle = '#3c4e52';
+    ctx.lineWidth = 0.03;
+    ctx.strokeRect(-0.46, -0.28, 0.88, 0.62);
+    ctx.fillStyle = '#6a7b78';
+    ctx.fillRect(-0.34, -0.18, 0.64, 0.06);
+    ctx.fillRect(-0.34, 0.18, 0.64, 0.06);
+    ctx.strokeStyle = '#99aba3';
+    ctx.lineWidth = 0.015;
+    ctx.beginPath();
+    ctx.moveTo(-0.15, -0.12);
+    ctx.lineTo(-0.15, 0.18);
+    ctx.moveTo(0.12, -0.12);
+    ctx.lineTo(0.12, 0.18);
+    ctx.stroke();
+    path(
+      ctx,
+      [
+        [-0.06, -0.06],
+        [0.03, -0.12],
+        [0.06, -0.03],
+        [0.03, 0.02],
+        [-0.03, 0.02],
+        [-0.06, -0.03],
+      ],
+      '#8a9e96',
+      '#5a706a',
+    );
+  } else if (prop.kind === 'vine') {
+    for (let i = 0; i < 5; i++) {
+      const startX = (v - 0.5) * 0.3 + (i - 2) * 0.12;
+      const startY = -0.42;
+      ctx.strokeStyle = i % 2 ? '#3a7a5a' : '#4a8e68';
+      ctx.lineWidth = 0.025 + (i % 3) * 0.008;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      const segments = 3 + (i % 2);
+      let cx = startX;
+      let cy = startY;
+      for (let s = 0; s < segments; s++) {
+        cx += Math.sin(i * 7 + s * 3 + v * 10) * 0.1;
+        cy += 0.18 + v * 0.06;
+        ctx.lineTo(cx, cy);
+      }
+      ctx.stroke();
+      for (let s = 0; s < segments; s++) {
+        const lx = startX + Math.sin(i * 7 + s * 3 + v * 10) * 0.1 * (s + 1);
+        const ly = startY + (0.18 + v * 0.06) * (s + 1);
+        if ((i + s) % 2 === 0) {
+          ctx.fillStyle = '#5a9e72a0';
+          ctx.beginPath();
+          ctx.ellipse(lx + 0.04, ly, 0.04, 0.025, i + s, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  } else if (prop.kind === 'broken_column') {
+    ctx.rotate((v - 0.5) * 0.15);
+    ctx.fillStyle = '#1a282b80';
+    ctx.beginPath();
+    ctx.arc(0.04, 0.08, 0.38, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#6b7d7a';
+    ctx.beginPath();
+    ctx.arc(0, 0, 0.36, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#3e524e';
+    ctx.lineWidth = 0.04;
+    ctx.stroke();
+    ctx.fillStyle = '#8a9e97';
+    ctx.beginPath();
+    ctx.arc(-0.02, -0.02, 0.28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#b0c0b4';
+    ctx.lineWidth = 0.02;
+    ctx.beginPath();
+    ctx.arc(-0.04, -0.04, 0.22, Math.PI * 1.1, Math.PI * 1.7);
+    ctx.stroke();
+    const cracks = [
+      [-0.15, -0.2, 0.05, 0.15],
+      [0.1, -0.08, -0.12, 0.22],
+    ] as const;
+    ctx.strokeStyle = '#4a5e58';
+    ctx.lineWidth = 0.018;
+    for (const [x1, y1, x2, y2] of cracks) {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#52645e';
+    ctx.beginPath();
+    ctx.moveTo(0.15, -0.3);
+    ctx.lineTo(0.32, -0.18);
+    ctx.lineTo(0.28, -0.05);
+    ctx.lineTo(0.18, -0.1);
+    ctx.closePath();
+    ctx.fill();
   } else {
     ctx.fillStyle = '#26373b';
     ctx.fillRect(-0.11, -0.14, 0.23, 0.36);

@@ -1,5 +1,5 @@
 import { HEIGHT, WIDTH, isFloor } from '../engine/model';
-import type { Dungeon, Layout, Point } from '../engine/model';
+import type { DecorationPreset, Dungeon, Layout, Point } from '../engine/model';
 import { Random, deriveSeed } from '../engine/random';
 import { drawProp, path } from './props';
 import type { DrawingContext } from './props';
@@ -13,6 +13,50 @@ interface Edge {
   readonly a: Point;
   readonly b: Point;
 }
+
+interface Atmosphere {
+  readonly background: string;
+  readonly floorBase: readonly [number, number, number];
+  readonly floorSlab: readonly [number, number, number];
+  readonly sconceGlow: readonly [number, number, number];
+  readonly sconceRadius: number;
+  readonly sconceAlpha: number;
+}
+
+const atmospheres: Readonly<Record<DecorationPreset, Atmosphere>> = {
+  Mosslit: {
+    background: '#18272e',
+    floorBase: [115, 135, 140],
+    floorSlab: [188, 202, 191],
+    sconceGlow: [255, 214, 139],
+    sconceRadius: 2.25,
+    sconceAlpha: 0.25,
+  },
+  Crypt: {
+    background: '#131e24',
+    floorBase: [100, 118, 126],
+    floorSlab: [165, 180, 178],
+    sconceGlow: [220, 190, 120],
+    sconceRadius: 1.7,
+    sconceAlpha: 0.16,
+  },
+  Storehouse: {
+    background: '#1e2628',
+    floorBase: [125, 130, 128],
+    floorSlab: [195, 195, 175],
+    sconceGlow: [255, 210, 130],
+    sconceRadius: 2.4,
+    sconceAlpha: 0.28,
+  },
+  Sanctuary: {
+    background: '#162824',
+    floorBase: [108, 138, 128],
+    floorSlab: [175, 205, 185],
+    sconceGlow: [230, 220, 150],
+    sconceRadius: 2.0,
+    sconceAlpha: 0.2,
+  },
+};
 
 function boundaries(layout: Layout): Edge[][] {
   const edges: Edge[] = [];
@@ -65,12 +109,15 @@ function trace(ctx: DrawingContext, loops: readonly (readonly Edge[])[]): void {
 }
 
 function floors(ctx: DrawingContext, map: Dungeon): void {
+  const atmo = atmospheres[map.decoration.preset];
+  const [baseR, baseG, baseB] = atmo.floorBase;
+  const [slabR, slabG, slabB] = atmo.floorSlab;
   for (let y = 0; y < HEIGHT; y++) {
     for (let x = 0; x < WIDTH; x++) {
       if (!isFloor(map.layout, x, y)) continue;
       const rng = new Random(deriveSeed(map.surfaceSeed, x, y));
       const tone = rng.int(-8, 9);
-      ctx.fillStyle = `rgb(${115 + tone} ${135 + tone} ${140 + tone})`;
+      ctx.fillStyle = `rgb(${baseR + tone} ${baseG + tone} ${baseB + tone})`;
       ctx.fillRect(x, y, 1, 1);
       const slabs = rng.next() < 0.3 ? 2 : 1;
       for (let slab = 0; slab < slabs; slab++) {
@@ -87,7 +134,7 @@ function floors(ctx: DrawingContext, map: Dungeon): void {
             [sx + w, sy + h - 0.025],
             [sx + 0.025, sy + h],
           ],
-          `rgba(188,202,191,${0.035 + rng.next() * 0.09})`,
+          `rgba(${slabR},${slabG},${slabB},${0.035 + rng.next() * 0.09})`,
           '#334b4e35',
         );
         ctx.strokeStyle = '#c9d5c13b';
@@ -266,9 +313,10 @@ function architecture(ctx: DrawingContext, map: Dungeon): void {
 }
 
 export function renderDungeon(ctx: DrawingContext, map: Dungeon, options: RenderOptions): void {
+  const atmo = atmospheres[map.decoration.preset];
   ctx.save();
   ctx.setTransform(options.pixelsPerTile, 0, 0, options.pixelsPerTile, 0, 0);
-  ctx.fillStyle = '#18272e';
+  ctx.fillStyle = atmo.background;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
   const background = new Random(map.surfaceSeed);
   for (let i = 0; i < 2200; i++) {
@@ -294,12 +342,18 @@ export function renderDungeon(ctx: DrawingContext, map: Dungeon, options: Render
   for (const prop of map.decoration.props.filter((prop) => prop.kind === 'sconce')) {
     const x = prop.x + 0.5;
     const y = prop.y - 0.07;
-    const glow = ctx.createRadialGradient(x, y, 0.05, x, y, 2.25);
-    glow.addColorStop(0, '#ffd68b40');
-    glow.addColorStop(0.35, '#e8b4651c');
-    glow.addColorStop(1, '#e8b46500');
+    const [gr, gg, gb] = atmo.sconceGlow;
+    const glow = ctx.createRadialGradient(x, y, 0.05, x, y, atmo.sconceRadius);
+    glow.addColorStop(0, `rgba(${gr},${gg},${gb},${atmo.sconceAlpha})`);
+    glow.addColorStop(0.35, `rgba(${gr},${gg},${gb},${atmo.sconceAlpha * 0.44})`);
+    glow.addColorStop(1, `rgba(${gr},${gg},${gb},0)`);
     ctx.fillStyle = glow;
-    ctx.fillRect(x - 2.25, y - 2.25, 4.5, 4.5);
+    ctx.fillRect(
+      x - atmo.sconceRadius,
+      y - atmo.sconceRadius,
+      atmo.sconceRadius * 2,
+      atmo.sconceRadius * 2,
+    );
   }
   if (options.grid) {
     ctx.beginPath();

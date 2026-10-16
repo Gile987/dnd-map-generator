@@ -1,6 +1,6 @@
 # Encounter Map Forge
 
-A browser-only Angular workbench for making mosslit stone dungeon battle maps. It opens with a complete map, generates connected rooms and corridors, shuffles decoration without changing the layout, and exports a full-resolution PNG. The implementation follows [the project brief](encounter-map-forge-brief.md).
+A browser-only Angular workbench for making dungeon battle maps with distinct character presets. It opens with a complete map, generates connected rooms and corridors, shuffles decoration without changing the layout, and exports a full-resolution PNG. The implementation follows [the project brief](encounter-map-forge-brief.md).
 
 ## Run locally
 
@@ -32,14 +32,15 @@ Angular 22 requires Node `^22.22.3`, `^24.15.0`, or `>=26.0.0` and TypeScript `>
 - **Rooms:** choose an integer from 4–8. The map always contains 40 columns × 30 rows. The stepper normalizes the draft first — blank or non-numeric becomes 6, a fraction rounds down — then clamps to 4–8, so its buttons always agree with the value they set.
 - **New seed:** uses browser cryptographic randomness and generates immediately using the draft room count.
 - **Decoration:** Sparse, Balanced and Cluttered apply immediately to the current layout, with conservative blocking-prop budgets of 5%, 10% and 15% of room floor area. The engine may place fewer props to protect access.
+- **Character:** Mosslit, Crypt, Storehouse and Sanctuary change the prop palette and floor/wall palette immediately, without rebuilding the layout. Each preset uses its own deterministic decoration stream, so the same seed and density produce distinct rooms under different presets.
 - **Shuffle details:** advances the displayed detail revision, changing props and accents while preserving every tile, connection, threshold, landmark and floor texture.
 - **Grid:** controls both the preview and export. It starts enabled.
 - **Explore:** drag with a pointer, or focus the canvas and use arrow keys to pan. Use the zoom buttons, `+` / `-`, or Ctrl/Command + wheel over the preview to zoom. **Fit** or `Home` recenters the whole map. Ordinary wheel scrolling remains page scrolling. Zoom is relative to fit and ranges from 50% to 400%.
-- **Export PNG:** downloads the entire 2560 × 1920 image, at 64 pixels per tile, using the current grid toggle. Preview zoom and pan never affect the export. Filenames use the generated seed, density, detail revision and generator version; unapplied drafts are excluded and unsafe filename characters are removed.
+- **Export PNG:** downloads the entire 2560 × 1920 image, at 64 pixels per tile, using the current grid toggle. Preview zoom and pan never affect the export. Filenames use the generated seed, preset, density, detail revision and generator version; unapplied drafts are excluded and unsafe filename characters are removed.
 
 Stairs identify the entrance. The circular stone dais marks an objective area in another room. These are architectural landmarks, with no encounters, hidden information or game mechanics. A suggested scale is 5 feet per square; the exported image has no VTT metadata.
 
-For reproduction, record the **generated seed, room count, density, detail revision and generator version (1.0.0)**. Start at revision 0 with Generate, then Shuffle details the recorded number of times. Set the density to the recorded value. The summary always describes the current generated map, even while draft settings are being edited.
+For reproduction, record the **generated seed, room count, density, preset, detail revision and generator version (2.0.0)**. Start at revision 0 with Generate, then Shuffle details the recorded number of times. Set the density and preset to the recorded values. The summary always describes the current generated map, even while draft settings are being edited.
 
 ## Engine and model
 
@@ -47,13 +48,15 @@ For reproduction, record the **generated seed, room count, density, detail revis
 
 Coordinates use **x = column, y = row**, with zero-based tile indices and half-open room bounds: `[x, x + width)` and `[y, y + height)`. Tiles are stored row-major at `y * 40 + x`. Thresholds are explicit two-tile grid edges; horizontal edges span increasing x and vertical edges span increasing y. Doors are passable.
 
-The seeded engine uses unsigned 32-bit **FNV-1a over UTF-16 code units** for stable string hashing and **Mulberry32** for pseudorandom values. Versioned, separately derived streams govern layout, decoration and surface texture. Surface samples are also keyed by tile coordinates. Map data are deterministic for the same reproduction settings; browser rasterization can differ slightly between browsers.
+The seeded engine uses unsigned 32-bit **FNV-1a over UTF-16 code units** for stable string hashing and **Mulberry32** for pseudorandom values. Versioned, separately derived streams govern layout, decoration (keyed by preset, density and revision) and surface texture. Surface samples are also keyed by tile coordinates. Map data are deterministic for the same reproduction settings; browser rasterization can differ slightly between browsers.
+
+**Version history.** Version 2.0.0 added decoration presets. The decoration stream key now includes the preset name, so a v1.0.0 map with the same seed, room count, and density produces different Mosslit props under 2.0.0. More broadly, every stream key (layout, decoration, surface texture) includes `GENERATOR_VERSION`, so upgrading the generator changes room placement, floor textures, and decoration for any given seed; identical reproduction requires matching the generator version. The `GENERATOR_VERSION` constant is the authoritative compatibility marker; the model carries it in every `Dungeon.version` field and the export filename.
 
 Room placement has at most **16 deterministic retries × 320 attempts**. Each room is 5–9 tiles wide and 4–7 tiles high, with two solid tiles of separation before corridors are carved and an intact outer border. A deterministic minimum spanning tree connects room centers, using squared distance and stable room-ID tie-breaking. Orthogonal corridors carve two-tile clearance. At most one extra connection is added when final-tile shortest paths show a useful short alternative. Corridors may merge and enter other rooms.
 
 Actual floor topology determines connectivity, visible walls, and unambiguous corridor-to-room thresholds. Broad openings and ambiguous intersections have no decorative door. Landmark selection maximizes traversable center-to-center distance between different rooms using breadth-first search. The final floor field must form one component.
 
-Decoration follows validation. Crates, barrels and rubble block their tile; rugs, moss and sconces are decorative. Blocking props favor room edges and corners. Corridor tiles and neighboring room-entry space, thresholds, landmarks and their adjacent tiles are reserved. After every proposed blocking placement, breadth-first search confirms all remaining walkable tiles are connected and every room still has a clear 2 × 2 area. Placement is bounded by a finite candidate list. Changing density or shuffling creates new decoration without mutating an existing map.
+Decoration follows validation. Crates, barrels, rubble, sarcophagi and broken columns block their tile; rugs, moss, vines and sconces are decorative. Blocking props favor room edges and corners. Corridor tiles and neighboring room-entry space, thresholds, landmarks and their adjacent tiles are reserved. After every proposed blocking placement, breadth-first search confirms all remaining walkable tiles are connected and every room still has a clear 2 × 2 area. Placement is bounded by a finite candidate list. Changing density, preset or shuffling creates new decoration without mutating an existing map.
 
 ## Rendering and interface
 

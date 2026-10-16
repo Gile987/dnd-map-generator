@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { createHash } from 'node:crypto';
 import { generateDungeon } from './generate';
-import { changeDensity, shuffleDetails } from './decoration';
+import { changeDensity, changePreset, shuffleDetails } from './decoration';
 import { HEIGHT, WIDTH, center, indexOf } from './model';
-import type { Density, Dungeon, Settings } from './model';
+import type { DecorationPreset, Density, Dungeon, Settings } from './model';
 import { carveLayout, distances } from './topology';
 import { reservedTiles, validateDungeon } from './validation';
 
@@ -17,7 +17,12 @@ function digest(map: Dungeon): string {
   return createHash('sha256').update(JSON.stringify(map)).digest('hex').slice(0, 16);
 }
 
-const settings: Settings = { seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced' };
+const settings: Settings = {
+  seed: 'mosslit-sanctum',
+  roomCount: 6,
+  density: 'Balanced',
+  preset: 'Mosslit',
+};
 
 describe('deterministic dungeon generation', () => {
   test('reproduces full models and does not mutate settings or previous maps', () => {
@@ -33,20 +38,28 @@ describe('deterministic dungeon generation', () => {
 
   test('pins representative generated models to a recorded baseline', () => {
     const cases: readonly Settings[] = [
-      { seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced' },
-      { seed: 'amber-vault', roomCount: 4, density: 'Sparse' },
-      { seed: 'forgotten-library', roomCount: 8, density: 'Cluttered' },
-      { seed: 'lantern-watch', roomCount: 7, density: 'Sparse' },
-      { seed: 'moss-and-memory', roomCount: 5, density: 'Cluttered' },
-      { seed: 'silver-crypt', roomCount: 8, density: 'Balanced' },
+      { seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced', preset: 'Mosslit' },
+      { seed: 'amber-vault', roomCount: 4, density: 'Sparse', preset: 'Mosslit' },
+      { seed: 'forgotten-library', roomCount: 8, density: 'Cluttered', preset: 'Mosslit' },
+      { seed: 'lantern-watch', roomCount: 7, density: 'Sparse', preset: 'Mosslit' },
+      { seed: 'moss-and-memory', roomCount: 5, density: 'Cluttered', preset: 'Mosslit' },
+      { seed: 'silver-crypt', roomCount: 8, density: 'Balanced', preset: 'Mosslit' },
+      { seed: 'amber-vault', roomCount: 4, density: 'Sparse', preset: 'Crypt' },
+      { seed: 'forgotten-library', roomCount: 8, density: 'Cluttered', preset: 'Storehouse' },
+      { seed: 'lantern-watch', roomCount: 7, density: 'Sparse', preset: 'Sanctuary' },
     ];
-    expect(cases.map((entry) => `${entry.seed}:${digest(validMap(entry))}`)).toEqual([
-      'mosslit-sanctum:3d1aaad4c6a88f73',
-      'amber-vault:a5074a047b6f05b0',
-      'forgotten-library:d7a004eb69d49933',
-      'lantern-watch:f0aab59055a89df0',
-      'moss-and-memory:47c08761eb57584d',
-      'silver-crypt:0f53ed0b356b9955',
+    expect(
+      cases.map((entry) => `${entry.seed}:${entry.preset}:${digest(validMap(entry))}`),
+    ).toEqual([
+      'mosslit-sanctum:Mosslit:98ea0456edc39183',
+      'amber-vault:Mosslit:9e1e07c5c14b8295',
+      'forgotten-library:Mosslit:62377dddbbddc387',
+      'lantern-watch:Mosslit:32cbfcca0598728b',
+      'moss-and-memory:Mosslit:9013a57d319492ac',
+      'silver-crypt:Mosslit:515494aff2d383fd',
+      'amber-vault:Crypt:87862478829bf7d2',
+      'forgotten-library:Storehouse:dc3a0745a0d5a396',
+      'lantern-watch:Sanctuary:ff1f06c72013193a',
     ]);
   });
 
@@ -55,7 +68,7 @@ describe('deterministic dungeon generation', () => {
     for (let seed = 0; seed < 45; seed++) {
       const density = densities[seed % densities.length] ?? 'Balanced';
       const roomCount = 4 + (seed % 5);
-      const map = validMap({ seed: `batch-${seed}`, roomCount, density });
+      const map = validMap({ seed: `batch-${seed}`, roomCount, density, preset: 'Mosslit' });
       expect(map.layout.rooms).toHaveLength(roomCount);
       expect(map.layout.tiles).toHaveLength(WIDTH * HEIGHT);
       expect(validateDungeon(map), `batch-${seed}`).toBeUndefined();
@@ -85,7 +98,12 @@ describe('deterministic dungeon generation', () => {
   });
 
   test('adds the optional extra connection only for seeds with a useful shortcut', () => {
-    const shortcut = validMap({ seed: 'batch-1', roomCount: 5, density: 'Balanced' });
+    const shortcut = validMap({
+      seed: 'batch-1',
+      roomCount: 8,
+      density: 'Balanced',
+      preset: 'Mosslit',
+    });
     expect(shortcut.layout.connections).toHaveLength(shortcut.layout.rooms.length);
     const pairs = shortcut.layout.connections.map(
       (link) => `${Math.min(link.from, link.to)}~${Math.max(link.from, link.to)}`,
@@ -153,5 +171,50 @@ describe('deterministic dungeon generation', () => {
     expect(changeDensity(map, 'Sparse').layout).toEqual(
       validMap({ ...settings, density: 'Sparse' }).layout,
     );
+  });
+
+  test('preset changes preserve all topology and surface data', () => {
+    const original = validMap(settings);
+    for (const preset of ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'] as const) {
+      const changed = changePreset(original, preset);
+      expect(changed.layout).toEqual(original.layout);
+      expect(changed.surfaceSeed).toBe(original.surfaceSeed);
+      expect(changed.seed).toBe(original.seed);
+      expect(changed.decoration.preset).toBe(preset);
+      expect(changed.decoration.density).toBe(original.decoration.density);
+      expect(changed.decoration.revision).toBe(original.decoration.revision);
+      expect(validateDungeon(changed)).toBeUndefined();
+    }
+    expect(changePreset(original, 'Mosslit')).toEqual(original);
+    const crypt = changePreset(original, 'Crypt');
+    const storehouse = changePreset(original, 'Storehouse');
+    expect(crypt.decoration.props).not.toEqual(storehouse.decoration.props);
+  });
+
+  test('each preset produces valid dungeons across seeds and densities', () => {
+    const presets: readonly DecorationPreset[] = ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'];
+    const densities: readonly Density[] = ['Sparse', 'Balanced', 'Cluttered'];
+    for (const preset of presets) {
+      for (let i = 0; i < 8; i++) {
+        const density = densities[i % densities.length] ?? 'Balanced';
+        const map = validMap({
+          seed: `preset-${preset}-${i}`,
+          roomCount: 4 + (i % 5),
+          density,
+          preset,
+        });
+        expect(map.decoration.preset).toBe(preset);
+        expect(validateDungeon(map)).toBeUndefined();
+      }
+    }
+  });
+
+  test('rejects invalid preset in settings', () => {
+    const invalidPresets: readonly string[] = ['Dungeon', 'mosslit', ''];
+    for (const preset of invalidPresets)
+      expect(generateDungeon({ ...settings, preset: preset as DecorationPreset })).toEqual({
+        ok: false,
+        error: 'Choose a valid decoration preset.',
+      });
   });
 });

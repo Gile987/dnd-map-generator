@@ -36,7 +36,9 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export PNG' }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('encounter-mosslit-sanctum-cluttered-r1-v1.0.0.png');
+  expect(download.suggestedFilename()).toBe(
+    'encounter-mosslit-sanctum-mosslit-cluttered-r1-v2.0.0.png',
+  );
   await download.saveAs('artifacts/browser-export.png');
   const png = await PNG.read('artifacts/browser-export.png');
   expect(png).toEqual({ width: 2560, height: 1920 });
@@ -165,6 +167,40 @@ test('grid, pointer pan, keyboard zoom, ordinary scrolling and responsive resize
       `${width}px viewport`,
     ).toBe(true);
   }
+});
+
+test('preset selection applies immediately, interacts with pending drafts, and appears in export filename', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('#map-summary')).toContainText('Mosslit');
+  await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await expect(page.locator('#map-summary')).toContainText('Crypt');
+  await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
+  await expect(page.getByText('Layout edits ready.')).not.toBeVisible();
+
+  await page.getByLabel('World seed').fill('draft-seed');
+  await expect(page.getByText('Layout edits ready. Generate to apply.')).toBeVisible();
+  await expect(page.locator('#map-summary')).toContainText('Crypt');
+  await expect(page.locator('#map-summary')).not.toContainText('draft-seed');
+
+  await page.getByRole('radio', { name: 'Sanctuary', exact: true }).check();
+  await expect(page.locator('#map-summary')).toContainText('Sanctuary');
+  await expect(page.locator('#map-summary')).not.toContainText('draft-seed');
+
+  await page.getByRole('button', { name: 'Shuffle details' }).click();
+  await expect(page.locator('#map-summary')).toContainText('r1');
+  await page.getByRole('radio', { name: 'Storehouse', exact: true }).check();
+  await expect(page.locator('#map-summary')).toContainText('Storehouse');
+  await expect(page.locator('#map-summary')).toContainText('r1');
+
+  await page.getByRole('radio', { name: 'Cluttered' }).check();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export PNG' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe(
+    'encounter-mosslit-sanctum-storehouse-cluttered-r1-v2.0.0.png',
+  );
 });
 
 test('export failure is reported and controls recover', async ({ page }) => {

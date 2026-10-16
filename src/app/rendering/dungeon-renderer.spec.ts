@@ -1,6 +1,7 @@
 import { createCanvas } from '@napi-rs/canvas';
 import { describe, expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
+import { changePreset } from '../engine/decoration';
 import { showcaseDungeon } from '../engine/showcase';
 import type { Dungeon, Settings } from '../engine/model';
 import { renderDungeon } from './dungeon-renderer';
@@ -21,14 +22,27 @@ function generatedMap(settings: Settings): Dungeon {
 describe('renderer determinism', () => {
   test.each([
     ['showcase', showcaseDungeon()],
-    ['amber-vault', generatedMap({ seed: 'amber-vault', roomCount: 4, density: 'Sparse' })],
+    [
+      'amber-vault',
+      generatedMap({ seed: 'amber-vault', roomCount: 4, density: 'Sparse', preset: 'Mosslit' }),
+    ],
     [
       'mosslit-sanctum',
-      generatedMap({ seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced' }),
+      generatedMap({
+        seed: 'mosslit-sanctum',
+        roomCount: 6,
+        density: 'Balanced',
+        preset: 'Mosslit',
+      }),
     ],
     [
       'forgotten-library',
-      generatedMap({ seed: 'forgotten-library', roomCount: 8, density: 'Cluttered' }),
+      generatedMap({
+        seed: 'forgotten-library',
+        roomCount: 8,
+        density: 'Cluttered',
+        preset: 'Mosslit',
+      }),
     ],
   ])('renders the same map (%s) twice to identical PNG bytes', (_name, map) => {
     expect(exportPng(map, true).equals(exportPng(map, true))).toBe(true);
@@ -43,4 +57,40 @@ describe('renderer determinism', () => {
     const map = showcaseDungeon();
     expect(exportPng(map, true).equals(exportPng(map, false))).toBe(false);
   });
+
+  test('different presets produce different renders for the same layout', () => {
+    const base = generatedMap({
+      seed: 'mosslit-sanctum',
+      roomCount: 6,
+      density: 'Balanced',
+      preset: 'Mosslit',
+    });
+    const presets: readonly {
+      name: string;
+      preset: 'Mosslit' | 'Crypt' | 'Storehouse' | 'Sanctuary';
+    }[] = [
+      { name: 'Crypt', preset: 'Crypt' },
+      { name: 'Storehouse', preset: 'Storehouse' },
+      { name: 'Sanctuary', preset: 'Sanctuary' },
+    ];
+    const baseBytes = exportPng(base, true);
+    for (const { preset } of presets) {
+      const variant = changePreset(base, preset);
+      const variantBytes = exportPng(variant, true);
+      expect(baseBytes.equals(variantBytes), `Mosslit vs ${preset}`).toBe(false);
+    }
+  });
+
+  test.each(['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'] as const)(
+    'renders the same %s map twice to identical bytes',
+    (preset) => {
+      const map = generatedMap({
+        seed: 'mosslit-sanctum',
+        roomCount: 6,
+        density: 'Balanced',
+        preset,
+      });
+      expect(exportPng(map, true).equals(exportPng(map, true))).toBe(true);
+    },
+  );
 });
