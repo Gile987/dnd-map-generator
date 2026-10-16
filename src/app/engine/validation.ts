@@ -1,4 +1,4 @@
-import { HEIGHT, WIDTH, contains, indexOf, isFloor } from './model';
+import { HEIGHT, WIDTH, contains, indexOf, isBlockingProp, isFloor } from './model';
 import type { Dungeon, Layout, Point, Room, Settings } from './model';
 import { distances } from './topology';
 
@@ -9,6 +9,8 @@ export function validateSettings(settings: Settings): string | undefined {
     return 'Choose a whole number of rooms from 4 to 8.';
   if (!['Sparse', 'Balanced', 'Cluttered'].includes(settings.density))
     return 'Choose a valid decoration density.';
+  if (!['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'].includes(settings.preset))
+    return 'Choose a valid decoration preset.';
   return undefined;
 }
 
@@ -127,7 +129,7 @@ export function validateDungeon(map: Dungeon): string | undefined {
   const blocked = new Set<number>();
   for (const prop of map.decoration.props) {
     if (!isFloor(map.layout, prop.x, prop.y)) return 'A prop is outside the floor.';
-    if (prop.blocking !== ['crate', 'barrel', 'rubble'].includes(prop.kind))
+    if (prop.blocking !== isBlockingProp(prop.kind))
       return 'A prop has an invalid movement classification.';
     if (!prop.blocking) continue;
     const tile = indexOf(prop.x, prop.y);

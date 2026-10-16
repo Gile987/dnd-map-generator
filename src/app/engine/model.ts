@@ -1,6 +1,6 @@
 export const WIDTH = 40;
 export const HEIGHT = 30;
-export const GENERATOR_VERSION = '1.0.0';
+export const GENERATOR_VERSION = '2.0.0';
 
 export interface Point {
   readonly x: number;
@@ -40,14 +40,35 @@ export interface Layout {
 
 export type Density = 'Sparse' | 'Balanced' | 'Cluttered';
 
+export type DecorationPreset = 'Mosslit' | 'Crypt' | 'Storehouse' | 'Sanctuary';
+
+export const DEFAULT_PRESET: DecorationPreset = 'Mosslit';
+
+export const ALL_PRESETS: readonly DecorationPreset[] = [
+  'Mosslit',
+  'Crypt',
+  'Storehouse',
+  'Sanctuary',
+];
+
 export interface Settings {
   readonly seed: string;
   readonly roomCount: number;
   readonly density: Density;
+  readonly preset: DecorationPreset;
 }
 
 export interface Prop extends Point {
-  readonly kind: 'crate' | 'barrel' | 'rubble' | 'rug' | 'sconce' | 'moss';
+  readonly kind:
+    | 'crate'
+    | 'barrel'
+    | 'rubble'
+    | 'rug'
+    | 'sconce'
+    | 'moss'
+    | 'sarcophagus'
+    | 'vine'
+    | 'broken_column';
   readonly blocking: boolean;
   readonly variation: number;
 }
@@ -55,6 +76,7 @@ export interface Prop extends Point {
 export interface Decoration {
   readonly props: readonly Prop[];
   readonly density: Density;
+  readonly preset: DecorationPreset;
   readonly revision: number;
 }
 
@@ -81,6 +103,16 @@ export function contains(room: Room, point: Point): boolean {
     point.y >= room.y &&
     point.x < room.x + room.width &&
     point.y < room.y + room.height
+  );
+}
+
+export function isBlockingProp(kind: Prop['kind']): boolean {
+  return (
+    kind === 'crate' ||
+    kind === 'barrel' ||
+    kind === 'rubble' ||
+    kind === 'sarcophagus' ||
+    kind === 'broken_column'
   );
 }
 

@@ -4,7 +4,7 @@ import { test, expect } from 'vitest';
 import { showcaseDungeon } from '../src/app/engine/showcase';
 import { renderDungeon } from '../src/app/rendering/dungeon-renderer';
 import { generateDungeon } from '../src/app/engine/generate';
-import type { Density } from '../src/app/engine/model';
+import type { Density, DecorationPreset } from '../src/app/engine/model';
 
 test('render the reusable showcase at export resolution and crop a close-up', () => {
   mkdirSync('artifacts', { recursive: true });
@@ -21,13 +21,18 @@ test('render the reusable showcase at export resolution and crop a close-up', ()
 test('render six representative maps and a contact sheet for visual review', () => {
   mkdirSync('artifacts', { recursive: true });
   const sheet = createCanvas(1440, 810);
-  const cases: readonly { seed: string; roomCount: number; density: Density }[] = [
-    { seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced' },
-    { seed: 'amber-vault', roomCount: 4, density: 'Sparse' },
-    { seed: 'forgotten-library', roomCount: 8, density: 'Cluttered' },
-    { seed: 'lantern-watch', roomCount: 7, density: 'Sparse' },
-    { seed: 'moss-and-memory', roomCount: 5, density: 'Cluttered' },
-    { seed: 'silver-crypt', roomCount: 8, density: 'Balanced' },
+  const cases: readonly {
+    seed: string;
+    roomCount: number;
+    density: Density;
+    preset: DecorationPreset;
+  }[] = [
+    { seed: 'mosslit-sanctum', roomCount: 6, density: 'Balanced', preset: 'Mosslit' },
+    { seed: 'amber-vault', roomCount: 4, density: 'Sparse', preset: 'Crypt' },
+    { seed: 'forgotten-library', roomCount: 8, density: 'Cluttered', preset: 'Storehouse' },
+    { seed: 'lantern-watch', roomCount: 7, density: 'Sparse', preset: 'Sanctuary' },
+    { seed: 'moss-and-memory', roomCount: 5, density: 'Cluttered', preset: 'Mosslit' },
+    { seed: 'silver-crypt', roomCount: 8, density: 'Balanced', preset: 'Crypt' },
   ];
   cases.forEach((settings, i) => {
     const result = generateDungeon(settings);

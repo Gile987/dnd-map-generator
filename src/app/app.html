@@ -86,6 +86,24 @@
             </div>
             <p class="field-hint" id="room-hint">Connected chambers. Unexpected turns.</p>
           </div>
+          <fieldset class="preset-field">
+            <legend>Character <span>THE DUNGEON'S IDENTITY</span></legend>
+            @let selectedPreset = map().decoration.preset;
+            <div class="preset-options">
+              @for (preset of presets; track preset) {
+              <label [class.selected]="selectedPreset === preset"
+                ><input
+                  type="radio"
+                  name="preset"
+                  [value]="preset"
+                  [checked]="selectedPreset === preset"
+                  (change)="selectPreset(preset)"
+                /><span>{{ preset }}</span></label
+              >
+              }
+            </div>
+            <p class="field-hint">{{ presetDescription() }}</p>
+          </fieldset>
           <fieldset class="density-field">
             <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
             @let selectedDensity = map().decoration.density;
@@ -133,8 +151,8 @@
       <div class="style-note">
         <span class="style-swatch"></span>
         <div>
-          <strong>Mosslit stone</strong>
-          <p>Cool slate. Soft moss. A warm glow.</p>
+          <strong>{{ presetLabel() }}</strong>
+          <p>{{ presetDescription() }}</p>
         </div>
       </div>
     </aside>
@@ -144,7 +162,7 @@
         <div class="map-heading">
           <span class="map-icon"><forge-icon name="layers" /></span>
           <div>
-            <h2 id="map-title">The mosslit sanctum</h2>
+            <h2 id="map-title">{{ presetLabel() }}</h2>
             <span>STONE DUNGEON <b> / </b> 40 × 30 TILES</span>
           </div>
         </div>
@@ -163,10 +181,11 @@
         <div><span>GENERATED SEED</span><strong class="seed-summary">{{ map().seed }}</strong></div>
         <div><span>ROOMS</span><strong>{{ map().layout.rooms.length }} connected</strong></div>
         <div>
-          @let currentDensity = map().decoration.density;
+          @let currentDensity = map().decoration.density; @let currentPreset =
+          map().decoration.preset;
           <span>DETAILS</span
           ><strong
-            >{{ currentDensity }}
+            >{{ currentPreset }} · {{ currentDensity }}
             <span class="revision">r{{ map().decoration.revision }}</span></strong
           >
         </div>

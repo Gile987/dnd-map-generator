@@ -20,6 +20,7 @@ export function showcaseDungeon(): Dungeon {
     layout: createLayout(rooms, connections),
     decoration: {
       density: 'Balanced',
+      preset: 'Mosslit',
       revision: 0,
       props: [
         { x: 5, y: 5, kind: 'crate', blocking: true, variation: 0.2 },

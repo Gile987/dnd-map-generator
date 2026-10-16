@@ -9,7 +9,8 @@ export function exportFilename(map: Dungeon): string {
       .replace(/[^a-zA-Z0-9_-]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 64) || 'dungeon';
-  return `encounter-${seed}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+  const preset = map.decoration.preset.toLowerCase();
+  return `encounter-${seed}-${preset}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
 }
 
 export async function createPng(map: Dungeon, grid: boolean): Promise<Blob> {
