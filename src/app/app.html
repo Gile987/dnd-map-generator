@@ -255,9 +255,11 @@
       @if (!error()) { <forge-icon name="check" />{{ status() }} }
     </p>
   </div>
+
+  <forge-library [map]="map()" [disabled]="busy() !== null" (open)="openSaved($event)" />
 </main>
 
 <footer>
   <span>FOR THE WORLDS YOU HAVEN'T FOUND YET.</span
-  ><span>No accounts. No saving. Just a little imagination.</span>
+  ><span>No accounts. Your maps stay in this browser.</span>
 </footer>

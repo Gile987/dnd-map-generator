@@ -516,13 +516,29 @@ function placeForestFloorProps(
   }
 }
 
-function validateForest(map: ForestClearing): string | undefined {
+function routeIsValid(layout: ForestLayout): boolean {
+  const start = indexOf(layout.pathStart.x, layout.pathStart.y);
+  const end = indexOf(layout.pathEnd.x, layout.pathEnd.y);
+  if (layout.route.length === 0) return false;
+  const routeSet = new Set(layout.route);
+  if (layout.route.some((tile) => !layout.tiles[tile])) return false;
+  if (!routeSet.has(start) || !routeSet.has(end)) return false;
+  const blocked = new Set<number>();
+  for (let tile = 0; tile < layout.tiles.length; tile++) {
+    if (layout.tiles[tile] && !routeSet.has(tile)) blocked.add(tile);
+  }
+  return forestDistances(layout.tiles, layout.pathStart, blocked).has(end);
+}
+
+export function validateForest(map: ForestClearing): string | undefined {
   if (map.layout.tiles.length !== WIDTH * HEIGHT) return 'The tile field has incorrect dimensions.';
   if (!isConnected(map.layout.tiles)) return 'The forest floor is not connected.';
   if (!isWalkable(map.layout, map.layout.pathStart.x, map.layout.pathStart.y))
     return 'The path start is not on walkable ground.';
   if (!isWalkable(map.layout, map.layout.pathEnd.x, map.layout.pathEnd.y))
     return 'The path end is not on walkable ground.';
+  if (!routeIsValid(map.layout))
+    return 'The forest path is missing or does not connect the clearing.';
 
   const blocked = new Set<number>();
   for (const prop of map.decoration.props) {

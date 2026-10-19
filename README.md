@@ -9,7 +9,7 @@ npm ci
 npm start
 ```
 
-Open `http://127.0.0.1:4200`. Build the static application with `npm run build`; output is in `dist/encounter-map-forge/browser`. There is no backend, account, persistence, or deployment configuration. Refreshing the page restores the initial map.
+Open `http://127.0.0.1:4200`. Build the static application with `npm run build`; output is in `dist/encounter-map-forge/browser`. There is no backend, account, cloud sync, or deployment configuration. The initial map loads on a fresh browser; maps you save to the library persist in that browser's local storage and survive a refresh.
 
 ## Verified tooling
 
@@ -38,6 +38,7 @@ Angular 22 requires Node `^22.22.3`, `^24.15.0`, or `>=26.0.0` and TypeScript `>
 - **Grid:** controls both the preview and export. It starts enabled.
 - **Explore:** drag with a pointer, or focus the canvas and use arrow keys to pan. Use the zoom buttons, `+` / `-`, or Ctrl/Command + wheel over the preview to zoom. **Fit** or `Home` recenters the whole map. Ordinary wheel scrolling remains page scrolling. Zoom is relative to fit and ranges from 50% to 400%.
 - **Export PNG:** downloads the entire 2560 × 1920 image, at 64 pixels per tile, using the current grid toggle. Preview zoom and pan never affect the export. Filenames include the map type, generated seed, density, detail revision and generator version; unapplied drafts are excluded and unsafe filename characters are removed.
+- **Map library:** save the current generated map with a name and thumbnail, then reopen, rename, duplicate, favorite, or delete it. Saving is explicit and always records the accepted generated map — its seed, type, settings, and revision — never unapplied drafts. Saves live in this browser's local storage only. **Download backup** writes them to a JSON file and **Import backup** restores them; the backup records the save-format version (1.0.0) and each map's generator version, so a later release never silently reinterprets an older map.
 
 Dungeons use stairs for the entrance and a circular stone dais for the objective. These are architectural landmarks, with no encounters, hidden information or game mechanics. Forest paths continue off two map edges; their endpoints are unmarked. A suggested scale is 5 feet per square; the exported image has no VTT metadata.
 
@@ -88,7 +89,7 @@ npm run test:e2e
 
 The Playwright browser download is needed once. The browser suite starts and stops a local dev server, or reuses an existing server on port 4200. Tests generate ignored review artifacts in `artifacts/`, including desktop/mobile screenshots and a browser-exported PNG. `npm test` also renders the showcase, six full maps, close-ups, and a contact sheet using the development-only `@napi-rs/canvas` package. Use `npm run format` to format source, tests and configuration.
 
-Engine tests cover deterministic equality, immutable inputs/previous maps, a batch of **45 successful seeds** spanning 4–8 rooms and all densities (dungeon), explicit bounded failure, invalid settings, border integrity, room count, topology, reachable landmarks, safe decoration, independent detail shuffling, and view-independent generation. Forest tests cover **30 successful seeds** across all densities, connectivity, tree placement on non-walkable tiles, blocking prop validation, and open-space minimums. Browser tests cover initial rendering, distinct actions, draft isolation, input correction, revision summaries, zoom/pan/fit/grid, responsive resizing, exact export dimensions, viewport-independent export bytes, recovery after a simulated Blob failure, and map-type switching between dungeon and forest. Test sources and review scripts are type-checked separately from the application build.
+Engine tests cover deterministic equality, immutable inputs/previous maps, a batch of **45 successful seeds** spanning 4–8 rooms and all densities (dungeon), explicit bounded failure, invalid settings, border integrity, room count, topology, reachable landmarks, safe decoration, independent detail shuffling, and view-independent generation. Forest tests cover **30 successful seeds** across all densities, connectivity, tree placement on non-walkable tiles, blocking prop validation, and open-space minimums. Browser tests cover initial rendering, distinct actions, draft isolation, input correction, revision summaries, zoom/pan/fit/grid, responsive resizing, exact export dimensions, viewport-independent export bytes, recovery after a simulated Blob failure, map-type switching between dungeon and forest, and saving, reopening, renaming, duplicating, favoriting, deleting, and backing up maps. The save format is unit-tested against generated dungeon and forest models, including malformed backups and future-version rejection. Test sources and review scripts are type-checked separately from the application build.
 
 Six curated review cases were inspected at fit-to-view and close-up, alongside the original showcase and a browser-exported PNG:
 
@@ -103,4 +104,4 @@ Six curated review cases were inspected at fit-to-view and close-up, alongside t
 
 These cases are review fixtures, not replacements for failed generation. Visual checks looked at corners, thresholds, corridor clearance, prop scale, open play space, grid alignment and legibility. Desktop and mobile Chromium previews were inspected. Other browser engines and touch hardware have not been manually verified. Procedural composition varies: low room counts can leave large solid areas, corridors can cross or merge, and doors are intentionally omitted at ambiguous openings. The renderer prioritizes clear, stylized stonework over photorealism. There is no guarantee that every seed has equally strong composition.
 
-Caves, taverns, manual editing, persistence, encounters, fog of war, dynamic lighting and VTT integrations remain outside this release.
+Caves, taverns, manual editing, cloud accounts and sync, encounters, fog of war, dynamic lighting and VTT integrations remain outside this release. Browser-local saving is included (see the map library above).

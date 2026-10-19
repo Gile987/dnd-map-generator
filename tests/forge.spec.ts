@@ -10,7 +10,7 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
   await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
-  await expect(page.locator('p[role="status"]')).toContainText('ready');
+  await expect(page.locator('.status')).toContainText('ready');
   await expect(canvas).toHaveJSProperty(
     'width',
     await canvas.evaluate((element) =>
