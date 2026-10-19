@@ -442,6 +442,12 @@ form {
     }
   }
 }
+.pending-settings {
+  margin: 16px 0 -6px;
+  .text-button {
+    margin-top: 7px;
+  }
+}
 .pending {
   font-size: 10px;
   color: #987239;
@@ -449,7 +455,7 @@ form {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 16px 0 -6px;
+  margin: 0;
   span {
     width: 4px;
     height: 4px;
@@ -476,11 +482,15 @@ form {
     width: 16px;
     height: 16px;
   }
+  &:disabled {
+    cursor: default;
+    box-shadow: none;
+  }
   .generate-arrow {
     margin-left: auto;
     width: 13px;
   }
-  &:hover {
+  &:hover:not(:disabled) {
     background: #183d2c;
   }
 }

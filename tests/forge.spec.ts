@@ -21,13 +21,13 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await page.screenshot({ path: 'artifacts/desktop.png', fullPage: true });
 
   await page.getByLabel('World seed').fill('unapplied-seed');
-  await expect(page.getByText('Layout edits ready. Generate to apply.')).toBeVisible();
+  await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
   await expect(page.locator('#map-summary')).not.toContainText('unapplied-seed');
   await page.getByRole('radio', { name: 'Cluttered' }).check();
-  await expect(page.locator('#map-summary')).toContainText('Cluttered');
+  await expect(page.locator('#map-summary')).toContainText('Balanced');
   await expect(page.locator('#map-summary')).toContainText('r1');
   await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
   await expect(page.getByLabel('Zoom level')).toHaveText('125%');
@@ -37,7 +37,7 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await page.getByRole('button', { name: 'Export PNG' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
-    'encounter-mosslit-sanctum-mosslit-cluttered-r1-v3.0.0.png',
+    'encounter-mosslit-sanctum-mosslit-balanced-r1-v3.0.0.png',
   );
   await download.saveAs('artifacts/browser-export.png');
   const png = await PNG.read('artifacts/browser-export.png');
@@ -53,11 +53,12 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('unapplied-seed');
   await expect(page.locator('#map-summary')).toContainText('r0');
-  await expect(page.getByText('Layout edits ready. Generate to apply.')).not.toBeVisible();
+  await expect(page.locator('#map-summary')).toContainText('Cluttered');
+  await expect(page.getByText('Settings changed. Generate to apply.')).not.toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test('invalid drafts keep the last map, corrected input succeeds, and new seed generates immediately', async ({
+test('invalid drafts keep the last map and randomizing a seed waits for Generate', async ({
   page,
 }) => {
   await page.goto('/');
@@ -78,7 +79,10 @@ test('invalid drafts keep the last map, corrected input succeeds, and new seed g
   await expect(page.locator('#map-summary')).toContainText('recovery-test');
   await expect(page.locator('#map-summary')).toContainText('4 connected');
   await expect(page.getByLabel('World seed')).toHaveValue('recovery-test');
-  await page.getByRole('button', { name: 'New seed', exact: true }).click();
+  await page.getByRole('button', { name: 'Randomize seed', exact: true }).click();
+  await expect(page.locator('#map-summary')).toContainText('recovery-test');
+  await expect(page.getByLabel('World seed')).toHaveValue(/^dungeon-/);
+  await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('dungeon-');
   await expect(page.locator('#map-summary')).not.toContainText('recovery-test');
 });
@@ -169,42 +173,36 @@ test('grid, pointer pan, keyboard zoom, ordinary scrolling and responsive resize
   }
 });
 
-test('preset selection applies immediately, interacts with pending drafts, and appears in export filename', async ({
+test('preset and density drafts wait for Generate and exports use the displayed map', async ({
   page,
 }) => {
   await page.goto('/');
-  await expect(page.locator('#map-summary')).toContainText('Mosslit');
   await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
-  await expect(page.locator('#map-summary')).toContainText('Crypt');
-  await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
-  await expect(page.getByText('Layout edits ready.')).not.toBeVisible();
-
+  await expect(page.locator('#map-summary')).toContainText('Mosslit');
   await page.getByLabel('World seed').fill('draft-seed');
-  await expect(page.getByText('Layout edits ready. Generate to apply.')).toBeVisible();
-  await expect(page.locator('#map-summary')).toContainText('Crypt');
-  await expect(page.locator('#map-summary')).not.toContainText('draft-seed');
-
+  await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
   await page.getByRole('radio', { name: 'Sanctuary', exact: true }).check();
-  await expect(page.locator('#map-summary')).toContainText('Sanctuary');
+  await expect(page.locator('#map-summary')).toContainText('Mosslit');
   await expect(page.locator('#map-summary')).not.toContainText('draft-seed');
-
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   await page.getByRole('radio', { name: 'Storehouse', exact: true }).check();
-  await expect(page.locator('#map-summary')).toContainText('Storehouse');
-  await expect(page.locator('#map-summary')).toContainText('r1');
-
   await page.getByRole('radio', { name: 'Cluttered' }).check();
+  await expect(page.locator('#map-summary')).toContainText('Mosslit · Balanced r1');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export PNG' }).click();
-  const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe(
-    'encounter-mosslit-sanctum-storehouse-cluttered-r1-v3.0.0.png',
+  expect((await downloadPromise).suggestedFilename()).toBe(
+    'encounter-mosslit-sanctum-mosslit-balanced-r1-v3.0.0.png',
   );
+  await page.getByRole('button', { name: 'Generate dungeon' }).click();
+  await expect(page.locator('#map-summary')).toContainText('draft-seed');
+  await expect(page.locator('#map-summary')).toContainText('Storehouse · Cluttered r0');
+  await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeDisabled();
 });
 
 test('export failure is reported and controls recover', async ({ page }) => {
   await page.goto('/');
+  await page.getByLabel('World seed').fill('pending-export-seed');
   await page.evaluate(() => {
     HTMLCanvasElement.prototype.toBlob = function (callback) {
       setTimeout(() => callback(null), 300);
@@ -231,6 +229,7 @@ test('map-type selector switches between dungeon and forest, preserves per-type 
   await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeVisible();
 
   await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('Crypt');
 
   await page.getByRole('button', { name: 'Shuffle details' }).click();
