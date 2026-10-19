@@ -126,7 +126,26 @@
               >
               }
             </div>
-            <p class="field-hint">{{ draftPresetDescription() }}</p>
+            <p class="field-hint">{{ draftStyleDescription() }}</p>
+          </fieldset>
+          } @if (mapType() === 'forest') {
+          <fieldset class="preset-field">
+            <legend>Character <span>THE CLEARING'S IDENTITY</span></legend>
+            @let selectedCharacter = character();
+            <div class="preset-options">
+              @for (item of characters; track item) {
+              <label [class.selected]="selectedCharacter === item"
+                ><input
+                  type="radio"
+                  name="character"
+                  [value]="item"
+                  [checked]="selectedCharacter === item"
+                  (change)="selectCharacter(item)"
+                /><span>{{ characterNames[item] }}</span></label
+              >
+              }
+            </div>
+            <p class="field-hint">{{ draftStyleDescription() }}</p>
           </fieldset>
           }
           <fieldset class="density-field">
@@ -174,7 +193,7 @@
         </div>
         <p>
           {{ mapType() === 'dungeon' ? 'Love the layout? Give its rooms a different kind of
-          character.' : 'Love the clearing? Change its props and undergrowth.' }}
+          character.' : 'Love the clearing? Give it a different woodland character.' }}
         </p>
         <button
           class="shuffle-button"
@@ -189,15 +208,13 @@
           'Your clearing and path stay put.' }}</span
         >
       </div>
-      @if (mapType() === 'dungeon') {
       <div class="style-note">
         <span class="style-swatch"></span>
         <div>
-          <strong>{{ presetLabel() }}</strong>
-          <p>{{ presetDescription() }}</p>
+          <strong>{{ styleLabel() }}</strong>
+          <p>{{ styleDescription() }}</p>
         </div>
       </div>
-      }
     </aside>
 
     <section class="map-panel" aria-labelledby="map-title">

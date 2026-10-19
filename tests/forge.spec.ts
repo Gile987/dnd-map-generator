@@ -37,7 +37,7 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await page.getByRole('button', { name: 'Export PNG' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
-    'encounter-mosslit-sanctum-mosslit-balanced-r1-v3.0.0.png',
+    'encounter-mosslit-sanctum-mosslit-balanced-r1-v4.0.0.png',
   );
   await download.saveAs('artifacts/browser-export.png');
   const png = await PNG.read('artifacts/browser-export.png');
@@ -192,7 +192,7 @@ test('preset and density drafts wait for Generate and exports use the displayed 
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export PNG' }).click();
   expect((await downloadPromise).suggestedFilename()).toBe(
-    'encounter-mosslit-sanctum-mosslit-balanced-r1-v3.0.0.png',
+    'encounter-mosslit-sanctum-mosslit-balanced-r1-v4.0.0.png',
   );
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('draft-seed');
@@ -239,17 +239,29 @@ test('map-type selector switches between dungeon and forest, preserves per-type 
   await page.getByRole('radio', { name: 'Forest' }).check();
   await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
   await expect(page.locator('#map-summary')).toContainText('Open clearing');
+  await expect(page.locator('#map-summary')).toContainText('Verdant · Balanced r0');
   await expect(page.getByRole('button', { name: 'Generate forest' })).toBeVisible();
   await expect(page.locator('#map-summary')).not.toContainText('connected');
+  await expect(page.getByRole('radio', { name: 'Verdant woodland' })).toBeChecked();
+
+  await page.getByRole('radio', { name: 'Autumn grove' }).check();
+  await expect(page.locator('#map-summary')).toContainText('Verdant · Balanced r0');
+  await expect(page.getByRole('button', { name: 'Generate forest' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Generate forest' }).click();
+  await expect(page.locator('#map-summary')).toContainText('Autumn · Balanced r0');
+  await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
+  await expect(page.getByText('Settings changed. Generate to apply.')).not.toBeVisible();
 
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
+  await expect(page.locator('#map-summary')).toContainText('Autumn');
 
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export PNG' }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/^encounter-mosslit-sanctum-forest-/);
-  expect(download.suggestedFilename()).toMatch(/v3\.0\.0\.png$/);
+  expect(download.suggestedFilename()).toBe(
+    'encounter-mosslit-sanctum-forest-autumn-balanced-r1-v4.0.0.png',
+  );
 
   await page.getByRole('radio', { name: 'Dungeon' }).check();
   await expect(page.locator('#map-summary')).toContainText('connected');

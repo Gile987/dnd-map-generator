@@ -45,7 +45,9 @@ export class Preview {
     return (
       'Forest clearing for seed ' +
       m.seed +
-      '. A path connects two map edges through the clearing. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
+      ', ' +
+      m.decoration.character +
+      ' character. A path connects two map edges through the clearing. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
     );
   });
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
