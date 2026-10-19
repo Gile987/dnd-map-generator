@@ -73,6 +73,8 @@ Dungeon decoration follows validation. Crates, barrels, rubble, sarcophagi and b
 
 ## Rendering and interface
 
+The root component provides one `WorkbenchSession` for its workbench. That service owns the accepted dungeon and forest maps, the active map type, and each type's pending settings. The displayed map is computed from the accepted map collection; switching, opening, generating, resetting, and shuffling use session commands rather than maintaining a separate current-map copy. Each initial map is generated once per session. Grid state, the busy lock, UI yielding, messages, and download coordination remain in the root component; pan/zoom stay in `Preview`, and saved-map persistence stays in `SaveStore`. Session transitions are tested without rendering a page.
+
 `renderDungeon(context, map, options)` and `renderForest(context, map, options)` are shared by the preview, export, and visual-review fixtures. Dungeons draw seeded slab fills and chips, continuous topology-derived wall contours, contact shadows, masonry joints, thresholds, architectural landmarks, props, restrained light, and the optional whole-map grid. Forests draw textured ground, a dirt path, clearing edges, trees, rocks, and undergrowth, with per-character ground tones, tree shapes, and prop palettes. All artwork is original Canvas vector drawing; there are no external images, fonts, asset licenses or runtime fetches.
 
 The showcase in `src/app/engine/showcase.ts` supplied the first renderer fixture: three rooms, two bent corridors, thresholds, and the prop collection. Its full export and close-up were inspected before implementing random generation.
