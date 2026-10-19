@@ -13,7 +13,6 @@ import type {
   Dungeon,
   DungeonSettings,
   ForestClearing,
-  ForestSettings,
   GeneratedMap,
   MapType,
 } from './engine/model';
@@ -27,6 +26,29 @@ import { Library } from './save/library';
 import { ROOM_DEFAULT, ROOM_MAX, ROOM_MIN, normalizeRoomCount, stepRoomCount } from './room-count';
 
 type Operation = 'generation' | 'details' | 'export';
+
+interface SettingsDraft {
+  readonly seed: string;
+  readonly rooms: string;
+  readonly density: Density;
+  readonly preset: DecorationPreset;
+}
+
+const PRESET_DESCRIPTIONS: Readonly<Record<DecorationPreset, string>> = {
+  Mosslit: 'Cool slate. Soft moss. A warm glow.',
+  Crypt: 'Stone sarcophagi and subdued lantern light.',
+  Storehouse: 'Crates, barrels, and worn runners.',
+  Sanctuary: 'Moss, vines, and broken architecture.',
+};
+
+function draftForMap(map: GeneratedMap): SettingsDraft {
+  return {
+    seed: map.seed,
+    rooms: map.type === 'dungeon' ? String(map.layout.rooms.length) : ROOM_DEFAULT,
+    density: map.decoration.density,
+    preset: map.type === 'dungeon' ? map.decoration.preset : DEFAULT_PRESET,
+  };
+}
 
 function initialMap(): Dungeon {
   const result = generateDungeon({
@@ -66,8 +88,15 @@ export class App {
   protected readonly map = signal<GeneratedMap>(initialMap());
   private readonly lastDungeon = signal<Dungeon>(initialMap());
   private readonly lastForest = signal<ForestClearing>(initialForestMap());
-  protected readonly seed = signal('mosslit-sanctum');
-  protected readonly rooms = signal(ROOM_DEFAULT);
+  private readonly drafts = signal<Record<MapType, SettingsDraft>>({
+    dungeon: draftForMap(this.lastDungeon()),
+    forest: draftForMap(this.lastForest()),
+  });
+  private readonly draft = computed(() => this.drafts()[this.mapType()]);
+  protected readonly seed = computed(() => this.draft().seed);
+  protected readonly rooms = computed(() => this.draft().rooms);
+  protected readonly density = computed(() => this.draft().density);
+  protected readonly preset = computed(() => this.draft().preset);
   protected readonly grid = signal(true);
   protected readonly busy = signal<Operation | null>(null);
   protected readonly error = signal('');
@@ -77,13 +106,21 @@ export class App {
   protected readonly presets: readonly DecorationPreset[] = ALL_PRESETS;
   protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest'];
   protected readonly exportSize = `${EXPORT_WIDTH} × ${EXPORT_HEIGHT} px`;
+  private readonly layoutPending = computed(() => {
+    const map = this.map();
+    return (
+      this.seed().trim() !== map.seed ||
+      (map.type === 'dungeon' &&
+        (!/^\d+$/.test(this.rooms()) || Number(this.rooms()) !== map.layout.rooms.length))
+    );
+  });
   protected readonly pending = computed(() => {
-    const m = this.map();
-    if (this.seed().trim() !== m.seed) return true;
-    if (m.type === 'dungeon' && this.mapType() === 'dungeon') {
-      return Number(this.rooms()) !== m.layout.rooms.length;
-    }
-    return false;
+    const map = this.map();
+    return (
+      this.layoutPending() ||
+      this.density() !== map.decoration.density ||
+      (map.type === 'dungeon' && this.preset() !== map.decoration.preset)
+    );
   });
   protected readonly invalidSeed = computed(
     () => this.attempted() && (!this.seed().trim() || this.seed().trim().length > 64),
@@ -105,19 +142,12 @@ export class App {
         Sparse: 'Quiet spaces, room to imagine.',
         Balanced: 'A little character. Plenty of space.',
         Cluttered: 'Storied spaces, with paths kept clear.',
-      })[this.map().decoration.density],
+      })[this.density()],
   );
+  protected readonly draftPresetDescription = computed(() => PRESET_DESCRIPTIONS[this.preset()]);
   protected readonly presetDescription = computed(() => {
-    const m = this.map();
-    if (m.type !== 'dungeon') return '';
-    return (
-      {
-        Mosslit: 'Cool slate. Soft moss. A warm glow.',
-        Crypt: 'Stone sarcophagi and subdued lantern light.',
-        Storehouse: 'Crates, barrels, and worn runners.',
-        Sanctuary: 'Moss, vines, and broken architecture.',
-      } as const
-    )[m.decoration.preset];
+    const map = this.map();
+    return map.type === 'dungeon' ? PRESET_DESCRIPTIONS[map.decoration.preset] : '';
   });
   protected readonly presetLabel = computed(() => {
     const m = this.map();
@@ -134,14 +164,6 @@ export class App {
   protected readonly mapTypeLabel = computed(() =>
     this.map().type === 'dungeon' ? 'Stone Dungeon' : 'Forest Clearing',
   );
-  protected readonly dungeonRoomCount = computed(() => {
-    const m = this.map();
-    return m.type === 'dungeon' ? m.layout.rooms.length : 0;
-  });
-  protected readonly currentPreset = computed(() => {
-    const m = this.map();
-    return m.type === 'dungeon' ? m.decoration.preset : '';
-  });
   protected readonly mapSummary = computed(() => {
     const m = this.map();
     if (m.type === 'dungeon') {
@@ -161,15 +183,15 @@ export class App {
   });
 
   protected editSeed(event: Event): void {
-    if (event.target instanceof HTMLInputElement) this.seed.set(event.target.value);
+    if (event.target instanceof HTMLInputElement) this.updateDraft({ seed: event.target.value });
   }
 
   protected editRooms(event: Event): void {
-    if (event.target instanceof HTMLInputElement) this.rooms.set(event.target.value);
+    if (event.target instanceof HTMLInputElement) this.updateDraft({ rooms: event.target.value });
   }
 
   protected stepRooms(delta: number): void {
-    this.rooms.set(stepRoomCount(this.rooms(), delta));
+    this.updateDraft({ rooms: stepRoomCount(this.rooms(), delta) });
   }
 
   protected submit(event: SubmitEvent): void {
@@ -192,13 +214,20 @@ export class App {
     });
   }
 
-  protected async newSeed(): Promise<void> {
+  protected randomizeSeed(): void {
     if (this.busy()) return;
     const values = crypto.getRandomValues(new Uint32Array(2));
-    this.seed.set(
-      `dungeon-${Array.from(values, (value) => value.toString(16).padStart(8, '0')).join('')}`,
-    );
-    await this.generate();
+    this.updateDraft({
+      seed: `${this.mapType()}-${Array.from(values, (value) => value.toString(16).padStart(8, '0')).join('')}`,
+    });
+  }
+
+  protected resetChanges(): void {
+    if (this.busy()) return;
+    this.resetDraft(this.map());
+    this.attempted.set(false);
+    this.error.set('');
+    this.status.set('Pending settings reset. Your displayed map is unchanged.');
   }
 
   protected async shuffle(): Promise<void> {
@@ -221,33 +250,12 @@ export class App {
     });
   }
 
-  protected async selectDensity(density: Density): Promise<void> {
-    if (density === this.map().decoration.density) return;
-    await this.run('details', () => {
-      this.map.update((map) => {
-        const updated =
-          map.type === 'dungeon' ? changeDensity(map, density) : changeForestDensity(map, density);
-        if (updated.type === 'dungeon') this.lastDungeon.set(updated);
-        else this.lastForest.set(updated);
-        return updated;
-      });
-      this.status.set(`${density} decoration applied. Your layout is preserved.`);
-    });
+  protected selectDensity(density: Density): void {
+    this.updateDraft({ density });
   }
 
-  protected async selectPreset(preset: DecorationPreset): Promise<void> {
-    const m = this.map();
-    if (m.type !== 'dungeon') return;
-    if (preset === m.decoration.preset) return;
-    await this.run('details', () => {
-      this.map.update((map) => {
-        if (map.type !== 'dungeon') return map;
-        const updated = changePreset(map, preset);
-        this.lastDungeon.set(updated);
-        return updated;
-      });
-      this.status.set(`${preset} character applied. Your layout is preserved.`);
-    });
+  protected selectPreset(preset: DecorationPreset): void {
+    this.updateDraft({ preset });
   }
 
   protected openSaved(map: GeneratedMap): void {
@@ -255,12 +263,11 @@ export class App {
     this.mapType.set(map.type);
     if (map.type === 'dungeon') {
       this.lastDungeon.set(map);
-      this.rooms.set(String(map.layout.rooms.length));
     } else {
       this.lastForest.set(map);
     }
     this.map.set(map);
-    this.seed.set(map.seed);
+    this.resetDraft(map);
     this.attempted.set(false);
     this.error.set('');
     this.status.set(
@@ -279,54 +286,69 @@ export class App {
     });
   }
 
-  private async generate(): Promise<void> {
+  private updateDraft(changes: Partial<SettingsDraft>): void {
     if (this.busy()) return;
-    this.attempted.set(true);
     const type = this.mapType();
+    this.drafts.update((drafts) => ({ ...drafts, [type]: { ...drafts[type], ...changes } }));
+    this.attempted.set(false);
+    this.error.set('');
+  }
 
-    if (type === 'forest') {
-      const settings: ForestSettings = {
-        seed: this.seed(),
-        density: this.map().decoration.density,
-      };
-      const validation = validateForestSettings(settings);
-      if (validation) {
-        this.error.set(validation);
-        return;
-      }
-      await this.run('generation', () => {
-        const result = generateForestClearing(settings);
-        if (!result.ok) throw new Error(result.error);
-        this.lastForest.set(result.map);
-        this.map.set(result.map);
-        this.seed.set(result.map.seed);
-        this.attempted.set(false);
-        this.status.set('A new forest clearing is ready.');
-      });
-      return;
-    }
+  private resetDraft(map: GeneratedMap): void {
+    this.drafts.update((drafts) => ({ ...drafts, [map.type]: draftForMap(map) }));
+  }
 
-    const currentMap = this.map();
+  private async generate(): Promise<void> {
+    if (this.busy() || !this.pending()) return;
+    this.attempted.set(true);
+    const current = this.map();
+    const draft = this.draft();
+    const layoutChanged = this.layoutPending();
     const settings: DungeonSettings = {
-      seed: this.seed(),
-      roomCount: Number(this.rooms()),
-      density: currentMap.decoration.density,
-      preset: currentMap.type === 'dungeon' ? currentMap.decoration.preset : DEFAULT_PRESET,
+      seed: draft.seed,
+      roomCount: Number(draft.rooms),
+      density: draft.density,
+      preset: draft.preset,
     };
-    const validation = validateSettings(settings);
-    if (validation || !/^\d+$/.test(this.rooms())) {
-      this.error.set(validation ?? 'Choose a whole number of rooms from 4 to 8.');
+    const validation =
+      current.type === 'forest'
+        ? validateForestSettings(settings)
+        : validateSettings(settings) ||
+          (!/^\d+$/.test(draft.rooms) ? 'Choose a whole number of rooms from 4 to 8.' : undefined);
+    if (validation) {
+      this.error.set(validation);
       return;
     }
+
     await this.run('generation', () => {
-      const result = generateDungeon(settings);
-      if (!result.ok) throw new Error(result.error);
-      this.lastDungeon.set(result.map);
-      this.map.set(result.map);
-      this.seed.set(result.map.seed);
-      this.rooms.set(String(result.map.layout.rooms.length));
+      let next: GeneratedMap;
+      if (layoutChanged) {
+        const result =
+          current.type === 'dungeon' ? generateDungeon(settings) : generateForestClearing(settings);
+        if (!result.ok) throw new Error(result.error);
+        next = result.map;
+      } else if (current.type === 'forest') {
+        next = changeForestDensity(current, draft.density);
+      } else {
+        next = current;
+        if (draft.density !== current.decoration.density) next = changeDensity(next, draft.density);
+        if (draft.preset !== current.decoration.preset) next = changePreset(next, draft.preset);
+      }
+      if (next.decoration.density !== draft.density) {
+        throw new Error('Those decoration settings could not be applied. Try another density.');
+      }
+      if (next.type === 'dungeon') this.lastDungeon.set(next);
+      else this.lastForest.set(next);
+      this.map.set(next);
+      this.resetDraft(next);
       this.attempted.set(false);
-      this.status.set('A new dungeon is ready. Let the story begin.');
+      this.status.set(
+        layoutChanged
+          ? current.type === 'dungeon'
+            ? 'A new dungeon is ready. Let the story begin.'
+            : 'A new forest clearing is ready.'
+          : 'Settings applied. Your layout and detail revision are preserved.',
+      );
     });
   }
 
