@@ -1,0 +1,121 @@
+<section class="library" aria-labelledby="library-title">
+  <div class="library-heading">
+    <div class="panel-heading">
+      <span class="section-number">03</span>
+      <h2 id="library-title">Map library</h2>
+    </div>
+    <p class="library-note">
+      Your saved maps stay in this browser. Download a backup to keep them elsewhere.
+    </p>
+  </div>
+
+  <div class="save-row">
+    <label class="save-name-label" for="save-name">Save the current map</label>
+    <div class="save-controls">
+      <input
+        id="save-name"
+        type="text"
+        [value]="name()"
+        (input)="editName($event)"
+        [placeholder]="placeholder()"
+        maxlength="64"
+        autocomplete="off"
+        spellcheck="false"
+        [disabled]="disabled()"
+      />
+      <button class="save-button" type="button" (click)="save()" [disabled]="disabled()">
+        <forge-icon name="check" />Save map
+      </button>
+    </div>
+  </div>
+
+  <div class="library-tools">
+    <button
+      class="text-button"
+      type="button"
+      (click)="downloadBackup()"
+      [disabled]="disabled() || saved().length === 0"
+    >
+      <forge-icon name="download" />Download backup
+    </button>
+    <label class="text-button import-label">
+      <forge-icon name="upload" />Import backup
+      <input
+        type="file"
+        accept=".json,application/json"
+        (change)="importBackup($event)"
+        [disabled]="disabled()"
+      />
+    </label>
+  </div>
+
+  @if (saved().length === 0) {
+  <p class="library-empty">
+    Your library is empty. Generate a map you like, name it, and save it here.
+  </p>
+  } @else {
+  <ul class="saved-list">
+    @for (record of saved(); track record.id) {
+    <li class="saved-item" [class.favorite]="record.favorite">
+      <img
+        class="thumb"
+        [src]="record.thumbnail"
+        [alt]="record.name + ' thumbnail'"
+        width="160"
+        height="120"
+      />
+      <div class="saved-info">
+        @if (editingId() === record.id) {
+        <form class="rename-form" (submit)="commitRename($event, record)">
+          <label class="sr-only" [for]="'rename-' + record.id">Rename map</label>
+          <input
+            [id]="'rename-' + record.id"
+            type="text"
+            [value]="editDraft()"
+            (input)="editRename($event)"
+            maxlength="64"
+          />
+          <button type="submit">Save</button>
+          <button type="button" (click)="cancelRename()">Cancel</button>
+        </form>
+        } @else {
+        <div class="saved-title">
+          <strong class="saved-name">{{ record.name }}</strong>
+          <button
+            class="favorite-button"
+            type="button"
+            (click)="toggleFavorite(record)"
+            [attr.aria-pressed]="record.favorite"
+            [attr.aria-label]="record.favorite ? 'Remove from favorites' : 'Mark as favorite'"
+            [disabled]="disabled()"
+          >
+            <forge-icon name="star" />
+          </button>
+        </div>
+        <p class="saved-meta">
+          <span>{{ record.map.type === 'dungeon' ? 'Dungeon' : 'Forest' }}</span>
+          <span class="saved-seed">{{ record.map.seed }}</span>
+          <span>{{ summaryOf(record) }}</span>
+        </p>
+        }
+      </div>
+      <div class="saved-actions">
+        <button type="button" (click)="openMap(record)" [disabled]="disabled()">Open</button>
+        <button type="button" (click)="startRename(record)" [disabled]="disabled()">Rename</button>
+        <button type="button" (click)="duplicateMap(record)" [disabled]="disabled()">
+          Duplicate
+        </button>
+        <button type="button" class="danger" (click)="removeMap(record)" [disabled]="disabled()">
+          Delete
+        </button>
+      </div>
+    </li>
+    }
+  </ul>
+  }
+
+  <div class="library-message">
+    <p class="error" role="alert">{{ error() }}</p>
+    <p class="notice" role="status" aria-live="polite">@if (!error()) { {{ notice() }} }</p>
+  </div>
+</section>

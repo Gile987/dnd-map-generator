@@ -1,0 +1,222 @@
+import { describe, expect, test } from 'vitest';
+import { generateDungeon } from '../engine/generate';
+import { generateForestClearing } from '../engine/forest-generate';
+import { indexOf } from '../engine/model';
+import type { GeneratedMap } from '../engine/model';
+import {
+  BACKUP_FORMAT,
+  SAVE_FORMAT_VERSION,
+  defaultMapName,
+  duplicateName,
+  makeSavedMap,
+  mapSummary,
+  normalizeName,
+  parseBundle,
+  parseSavedMap,
+  serializeBundle,
+  uniqueById,
+} from './save-format';
+import type { SavedMap } from './save-format';
+
+const dungeon = generateDungeon({
+  seed: 'mosslit-sanctum',
+  roomCount: 6,
+  density: 'Balanced',
+  preset: 'Mosslit',
+});
+const forest = generateForestClearing({ seed: 'woodland-glade', density: 'Sparse' });
+if (!dungeon.ok) throw new Error(dungeon.error);
+if (!forest.ok) throw new Error(forest.error);
+
+const THUMB = 'data:image/png;base64,AAAA';
+
+function record(map: GeneratedMap, overrides: Partial<SavedMap> = {}): SavedMap {
+  return {
+    ...makeSavedMap(map, defaultMapName(map), THUMB, 'save-1', '2026-10-16T10:00:00.000Z'),
+    ...overrides,
+  };
+}
+
+type MutableMap = {
+  type: string;
+  seed: string;
+  surfaceSeed: unknown;
+  layout: Record<string, unknown>;
+  decoration: Record<string, unknown>;
+};
+
+function corruptRecord(base: GeneratedMap, mutate: (map: MutableMap) => void): unknown {
+  const clone: MutableMap = structuredClone({
+    ...base,
+    layout: { ...base.layout },
+    decoration: { ...base.decoration },
+  });
+  mutate(clone);
+  return {
+    ...makeSavedMap(base, defaultMapName(base), THUMB, 'save-1', '2026-10-16T10:00:00.000Z'),
+    map: clone,
+  };
+}
+
+function bundle(maps: unknown[], saveFormatVersion: unknown = SAVE_FORMAT_VERSION): string {
+  return JSON.stringify({ format: BACKUP_FORMAT, saveFormatVersion, maps });
+}
+
+describe('save format', () => {
+  test('builds human-friendly names and summaries', () => {
+    expect(defaultMapName(dungeon.map)).toBe('mosslit-sanctum dungeon');
+    expect(defaultMapName(forest.map)).toBe('woodland-glade clearing');
+    expect(mapSummary(dungeon.map)).toBe('6 rooms · Mosslit · Balanced r0');
+    expect(mapSummary(forest.map)).toBe('Sparse r0');
+  });
+
+  test('round-trips saved maps through a backup bundle without loss', () => {
+    const maps = [record(dungeon.map), record(forest.map, { id: 'save-2' })];
+    const parsed = parseBundle(serializeBundle(maps));
+    expect(parsed).toEqual({ ok: true, maps, skipped: 0 });
+  });
+
+  test('parses a single saved record and rejects malformed entries', () => {
+    const original = record(dungeon.map);
+    expect(parseSavedMap(original)).toEqual(original);
+
+    expect(parseSavedMap({ ...original, name: '   ' })).toBeUndefined();
+    expect(parseSavedMap({ ...original, name: 'x'.repeat(65) })).toBeUndefined();
+    expect(parseSavedMap({ ...original, id: 'not valid id!' })).toBeUndefined();
+    expect(parseSavedMap({ ...original, favorite: 'yes' })).toBeUndefined();
+    expect(parseSavedMap({ ...original, thumbnail: 'not-a-data-url' })).toBeUndefined();
+    expect(parseSavedMap({ ...original, saveFormatVersion: '99.0.0' })).toBeUndefined();
+    expect(parseSavedMap({ ...original, saveFormatVersion: 'banana' })).toBeUndefined();
+    expect(parseSavedMap({ ...original, map: { type: 'dungeon' } })).toBeUndefined();
+    expect(parseSavedMap(null)).toBeUndefined();
+    expect(parseSavedMap('nope')).toBeUndefined();
+  });
+
+  test('rejects structurally invalid maps that the renderer could not draw', () => {
+    expect(
+      parseSavedMap(corruptRecord(dungeon.map, (m) => (m.decoration.preset = 'Unknown'))),
+    ).toBeUndefined();
+    expect(
+      parseSavedMap(corruptRecord(dungeon.map, (m) => (m.decoration.density = 'Dense'))),
+    ).toBeUndefined();
+    expect(parseSavedMap(corruptRecord(dungeon.map, (m) => (m.seed = '   ')))).toBeUndefined();
+    expect(
+      parseSavedMap(corruptRecord(dungeon.map, (m) => (m.decoration.revision = -1))),
+    ).toBeUndefined();
+    expect(
+      parseSavedMap(
+        corruptRecord(dungeon.map, (m) => {
+          m.decoration.props = [{ x: 0, y: 0, kind: 'nope', blocking: false, variation: 0.5 }];
+        }),
+      ),
+    ).toBeUndefined();
+    expect(
+      parseSavedMap(corruptRecord(forest.map, (m) => (m.layout.route = undefined))),
+    ).toBeUndefined();
+    expect(
+      parseSavedMap(corruptRecord(forest.map, (m) => (m.decoration.density = 'SparseX'))),
+    ).toBeUndefined();
+  });
+
+  test('bounds prop variation to [0, 1)', () => {
+    const withVariation = (value: number) =>
+      corruptRecord(dungeon.map, (m) => {
+        const props = m.decoration.props as Array<Record<string, unknown>>;
+        const first = props[0];
+        if (first) first['variation'] = value;
+      });
+    expect(parseSavedMap(withVariation(-0.1))).toBeUndefined();
+    expect(parseSavedMap(withVariation(1))).toBeUndefined();
+    expect(parseSavedMap(withVariation(1.5))).toBeUndefined();
+    expect(parseSavedMap(withVariation(1e308))).toBeUndefined();
+    expect(parseSavedMap(withVariation(0))).toBeDefined();
+    expect(parseSavedMap(withVariation(0.999))).toBeDefined();
+  });
+
+  test('rejects forest routes that are empty, off-path, or disconnected', () => {
+    const start = indexOf(forest.map.layout.pathStart.x, forest.map.layout.pathStart.y);
+    const end = indexOf(forest.map.layout.pathEnd.x, forest.map.layout.pathEnd.y);
+    const withRoute = (route: unknown) =>
+      corruptRecord(forest.map, (m) => {
+        m.layout.route = route;
+      });
+    expect(parseSavedMap(withRoute([]))).toBeUndefined();
+    expect(parseSavedMap(withRoute([0]))).toBeUndefined();
+    expect(parseSavedMap(withRoute([start]))).toBeUndefined();
+    expect(parseSavedMap(withRoute([start, end]))).toBeUndefined();
+  });
+
+  test('rejects a corrupt map body even when the wrapper looks right', () => {
+    const corrupt = { ...record(dungeon.map) };
+    if (corrupt.map.type !== 'dungeon') throw new Error('Expected dungeon');
+    corrupt.map = {
+      ...corrupt.map,
+      layout: { ...corrupt.map.layout, tiles: corrupt.map.layout.tiles.slice(0, 100) },
+    };
+    expect(parseSavedMap(corrupt)).toBeUndefined();
+  });
+
+  test('bundle parser enforces an explicit save-format version policy', () => {
+    const good = record(dungeon.map);
+
+    expect(parseBundle('not json')).toEqual({ ok: false, error: 'That backup is not valid JSON.' });
+    expect(parseBundle('{"format":"other","saveFormatVersion":"1.0.0","maps":[]}')).toEqual({
+      ok: false,
+      error: 'That file is not an Encounter Map Forge backup.',
+    });
+    expect(parseBundle('[]')).toEqual({
+      ok: false,
+      error: 'That file is not an Encounter Map Forge backup.',
+    });
+    expect(parseBundle(bundle([], '99.0.0'))).toEqual({
+      ok: false,
+      error: 'That backup uses a save format this version of Encounter Map Forge cannot read.',
+    });
+    expect(parseBundle(bundle([], 'banana'))).toEqual({
+      ok: false,
+      error: 'That backup uses a save format this version of Encounter Map Forge cannot read.',
+    });
+    expect(
+      parseBundle(JSON.stringify({ format: BACKUP_FORMAT, saveFormatVersion: '1.0.0' })),
+    ).toEqual({
+      ok: false,
+      error: 'That backup is not a valid map library.',
+    });
+
+    const bad = { ...good, id: 'bad id' };
+    const mixed = parseBundle(bundle([good, bad]));
+    expect(mixed).toEqual({ ok: true, maps: [good], skipped: 1 });
+
+    expect(parseBundle(bundle([bad]))).toEqual({
+      ok: false,
+      error: 'None of the maps in that backup could be read. They may use a newer save format.',
+    });
+  });
+
+  test('applies one name policy across default, normalize, and duplicate', () => {
+    const long = 'x'.repeat(64);
+    expect(defaultMapName({ ...dungeon.map, seed: long }).length).toBeLessThanOrEqual(64);
+    expect(duplicateName(long)).toBe('x'.repeat(57) + ' (copy)');
+    expect(duplicateName(long).length).toBe(64);
+    expect(normalizeName('  padded  ')).toBe('padded');
+    expect(normalizeName('y'.repeat(100)).length).toBe(64);
+    expect(parseSavedMap(record(dungeon.map, { name: 'x'.repeat(64) }))).toBeDefined();
+  });
+
+  test('deduplicates by id within an imported batch and against existing records', () => {
+    const a = record(dungeon.map, { id: 'a' });
+    const a2 = record(dungeon.map, { id: 'a' });
+    const b = record(dungeon.map, { id: 'b' });
+
+    const first = uniqueById([a, a2, b], new Set<string>());
+    expect(first).toEqual({ fresh: [a, b], skipped: 1 });
+
+    const second = uniqueById([a, b], new Set(['a']));
+    expect(second).toEqual({ fresh: [b], skipped: 1 });
+  });
+
+  test('records the save-format version for future compatibility checks', () => {
+    expect(record(dungeon.map).saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
+    expect(record(forest.map).map.version).toBe('3.0.0');
+  });
+});

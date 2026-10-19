@@ -5,6 +5,7 @@
     "src/app/*.ts",
     "src/app/engine/**/*.ts",
     "src/app/rendering/**/*.ts",
+    "src/app/save/**/*.ts",
     "tests/**/*.ts",
     "scripts/**/*.ts",
     "*.config.ts"

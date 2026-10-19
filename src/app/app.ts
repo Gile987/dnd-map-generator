@@ -23,6 +23,7 @@ import { downloadPng } from './rendering/export';
 import { EXPORT_HEIGHT, EXPORT_WIDTH } from './rendering/resolution';
 import { Icon } from './icon';
 import { Preview } from './preview/preview';
+import { Library } from './save/library';
 import { ROOM_DEFAULT, ROOM_MAX, ROOM_MIN, normalizeRoomCount, stepRoomCount } from './room-count';
 
 type Operation = 'generation' | 'details' | 'export';
@@ -55,7 +56,7 @@ function yieldForUi(): Promise<void> {
 
 @Component({
   selector: 'app-root',
-  imports: [Icon, Preview],
+  imports: [Icon, Library, Preview],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -247,6 +248,26 @@ export class App {
       });
       this.status.set(`${preset} character applied. Your layout is preserved.`);
     });
+  }
+
+  protected openSaved(map: GeneratedMap): void {
+    if (this.busy()) return;
+    this.mapType.set(map.type);
+    if (map.type === 'dungeon') {
+      this.lastDungeon.set(map);
+      this.rooms.set(String(map.layout.rooms.length));
+    } else {
+      this.lastForest.set(map);
+    }
+    this.map.set(map);
+    this.seed.set(map.seed);
+    this.attempted.set(false);
+    this.error.set('');
+    this.status.set(
+      map.type === 'dungeon'
+        ? 'Map opened from your library.'
+        : 'Clearing opened from your library.',
+    );
   }
 
   protected async export(): Promise<void> {
