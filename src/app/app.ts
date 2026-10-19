@@ -1,18 +1,26 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { generateDungeon } from './engine/generate';
 import {
-  generateForestClearing,
+  changeForestCharacter,
   changeForestDensity,
+  generateForestClearing,
   shuffleForestDetails,
 } from './engine/forest-generate';
 import { changeDensity, changePreset, shuffleDetails } from './engine/decoration';
-import { ALL_PRESETS, DEFAULT_PRESET } from './engine/model';
+import {
+  ALL_FOREST_CHARACTERS,
+  ALL_PRESETS,
+  DEFAULT_FOREST_CHARACTER,
+  DEFAULT_PRESET,
+} from './engine/model';
 import type {
   DecorationPreset,
   Density,
   Dungeon,
   DungeonSettings,
+  ForestCharacter,
   ForestClearing,
+  ForestSettings,
   GeneratedMap,
   MapType,
 } from './engine/model';
@@ -32,6 +40,7 @@ interface SettingsDraft {
   readonly rooms: string;
   readonly density: Density;
   readonly preset: DecorationPreset;
+  readonly character: ForestCharacter;
 }
 
 const PRESET_DESCRIPTIONS: Readonly<Record<DecorationPreset, string>> = {
@@ -41,12 +50,27 @@ const PRESET_DESCRIPTIONS: Readonly<Record<DecorationPreset, string>> = {
   Sanctuary: 'Moss, vines, and broken architecture.',
 };
 
+const CHARACTER_DESCRIPTIONS: Readonly<Record<ForestCharacter, string>> = {
+  Verdant: 'Lush broadleaf woodland with ferns and mossy logs.',
+  Autumn: 'Gold and russet canopies over fallen leaves.',
+  Pines: 'Ancient evergreens on a needle-covered floor.',
+  Fey: 'Unusual trees, flowering moss, and faint glimmers.',
+};
+
+const CHARACTER_LABELS: Readonly<Record<ForestCharacter, string>> = {
+  Verdant: 'Verdant woodland',
+  Autumn: 'Autumn grove',
+  Pines: 'Ancient pines',
+  Fey: 'Fey glade',
+};
+
 function draftForMap(map: GeneratedMap): SettingsDraft {
   return {
     seed: map.seed,
     rooms: map.type === 'dungeon' ? String(map.layout.rooms.length) : ROOM_DEFAULT,
     density: map.decoration.density,
     preset: map.type === 'dungeon' ? map.decoration.preset : DEFAULT_PRESET,
+    character: map.type === 'forest' ? map.decoration.character : DEFAULT_FOREST_CHARACTER,
   };
 }
 
@@ -65,6 +89,7 @@ function initialForestMap(): ForestClearing {
   const result = generateForestClearing({
     seed: 'mosslit-sanctum',
     density: 'Balanced',
+    character: DEFAULT_FOREST_CHARACTER,
   });
   if (!result.ok) throw new Error(result.error);
   return result.map;
@@ -97,6 +122,7 @@ export class App {
   protected readonly rooms = computed(() => this.draft().rooms);
   protected readonly density = computed(() => this.draft().density);
   protected readonly preset = computed(() => this.draft().preset);
+  protected readonly character = computed(() => this.draft().character);
   protected readonly grid = signal(true);
   protected readonly busy = signal<Operation | null>(null);
   protected readonly error = signal('');
@@ -104,6 +130,8 @@ export class App {
   protected readonly attempted = signal(false);
   protected readonly densities: readonly Density[] = ['Sparse', 'Balanced', 'Cluttered'];
   protected readonly presets: readonly DecorationPreset[] = ALL_PRESETS;
+  protected readonly characters: readonly ForestCharacter[] = ALL_FOREST_CHARACTERS;
+  protected readonly characterNames: Readonly<Record<ForestCharacter, string>> = CHARACTER_LABELS;
   protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest'];
   protected readonly exportSize = `${EXPORT_WIDTH} × ${EXPORT_HEIGHT} px`;
   private readonly layoutPending = computed(() => {
@@ -119,7 +147,8 @@ export class App {
     return (
       this.layoutPending() ||
       this.density() !== map.decoration.density ||
-      (map.type === 'dungeon' && this.preset() !== map.decoration.preset)
+      (map.type === 'dungeon' && this.preset() !== map.decoration.preset) ||
+      (map.type === 'forest' && this.character() !== map.decoration.character)
     );
   });
   protected readonly invalidSeed = computed(
@@ -144,14 +173,20 @@ export class App {
         Cluttered: 'Storied spaces, with paths kept clear.',
       })[this.density()],
   );
-  protected readonly draftPresetDescription = computed(() => PRESET_DESCRIPTIONS[this.preset()]);
-  protected readonly presetDescription = computed(() => {
+  protected readonly draftStyleDescription = computed(() =>
+    this.mapType() === 'dungeon'
+      ? PRESET_DESCRIPTIONS[this.preset()]
+      : CHARACTER_DESCRIPTIONS[this.character()],
+  );
+  protected readonly styleDescription = computed(() => {
     const map = this.map();
-    return map.type === 'dungeon' ? PRESET_DESCRIPTIONS[map.decoration.preset] : '';
+    return map.type === 'dungeon'
+      ? PRESET_DESCRIPTIONS[map.decoration.preset]
+      : CHARACTER_DESCRIPTIONS[map.decoration.character];
   });
-  protected readonly presetLabel = computed(() => {
+  protected readonly styleLabel = computed(() => {
     const m = this.map();
-    if (m.type !== 'dungeon') return '';
+    if (m.type === 'forest') return CHARACTER_LABELS[m.decoration.character];
     return (
       {
         Mosslit: 'Mosslit stone',
@@ -177,7 +212,7 @@ export class App {
     return {
       seed: m.seed,
       rooms: 'Open clearing',
-      details: `${m.decoration.density} r${m.decoration.revision}`,
+      details: `${m.decoration.character} · ${m.decoration.density} r${m.decoration.revision}`,
       type: 'FOREST CLEARING',
     };
   });
@@ -258,6 +293,10 @@ export class App {
     this.updateDraft({ preset });
   }
 
+  protected selectCharacter(character: ForestCharacter): void {
+    this.updateDraft({ character });
+  }
+
   protected openSaved(map: GeneratedMap): void {
     if (this.busy()) return;
     this.mapType.set(map.type);
@@ -304,11 +343,12 @@ export class App {
     const current = this.map();
     const draft = this.draft();
     const layoutChanged = this.layoutPending();
-    const settings: DungeonSettings = {
+    const settings: DungeonSettings & ForestSettings = {
       seed: draft.seed,
       roomCount: Number(draft.rooms),
       density: draft.density,
       preset: draft.preset,
+      character: draft.character,
     };
     const validation =
       current.type === 'forest'
@@ -328,7 +368,11 @@ export class App {
         if (!result.ok) throw new Error(result.error);
         next = result.map;
       } else if (current.type === 'forest') {
-        next = changeForestDensity(current, draft.density);
+        next = current;
+        if (draft.density !== next.decoration.density)
+          next = changeForestDensity(next, draft.density);
+        if (draft.character !== next.decoration.character)
+          next = changeForestCharacter(next, draft.character);
       } else {
         next = current;
         if (draft.density !== current.decoration.density) next = changeDensity(next, draft.density);
@@ -336,6 +380,9 @@ export class App {
       }
       if (next.decoration.density !== draft.density) {
         throw new Error('Those decoration settings could not be applied. Try another density.');
+      }
+      if (next.type === 'forest' && next.decoration.character !== draft.character) {
+        throw new Error('That forest character could not be applied. Try another seed.');
       }
       if (next.type === 'dungeon') this.lastDungeon.set(next);
       else this.lastForest.set(next);

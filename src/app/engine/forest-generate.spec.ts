@@ -1,8 +1,16 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, test } from 'vitest';
-import { GENERATOR_VERSION, HEIGHT, WIDTH, indexOf, isWalkable } from './model';
-import type { Density, ForestClearing, ForestSettings, Point } from './model';
 import {
+  ALL_FOREST_CHARACTERS,
+  GENERATOR_VERSION,
+  HEIGHT,
+  WIDTH,
+  indexOf,
+  isWalkable,
+} from './model';
+import type { Density, ForestCharacter, ForestClearing, ForestSettings, Point } from './model';
+import {
+  changeForestCharacter,
   changeForestDensity,
   generateForestClearing,
   shuffleForestDetails,
@@ -57,7 +65,11 @@ function digest(map: ForestClearing): string {
 
 describe('deterministic forest clearing generation', () => {
   test('reproduces full models and does not mutate settings or previous maps', () => {
-    const settings: ForestSettings = { seed: 'woodland-glade', density: 'Balanced' };
+    const settings: ForestSettings = {
+      seed: 'woodland-glade',
+      density: 'Balanced',
+      character: 'Verdant',
+    };
     const input = Object.freeze({ ...settings });
     const first = validMap(input);
     const snapshot = structuredClone(first);
@@ -65,25 +77,40 @@ describe('deterministic forest clearing generation', () => {
     expect(input).toEqual(settings);
     shuffleForestDetails(first);
     changeForestDensity(first, 'Cluttered');
+    changeForestCharacter(first, 'Fey');
     expect(first).toEqual(snapshot);
   });
 
   test('pins representative forest models to a recorded baseline', () => {
     const cases: readonly ForestSettings[] = [
-      { seed: 'woodland-glade', density: 'Balanced' },
-      { seed: 'emerald-path', density: 'Sparse' },
-      { seed: 'ancient-grove', density: 'Cluttered' },
-      { seed: 'misty-hollow', density: 'Sparse' },
-      { seed: 'sunlit-clearing', density: 'Balanced' },
-      { seed: 'twilight-wood', density: 'Cluttered' },
+      { seed: 'woodland-glade', density: 'Balanced', character: 'Verdant' },
+      { seed: 'emerald-path', density: 'Sparse', character: 'Verdant' },
+      { seed: 'ancient-grove', density: 'Cluttered', character: 'Verdant' },
+      { seed: 'misty-hollow', density: 'Sparse', character: 'Verdant' },
+      { seed: 'sunlit-clearing', density: 'Balanced', character: 'Verdant' },
+      { seed: 'twilight-wood', density: 'Cluttered', character: 'Verdant' },
     ];
     expect(cases.map((entry) => `${entry.seed}:${digest(validMap(entry))}`)).toEqual([
-      'woodland-glade:9dd65e4833bd07f7',
-      'emerald-path:e639bb2d15485115',
-      'ancient-grove:012b659450652f90',
-      'misty-hollow:1b1ef77a3c9c1b35',
-      'sunlit-clearing:442a0de0557af6ab',
-      'twilight-wood:b606a7a86362518e',
+      'woodland-glade:29698166a8645d97',
+      'emerald-path:a8582675400cbdf5',
+      'ancient-grove:ff82d6247de3e426',
+      'misty-hollow:493b9d96c6f31361',
+      'sunlit-clearing:ec8a1e11d7dc24f9',
+      'twilight-wood:8eb0564d9cb955a6',
+    ]);
+  });
+
+  test('pins every forest character for one seed to a recorded baseline', () => {
+    const cases = ALL_FOREST_CHARACTERS.map((character): ForestSettings => ({
+      seed: 'character-showcase',
+      density: 'Balanced',
+      character,
+    }));
+    expect(cases.map((entry) => `${entry.character}:${digest(validMap(entry))}`)).toEqual([
+      'Verdant:836d3da4c685b747',
+      'Autumn:76b0b61d97d2d8e9',
+      'Pines:4869ae625325dc88',
+      'Fey:c26d45b9b446bfb2',
     ]);
   });
 
@@ -91,7 +118,7 @@ describe('deterministic forest clearing generation', () => {
     const densities: readonly Density[] = ['Sparse', 'Balanced', 'Cluttered'];
     for (let seed = 0; seed < 30; seed++) {
       const density = densities[seed % densities.length] ?? 'Balanced';
-      const map = validMap({ seed: `forest-batch-${seed}`, density });
+      const map = validMap({ seed: `forest-batch-${seed}`, density, character: 'Verdant' });
       expect(map.type).toBe('forest');
       expect(map.version).toBe(GENERATOR_VERSION);
       expect(map.layout.tiles).toHaveLength(WIDTH * HEIGHT);
@@ -116,8 +143,62 @@ describe('deterministic forest clearing generation', () => {
     }
   });
 
+  test('satisfies connectivity and budget invariants for every character', () => {
+    for (let seed = 0; seed < 8; seed++) {
+      for (const character of ALL_FOREST_CHARACTERS) {
+        const map = validMap({
+          seed: `character-batch-${seed}`,
+          density: 'Cluttered',
+          character,
+        });
+        expect(map.decoration.character).toBe(character);
+        const blocked = new Set<number>();
+        for (const prop of map.decoration.props) {
+          if (prop.blocking) {
+            expect(isWalkable(map.layout, prop.x, prop.y)).toBe(true);
+            blocked.add(indexOf(prop.x, prop.y));
+          }
+        }
+        const floorCount = map.layout.tiles.filter(Boolean).length;
+        expect(blocked.size).toBeLessThanOrEqual(Math.floor(floorCount * budgets['Cluttered']));
+        const reachable = forestDistances(map.layout.tiles, map.layout.pathStart, blocked);
+        expect(reachable.size).toBe(floorCount - blocked.size);
+        expect(reachable.has(indexOf(map.layout.pathEnd.x, map.layout.pathEnd.y))).toBe(true);
+      }
+    }
+  });
+
+  test('changing the character preserves the layout, route, endpoints, surface, and revision', () => {
+    const original = validMap({
+      seed: 'character-change',
+      density: 'Balanced',
+      character: 'Verdant',
+    });
+    for (const character of ALL_FOREST_CHARACTERS) {
+      const changed = changeForestCharacter(original, character);
+      expect(changed.decoration.character).toBe(character);
+      expect(changed.layout).toEqual(original.layout);
+      expect(changed.surfaceSeed).toBe(original.surfaceSeed);
+      expect(changed.seed).toBe(original.seed);
+      expect(changed.version).toBe(original.version);
+      expect(changed.decoration.density).toBe(original.decoration.density);
+      expect(changed.decoration.revision).toBe(original.decoration.revision);
+      if (character !== 'Verdant') {
+        expect(changed.decoration.props).not.toEqual(original.decoration.props);
+      }
+      expect(changeForestCharacter(changed, 'Verdant')).toEqual(original);
+    }
+    expect(shuffleForestDetails(original).decoration.character).toBe('Verdant');
+    const autumn = changeForestCharacter(original, 'Autumn');
+    expect(shuffleForestDetails(autumn).decoration.character).toBe('Autumn');
+  });
+
   test('detail shuffling and density changes preserve layout and surface', () => {
-    const original = validMap({ seed: 'shuffle-test', density: 'Balanced' });
+    const original = validMap({
+      seed: 'shuffle-test',
+      density: 'Balanced',
+      character: 'Verdant',
+    });
     const shuffled = shuffleForestDetails(original);
     expect(shuffled.layout).toEqual(original.layout);
     expect(shuffled.surfaceSeed).toBe(original.surfaceSeed);
@@ -137,24 +218,49 @@ describe('deterministic forest clearing generation', () => {
 
   test('rejects invalid settings and bounded impossible placement', () => {
     for (const seed of ['', '   ', 'x'.repeat(65)])
-      expect(generateForestClearing({ seed, density: 'Balanced' }).ok).toBe(false);
+      expect(generateForestClearing({ seed, density: 'Balanced', character: 'Verdant' }).ok).toBe(
+        false,
+      );
     for (const density of ['Dense', 'balanced', ''] as const)
-      expect(generateForestClearing({ seed: 'test', density: density as Density })).toEqual({
+      expect(
+        generateForestClearing({
+          seed: 'test',
+          density: density as Density,
+          character: 'Verdant',
+        }),
+      ).toEqual({
         ok: false,
         error: 'Choose a valid decoration density.',
       });
-    const failure = generateForestClearing({ seed: 'test', density: 'Balanced' }, { retries: 0 });
+    for (const character of ['Weird', 'verdant', ''] as const)
+      expect(
+        validateForestSettings({
+          seed: 'test',
+          density: 'Balanced',
+          character: character as ForestCharacter,
+        }),
+      ).toBe('Choose a valid forest character.');
+    const failure = generateForestClearing(
+      { seed: 'test', density: 'Balanced', character: 'Verdant' },
+      { retries: 0 },
+    );
     expect(failure.ok).toBe(false);
   });
 
   test('trims seeds', () => {
-    const map = validMap({ seed: 'woodland-glade', density: 'Balanced' });
-    expect(validMap({ seed: '  woodland-glade  ', density: 'Balanced' })).toEqual(map);
+    const map = validMap({ seed: 'woodland-glade', density: 'Balanced', character: 'Verdant' });
+    expect(
+      validMap({ seed: '  woodland-glade  ', density: 'Balanced', character: 'Verdant' }),
+    ).toEqual(map);
   });
 
   test('has enough open space for encounters', () => {
     for (let seed = 0; seed < 10; seed++) {
-      const map = validMap({ seed: `space-test-${seed}`, density: 'Balanced' });
+      const map = validMap({
+        seed: `space-test-${seed}`,
+        density: 'Balanced',
+        character: 'Verdant',
+      });
       const floorCount = map.layout.tiles.filter(Boolean).length;
       expect(floorCount).toBeGreaterThanOrEqual(200);
       const centerFloors = [];
@@ -172,7 +278,11 @@ describe('deterministic forest clearing generation', () => {
 
   test('route tiles connect path start to path end', () => {
     for (let seed = 0; seed < 20; seed++) {
-      const map = validMap({ seed: `route-connectivity-${seed}`, density: 'Balanced' });
+      const map = validMap({
+        seed: `route-connectivity-${seed}`,
+        density: 'Balanced',
+        character: 'Verdant',
+      });
       expect(map.layout.route.length).toBeGreaterThan(0);
 
       const startIdx = indexOf(map.layout.pathStart.x, map.layout.pathStart.y);
@@ -217,7 +327,11 @@ describe('deterministic forest clearing generation', () => {
   test('shuffle and density changes maintain full connectivity and constraints', () => {
     for (let seed = 0; seed < 20; seed++) {
       for (const density of ['Sparse', 'Balanced', 'Cluttered'] as const) {
-        const map = validMap({ seed: `connectivity-${seed}`, density });
+        const map = validMap({
+          seed: `connectivity-${seed}`,
+          density,
+          character: 'Verdant',
+        });
         let current = map;
 
         for (let i = 0; i < 5; i++) {

@@ -1,9 +1,10 @@
 import { HEIGHT, WIDTH } from '../engine/model';
 import type { GeneratedMap } from '../engine/model';
+import { DEFAULT_FOREST_CHARACTER } from '../engine/model';
 import { validateDungeon } from '../engine/validation';
 import { validateForest } from '../engine/forest-generate';
 
-export const SAVE_FORMAT_VERSION = '1.0.0';
+export const SAVE_FORMAT_VERSION = '2.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -31,6 +32,7 @@ export type ParseResult =
 
 const DENSITIES: readonly string[] = ['Sparse', 'Balanced', 'Cluttered'];
 const PRESETS: readonly string[] = ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'];
+const FOREST_CHARACTERS: readonly string[] = ['Verdant', 'Autumn', 'Pines', 'Fey'];
 const PROP_KINDS: readonly string[] = [
   'crate',
   'barrel',
@@ -181,7 +183,12 @@ function isDungeonDecoration(value: unknown): boolean {
 }
 
 function isForestDecoration(value: unknown): boolean {
-  return isDecorationBase(value);
+  return (
+    isObject(value) &&
+    isDecorationBase(value) &&
+    typeof value['character'] === 'string' &&
+    FOREST_CHARACTERS.includes(value['character'])
+  );
 }
 
 function isGeneratedMap(value: unknown): value is GeneratedMap {
@@ -239,8 +246,29 @@ export function parseSavedMap(value: unknown): SavedMap | undefined {
   if (typeof saveFormatVersion !== 'string' || !isSupportedVersion(saveFormatVersion))
     return undefined;
   if (typeof thumbnail !== 'string' || !thumbnail.startsWith('data:image/')) return undefined;
-  if (!isUsableMap(map)) return undefined;
-  return { id, name, favorite, savedAt, saveFormatVersion, thumbnail, map };
+  let normalizedMap: unknown = map;
+  if (
+    isObject(map) &&
+    map['type'] === 'forest' &&
+    map['version'] === '3.0.0' &&
+    isObject(map['decoration']) &&
+    !('character' in map['decoration'])
+  ) {
+    normalizedMap = {
+      ...map,
+      decoration: { ...map['decoration'], character: DEFAULT_FOREST_CHARACTER },
+    };
+  }
+  if (!isUsableMap(normalizedMap)) return undefined;
+  return {
+    id,
+    name,
+    favorite,
+    savedAt,
+    saveFormatVersion: SAVE_FORMAT_VERSION,
+    thumbnail,
+    map: normalizedMap,
+  };
 }
 
 export function parseBundle(text: string): ParseResult {
@@ -328,7 +356,7 @@ export function mapSummary(map: GeneratedMap): string {
   if (map.type === 'dungeon') {
     return `${map.layout.rooms.length} rooms · ${map.decoration.preset} · ${map.decoration.density} r${map.decoration.revision}`;
   }
-  return `${map.decoration.density} r${map.decoration.revision}`;
+  return `${map.decoration.character} · ${map.decoration.density} r${map.decoration.revision}`;
 }
 
 export function uniqueById(

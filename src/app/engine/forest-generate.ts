@@ -1,6 +1,7 @@
 import { GENERATOR_VERSION, HEIGHT, WIDTH, indexOf, isBlockingProp, isWalkable } from './model';
 import type {
   Density,
+  ForestCharacter,
   ForestClearing,
   ForestDecoration,
   ForestGenerationResult,
@@ -9,6 +10,7 @@ import type {
   Point,
   Prop,
 } from './model';
+import { ALL_FOREST_CHARACTERS } from './model';
 import { Random, streamSeed } from './random';
 
 export interface ForestLimits {
@@ -209,32 +211,99 @@ function validateForestLayout(layout: ForestLayout): boolean {
 
 const budgets: Readonly<Record<Density, number>> = { Sparse: 0.05, Balanced: 0.1, Cluttered: 0.15 };
 
+interface EdgeRolls {
+  readonly bush: number;
+  readonly boulder: number;
+  readonly fern: number;
+  readonly stump: number;
+  readonly mushroom: number;
+}
+
+interface InteriorRolls {
+  readonly flower: number;
+  readonly fern: number;
+}
+
+interface CharacterProfile {
+  readonly trees: (random: Random) => number;
+  readonly edge: EdgeRolls;
+  readonly interior: InteriorRolls;
+  readonly undergrowth: Readonly<Record<Density, number>>;
+  readonly mushrooms: Readonly<Record<Density, number>>;
+  readonly logs: Readonly<Record<Density, number>>;
+}
+
+const VERDANT_EDGE: EdgeRolls = { bush: 0.3, boulder: 0.2, fern: 0.15, stump: 0.1, mushroom: 0.1 };
+const VERDANT_INTERIOR: InteriorRolls = { flower: 0.4, fern: 0.3 };
+
+const profiles: Readonly<Record<ForestCharacter, CharacterProfile>> = {
+  Verdant: {
+    trees: (random) => 50 + random.int(0, 20),
+    edge: VERDANT_EDGE,
+    interior: VERDANT_INTERIOR,
+    undergrowth: { Sparse: 8, Balanced: 16, Cluttered: 24 },
+    mushrooms: { Sparse: 2, Balanced: 5, Cluttered: 8 },
+    logs: { Sparse: 0, Balanced: 1, Cluttered: 2 },
+  },
+  Autumn: {
+    trees: (random) => 50 + random.int(0, 20),
+    edge: { bush: 0.25, boulder: 0.15, fern: 0.2, stump: 0.05, mushroom: 0.2 },
+    interior: { flower: 0.2, fern: 0.35 },
+    undergrowth: { Sparse: 12, Balanced: 18, Cluttered: 26 },
+    mushrooms: { Sparse: 4, Balanced: 8, Cluttered: 12 },
+    logs: { Sparse: 1, Balanced: 1, Cluttered: 2 },
+  },
+  Pines: {
+    trees: (random) => 70 + random.int(0, 25),
+    edge: { bush: 0.1, boulder: 0.3, fern: 0.05, stump: 0.25, mushroom: 0.1 },
+    interior: { flower: 0.05, fern: 0.55 },
+    undergrowth: { Sparse: 10, Balanced: 16, Cluttered: 22 },
+    mushrooms: { Sparse: 3, Balanced: 6, Cluttered: 9 },
+    logs: { Sparse: 1, Balanced: 2, Cluttered: 3 },
+  },
+  Fey: {
+    trees: (random) => 45 + random.int(0, 20),
+    edge: { bush: 0.2, boulder: 0.1, fern: 0.25, stump: 0.05, mushroom: 0.25 },
+    interior: { flower: 0.6, fern: 0.2 },
+    undergrowth: { Sparse: 10, Balanced: 18, Cluttered: 26 },
+    mushrooms: { Sparse: 4, Balanced: 9, Cluttered: 14 },
+    logs: { Sparse: 0, Balanced: 1, Cluttered: 2 },
+  },
+};
+
 function decorateForest(
   layout: ForestLayout,
   seed: string,
+  character: ForestCharacter,
   density: Density,
   revision: number,
 ): ForestDecoration {
-  const random = new Random(streamSeed(seed, 'forest-decoration', density, revision));
+  const random = new Random(streamSeed(seed, 'forest-decoration', character, density, revision));
+  const profile = profiles[character];
   const props: Prop[] = [];
   const blocked = new Set<number>();
   const routeSet = new Set(layout.route);
   const floorCount = layout.tiles.filter(Boolean).length;
   const maxBlocking = Math.floor(floorCount * budgets[density]);
 
-  placeTrees(layout, random, props);
-  placeClearingProps(layout, random, blocked, routeSet, maxBlocking, props);
-  placeForestFloorProps(layout, random, density, blocked, routeSet, maxBlocking, props);
+  placeTrees(layout, random, props, profile);
+  placeClearingProps(layout, random, blocked, routeSet, maxBlocking, props, profile);
+  placeForestFloorProps(layout, random, density, blocked, routeSet, maxBlocking, props, profile);
 
   const reachable = forestDistances(layout.tiles, layout.pathStart, blocked);
   if (!reachable.has(indexOf(layout.pathEnd.x, layout.pathEnd.y))) {
-    return { props: props.filter((p) => !p.blocking), density, revision };
+    return { props: props.filter((p) => !p.blocking), density, character, revision };
   }
 
-  return { props, density, revision };
+  return { props, density, character, revision };
 }
 
-function placeTrees(layout: ForestLayout, random: Random, props: Prop[]): void {
+function placeTrees(
+  layout: ForestLayout,
+  random: Random,
+  props: Prop[],
+  profile: CharacterProfile,
+): void {
   const candidates: { x: number; y: number }[] = [];
   for (let y = 1; y < HEIGHT - 1; y++) {
     for (let x = 1; x < WIDTH - 1; x++) {
@@ -262,7 +331,7 @@ function placeTrees(layout: ForestLayout, random: Random, props: Prop[]): void {
     }
   }
 
-  const treeCount = Math.min(candidates.length, 50 + random.int(0, 20));
+  const treeCount = Math.min(candidates.length, profile.trees(random));
   const step = Math.max(1, Math.floor(candidates.length / treeCount));
   for (
     let i = 0;
@@ -325,6 +394,7 @@ function placeClearingProps(
   routeSet: ReadonlySet<number>,
   maxBlocking: number,
   props: Prop[],
+  profile: CharacterProfile,
 ): void {
   const edgeCandidates: { x: number; y: number }[] = [];
   for (let y = 2; y < HEIGHT - 2; y++) {
@@ -383,12 +453,14 @@ function placeClearingProps(
     if (blocked.has(tile)) continue;
 
     const roll = random.next();
+    const { edge } = profile;
     let kind: Prop['kind'];
-    if (roll < 0.3) kind = 'bush';
-    else if (roll < 0.5) kind = 'boulder';
-    else if (roll < 0.65) kind = 'fern';
-    else if (roll < 0.75) kind = 'stump';
-    else if (roll < 0.85) kind = 'mushroom';
+    if (roll < edge.bush) kind = 'bush';
+    else if (roll < edge.bush + edge.boulder) kind = 'boulder';
+    else if (roll < edge.bush + edge.boulder + edge.fern) kind = 'fern';
+    else if (roll < edge.bush + edge.boulder + edge.fern + edge.stump) kind = 'stump';
+    else if (roll < edge.bush + edge.boulder + edge.fern + edge.stump + edge.mushroom)
+      kind = 'mushroom';
     else kind = 'fern';
 
     const blocking = isBlockingProp(kind);
@@ -416,8 +488,8 @@ function placeClearingProps(
 
     let kind: Prop['kind'];
     const kindRoll = random.next();
-    if (kindRoll < 0.4) kind = 'flower';
-    else if (kindRoll < 0.7) kind = 'fern';
+    if (kindRoll < profile.interior.flower) kind = 'flower';
+    else if (kindRoll < profile.interior.flower + profile.interior.fern) kind = 'fern';
     else kind = 'mushroom';
 
     props.push({ ...point, kind, blocking: false, variation: random.next() });
@@ -433,6 +505,7 @@ function placeForestFloorProps(
   routeSet: ReadonlySet<number>,
   maxBlocking: number,
   props: Prop[],
+  profile: CharacterProfile,
 ): void {
   const nonWalkable: { x: number; y: number }[] = [];
   for (let y = 1; y < HEIGHT - 1; y++) {
@@ -452,7 +525,7 @@ function placeForestFloorProps(
     }
   }
 
-  const fernCount = density === 'Sparse' ? 8 : density === 'Balanced' ? 16 : 24;
+  const fernCount = profile.undergrowth[density];
   let ferns = 0;
   for (const point of nonWalkable) {
     if (ferns >= fernCount) break;
@@ -461,7 +534,7 @@ function placeForestFloorProps(
     ferns++;
   }
 
-  const mushroomCount = density === 'Sparse' ? 2 : density === 'Balanced' ? 5 : 8;
+  const mushroomCount = profile.mushrooms[density];
   let mushrooms = 0;
   for (const point of nonWalkable) {
     if (mushrooms >= mushroomCount) break;
@@ -471,7 +544,7 @@ function placeForestFloorProps(
     mushrooms++;
   }
 
-  const logCount = density === 'Sparse' ? 0 : density === 'Balanced' ? 1 : 2;
+  const logCount = profile.logs[density];
   const walkable: { x: number; y: number }[] = [];
   for (let y = 2; y < HEIGHT - 2; y++) {
     for (let x = 2; x < WIDTH - 2; x++) {
@@ -568,6 +641,8 @@ export function validateForestSettings(settings: ForestSettings): string | undef
     return 'Enter a seed between 1 and 64 characters.';
   if (!['Sparse', 'Balanced', 'Cluttered'].includes(settings.density))
     return 'Choose a valid decoration density.';
+  if (!ALL_FOREST_CHARACTERS.includes(settings.character))
+    return 'Choose a valid forest character.';
   return undefined;
 }
 
@@ -608,7 +683,7 @@ export function generateForestClearing(
       seed,
       layout,
       surfaceSeed: streamSeed(seed, 'surface'),
-      decoration: decorateForest(layout, seed, settings.density, 0),
+      decoration: decorateForest(layout, seed, settings.character, settings.density, 0),
     };
 
     const error = validateForest(map);
@@ -624,7 +699,13 @@ export function generateForestClearing(
 
 export function shuffleForestDetails(map: ForestClearing): ForestClearing {
   const revision = map.decoration.revision + 1;
-  const decoration = decorateForest(map.layout, map.seed, map.decoration.density, revision);
+  const decoration = decorateForest(
+    map.layout,
+    map.seed,
+    map.decoration.character,
+    map.decoration.density,
+    revision,
+  );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
   if (error) return map;
@@ -632,7 +713,30 @@ export function shuffleForestDetails(map: ForestClearing): ForestClearing {
 }
 
 export function changeForestDensity(map: ForestClearing, density: Density): ForestClearing {
-  const decoration = decorateForest(map.layout, map.seed, density, map.decoration.revision);
+  const decoration = decorateForest(
+    map.layout,
+    map.seed,
+    map.decoration.character,
+    density,
+    map.decoration.revision,
+  );
+  const updated: ForestClearing = { ...map, decoration };
+  const error = validateForest(updated);
+  if (error) return map;
+  return updated;
+}
+
+export function changeForestCharacter(
+  map: ForestClearing,
+  character: ForestCharacter,
+): ForestClearing {
+  const decoration = decorateForest(
+    map.layout,
+    map.seed,
+    character,
+    map.decoration.density,
+    map.decoration.revision,
+  );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
   if (error) return map;

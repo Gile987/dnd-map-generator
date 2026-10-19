@@ -1,7 +1,64 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
 const itemByName = (page: import('@playwright/test').Page, name: string) =>
   page.locator('.saved-item').filter({ has: page.getByText(name, { exact: true }) });
+
+test('imports a v3 library, reopens its original settings, and exports format-2 records', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-v3.json');
+  await expect(page.locator('.saved-item')).toHaveCount(3);
+  await expect(page.locator('.library-message .notice')).toContainText('Imported 3 maps');
+  await page.reload();
+  await itemByName(page, 'ancient-grove legacy clearing')
+    .getByRole('button', { name: 'Open', exact: true })
+    .click();
+  await expect(page.getByRole('radio', { name: 'Verdant woodland', exact: true })).toBeChecked();
+  await expect(page.getByRole('radio', { name: 'Cluttered', exact: true })).toBeChecked();
+  await expect(page.locator('#map-summary')).toContainText('Verdant · Cluttered r2');
+  await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download backup' }).click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
+    saveFormatVersion: '2.0.0',
+    maps: Array.from({ length: 3 }, () => ({
+      saveFormatVersion: '2.0.0',
+      map: { version: '3.0.0', decoration: { character: 'Verdant' } },
+    })),
+  });
+});
+
+test('a Fey save survives a format-2 backup round trip and refresh', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('radio', { name: 'Forest', exact: true }).check();
+  await page.getByRole('radio', { name: 'Fey glade', exact: true }).check();
+  await page.getByRole('button', { name: 'Generate forest' }).click();
+  await expect(page.locator('#map-summary')).toContainText('Fey · Balanced r0');
+  await page.locator('#save-name').fill('Fey backup');
+  await page.getByRole('button', { name: 'Save map', exact: true }).click();
+  await expect(itemByName(page, 'Fey backup')).toBeVisible();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download backup' }).click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
+    saveFormatVersion: '2.0.0',
+    maps: [{ saveFormatVersion: '2.0.0', map: { decoration: { character: 'Fey' } } }],
+  });
+  await itemByName(page, 'Fey backup').getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.getByText('Your library is empty.')).toBeVisible();
+  await page.setInputFiles('.import-label input', path);
+  await expect(itemByName(page, 'Fey backup')).toBeVisible();
+  await page.reload();
+  await itemByName(page, 'Fey backup').getByRole('button', { name: 'Open', exact: true }).click();
+  await expect(page.getByRole('radio', { name: 'Fey glade', exact: true })).toBeChecked();
+  await expect(page.locator('#map-summary')).toContainText('Fey · Balanced r0');
+  await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
+});
 
 test('saves a generated map, restores it after refresh, and keeps drafts out of the save', async ({
   page,

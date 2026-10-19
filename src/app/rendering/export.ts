@@ -15,7 +15,7 @@ export function exportFilename(map: GeneratedMap): string {
     const preset = map.decoration.preset.toLowerCase();
     return `encounter-${seed}-${preset}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   }
-  return `encounter-${seed}-forest-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+  return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
 }
 
 function renderMapToCanvas(

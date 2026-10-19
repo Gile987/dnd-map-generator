@@ -3,8 +3,10 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { test, expect } from 'vitest';
 import { showcaseDungeon } from '../src/app/engine/showcase';
 import { renderDungeon } from '../src/app/rendering/dungeon-renderer';
+import { renderForest } from '../src/app/rendering/forest-renderer';
 import { generateDungeon } from '../src/app/engine/generate';
-import type { Density, DecorationPreset } from '../src/app/engine/model';
+import { generateForestClearing } from '../src/app/engine/forest-generate';
+import type { Density, DecorationPreset, ForestCharacter } from '../src/app/engine/model';
 
 test('render the reusable showcase at export resolution and crop a close-up', () => {
   mkdirSync('artifacts', { recursive: true });
@@ -60,4 +62,35 @@ test('render six representative maps and a contact sheet for visual review', () 
     ctx.drawImage(canvas, x, y + 36, 480, 360);
   });
   writeFileSync('artifacts/contact-sheet.png', sheet.toBuffer('image/png'));
+});
+
+test('render the four forest characters and a contact sheet for visual review', () => {
+  mkdirSync('artifacts', { recursive: true });
+  const sheet = createCanvas(1440, 810);
+  const characters: readonly ForestCharacter[] = ['Verdant', 'Autumn', 'Pines', 'Fey'];
+  characters.forEach((character, i) => {
+    const result = generateForestClearing({
+      seed: 'character-showcase',
+      density: 'Balanced',
+      character,
+    });
+    expect(result.ok, character).toBe(true);
+    if (!result.ok) return;
+    const canvas = createCanvas(2560, 1920);
+    renderForest(canvas.getContext('2d'), result.map, { grid: true, pixelsPerTile: 64 });
+    writeFileSync(`artifacts/forest-${character}.png`, canvas.toBuffer('image/png'));
+    const detail = createCanvas(768, 640);
+    detail.getContext('2d').drawImage(canvas, 640, 512, 768, 640, 0, 0, 768, 640);
+    writeFileSync(`artifacts/forest-${character}-detail.png`, detail.toBuffer('image/png'));
+    const ctx = sheet.getContext('2d');
+    const x = (i % 2) * 720;
+    const y = Math.floor(i / 2) * 405;
+    ctx.fillStyle = '#f5f3ec';
+    ctx.fillRect(x, y, 720, 405);
+    ctx.fillStyle = '#214437';
+    ctx.font = '14px sans-serif';
+    ctx.fillText(`${character} / character-showcase / Balanced`, x + 12, y + 22);
+    ctx.drawImage(canvas, x, y + 36, 720, 360);
+  });
+  writeFileSync('artifacts/forest-characters.png', sheet.toBuffer('image/png'));
 });

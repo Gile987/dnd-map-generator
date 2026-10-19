@@ -1,6 +1,6 @@
 export const WIDTH = 40;
 export const HEIGHT = 30;
-export const GENERATOR_VERSION = '3.0.0';
+export const GENERATOR_VERSION = '4.0.0';
 
 export type MapType = 'dungeon' | 'forest';
 
@@ -53,6 +53,17 @@ export const ALL_PRESETS: readonly DecorationPreset[] = [
   'Sanctuary',
 ];
 
+export type ForestCharacter = 'Verdant' | 'Autumn' | 'Pines' | 'Fey';
+
+export const DEFAULT_FOREST_CHARACTER: ForestCharacter = 'Verdant';
+
+export const ALL_FOREST_CHARACTERS: readonly ForestCharacter[] = [
+  'Verdant',
+  'Autumn',
+  'Pines',
+  'Fey',
+];
+
 export interface DungeonSettings {
   readonly seed: string;
   readonly roomCount: number;
@@ -63,6 +74,7 @@ export interface DungeonSettings {
 export interface ForestSettings {
   readonly seed: string;
   readonly density: Density;
+  readonly character: ForestCharacter;
 }
 
 export type MapSettings =
@@ -104,6 +116,7 @@ export interface Decoration {
 export interface ForestDecoration {
   readonly props: readonly Prop[];
   readonly density: Density;
+  readonly character: ForestCharacter;
   readonly revision: number;
 }
 

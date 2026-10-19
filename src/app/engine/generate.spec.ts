@@ -51,15 +51,15 @@ describe('deterministic dungeon generation', () => {
     expect(
       cases.map((entry) => `${entry.seed}:${entry.preset}:${digest(validMap(entry))}`),
     ).toEqual([
-      'mosslit-sanctum:Mosslit:dd379eb6529ef04a',
-      'amber-vault:Mosslit:9e81d6718f2729a7',
-      'forgotten-library:Mosslit:cda8ee97437e19fd',
-      'lantern-watch:Mosslit:d2c0b30fbe3a0f50',
-      'moss-and-memory:Mosslit:e1b3d5e3d1f0a35c',
-      'silver-crypt:Mosslit:7bcd96a9d0da5ade',
-      'amber-vault:Crypt:36cc65b8d2e9f911',
-      'forgotten-library:Storehouse:1bdc093c31c24b08',
-      'lantern-watch:Sanctuary:10bd2a562b030cfd',
+      'mosslit-sanctum:Mosslit:dbf184c1e457504a',
+      'amber-vault:Mosslit:1f00b8ca9a547ed1',
+      'forgotten-library:Mosslit:dfe27cfa97ad790a',
+      'lantern-watch:Mosslit:8d78a463cc22b631',
+      'moss-and-memory:Mosslit:fc313ac04975c2c3',
+      'silver-crypt:Mosslit:427fd3244f76e1c2',
+      'amber-vault:Crypt:c7241eef69cde23f',
+      'forgotten-library:Storehouse:13d98ab5a23c1733',
+      'lantern-watch:Sanctuary:e18fde97d0554200',
     ]);
   });
 
@@ -99,7 +99,7 @@ describe('deterministic dungeon generation', () => {
 
   test('adds the optional extra connection only for seeds with a useful shortcut', () => {
     const shortcut = validMap({
-      seed: 'batch-1',
+      seed: 'batch-0',
       roomCount: 8,
       density: 'Balanced',
       preset: 'Mosslit',
@@ -122,7 +122,12 @@ describe('deterministic dungeon generation', () => {
     if (detour === undefined || improved === undefined)
       throw new Error('the shortcut endpoints are unreachable');
     expect(detour - improved).toBeGreaterThanOrEqual(10);
-    const spanningTreeOnly = validMap(settings);
+    const spanningTreeOnly = validMap({
+      seed: 'lantern-watch',
+      roomCount: 6,
+      density: 'Balanced',
+      preset: 'Mosslit',
+    });
     expect(spanningTreeOnly.layout.connections).toHaveLength(
       spanningTreeOnly.layout.rooms.length - 1,
     );

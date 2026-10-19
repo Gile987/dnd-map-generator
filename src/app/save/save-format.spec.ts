@@ -1,13 +1,15 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
-import { indexOf } from '../engine/model';
+import { ALL_FOREST_CHARACTERS, indexOf } from '../engine/model';
 import type { GeneratedMap } from '../engine/model';
 import {
   BACKUP_FORMAT,
   SAVE_FORMAT_VERSION,
   defaultMapName,
   duplicateName,
+  isUsableMap,
   makeSavedMap,
   mapSummary,
   normalizeName,
@@ -24,7 +26,11 @@ const dungeon = generateDungeon({
   density: 'Balanced',
   preset: 'Mosslit',
 });
-const forest = generateForestClearing({ seed: 'woodland-glade', density: 'Sparse' });
+const forest = generateForestClearing({
+  seed: 'woodland-glade',
+  density: 'Sparse',
+  character: 'Verdant',
+});
 if (!dungeon.ok) throw new Error(dungeon.error);
 if (!forest.ok) throw new Error(forest.error);
 
@@ -67,7 +73,7 @@ describe('save format', () => {
     expect(defaultMapName(dungeon.map)).toBe('mosslit-sanctum dungeon');
     expect(defaultMapName(forest.map)).toBe('woodland-glade clearing');
     expect(mapSummary(dungeon.map)).toBe('6 rooms · Mosslit · Balanced r0');
-    expect(mapSummary(forest.map)).toBe('Sparse r0');
+    expect(mapSummary(forest.map)).toBe('Verdant · Sparse r0');
   });
 
   test('round-trips saved maps through a backup bundle without loss', () => {
@@ -146,6 +152,96 @@ describe('save format', () => {
     expect(parseSavedMap(withRoute([start, end]))).toBeUndefined();
   });
 
+  test('migrates actual v3 forest saves without changing their saved models', () => {
+    const text = readFileSync(new URL('./fixtures/forest-v3.json', import.meta.url), 'utf8');
+    const original: unknown = JSON.parse(text);
+    if (typeof original !== 'object' || original === null || !('maps' in original))
+      throw new Error('Legacy fixture has no maps');
+    const maps = original.maps;
+    if (!Array.isArray(maps)) throw new Error('Legacy fixture has no map records');
+    const snapshot = structuredClone(maps);
+    const parsed = parseBundle(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    expect(parsed.skipped).toBe(0);
+    expect(parsed.maps).toHaveLength(3);
+    parsed.maps.forEach((entry, i) => {
+      const legacy: unknown = maps[i];
+      if (typeof legacy !== 'object' || legacy === null || !('map' in legacy))
+        throw new Error('Legacy fixture has no map');
+      expect(parseSavedMap(legacy)).toEqual(entry);
+      expect(entry.saveFormatVersion).toBe('2.0.0');
+      expect(entry.map.type).toBe('forest');
+      if (entry.map.type !== 'forest') throw new Error('Expected forest');
+      const { character, ...decoration } = entry.map.decoration;
+      expect(character).toBe('Verdant');
+      expect({ ...entry.map, decoration }).toEqual(legacy.map);
+      expect(entry.map.version).toBe('3.0.0');
+    });
+    expect(maps).toEqual(snapshot);
+    expect(parseBundle(serializeBundle(parsed.maps))).toEqual(parsed);
+  });
+
+  test.each(ALL_FOREST_CHARACTERS)(
+    'writes %s records and backups as format 2.0.0 so v1 readers reject them',
+    (character) => {
+      const result = generateForestClearing({
+        seed: 'character-save',
+        density: 'Balanced',
+        character,
+      });
+      if (!result.ok) throw new Error(result.error);
+      const saved = record(result.map);
+      expect(saved.saveFormatVersion).toBe('2.0.0');
+      const text = serializeBundle([saved]);
+      expect(JSON.parse(text)).toMatchObject({
+        saveFormatVersion: '2.0.0',
+        maps: [{ saveFormatVersion: '2.0.0' }],
+      });
+      expect(parseBundle(text)).toEqual({ ok: true, maps: [saved], skipped: 0 });
+    },
+  );
+
+  test('upgrades the initial I19 format-1 character records without changing their artwork', () => {
+    const result = generateForestClearing({
+      seed: 'early-fey',
+      density: 'Balanced',
+      character: 'Fey',
+    });
+    if (!result.ok) throw new Error(result.error);
+    const initial = record(result.map, { saveFormatVersion: '1.0.0' });
+    const parsed = parseSavedMap(initial);
+    expect(parsed).toEqual({ ...initial, saveFormatVersion: '2.0.0' });
+    expect(initial.saveFormatVersion).toBe('1.0.0');
+  });
+
+  test('requires a character on current forest models before they are considered usable', () => {
+    const invalid = corruptRecord(forest.map, (m) => {
+      delete m.decoration['character'];
+    });
+    expect(parseSavedMap(invalid)).toBeUndefined();
+    expect(
+      isUsableMap({
+        ...forest.map,
+        decoration: { ...forest.map.decoration, character: undefined },
+      }),
+    ).toBe(false);
+  });
+
+  test('keeps format-1 dungeon saves readable while upgrading their record version', () => {
+    const legacy = record(dungeon.map, { saveFormatVersion: '1.0.0' });
+    expect(parseBundle(bundle([legacy], '1.0.0'))).toEqual({
+      ok: true,
+      maps: [{ ...legacy, saveFormatVersion: '2.0.0' }],
+      skipped: 0,
+    });
+  });
+
+  test('rejects forest maps with an unknown character', () => {
+    expect(
+      parseSavedMap(corruptRecord(forest.map, (m) => (m.decoration['character'] = 'Meadow'))),
+    ).toBeUndefined();
+  });
+
   test('rejects a corrupt map body even when the wrapper looks right', () => {
     const corrupt = { ...record(dungeon.map) };
     if (corrupt.map.type !== 'dungeon') throw new Error('Expected dungeon');
@@ -217,6 +313,6 @@ describe('save format', () => {
 
   test('records the save-format version for future compatibility checks', () => {
     expect(record(dungeon.map).saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
-    expect(record(forest.map).map.version).toBe('3.0.0');
+    expect(record(forest.map).map.version).toBe('4.0.0');
   });
 });
