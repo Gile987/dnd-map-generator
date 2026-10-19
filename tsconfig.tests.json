@@ -6,6 +6,7 @@
     "src/app/engine/**/*.ts",
     "src/app/rendering/**/*.ts",
     "src/app/save/**/*.ts",
+    "src/app/workbench/**/*.ts",
     "tests/**/*.ts",
     "scripts/**/*.ts",
     "*.config.ts"
