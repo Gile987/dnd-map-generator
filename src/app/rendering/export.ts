@@ -1,7 +1,6 @@
-import { renderDungeon } from './dungeon-renderer';
-import { renderForest } from './forest-renderer';
+import { renderMap } from './render-map';
 import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from './resolution';
-import type { Dungeon, ForestClearing, GeneratedMap } from '../engine/model';
+import type { GeneratedMap } from '../engine/model';
 
 export function exportFilename(map: GeneratedMap): string {
   const seed =
@@ -18,18 +17,6 @@ export function exportFilename(map: GeneratedMap): string {
   return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
 }
 
-function renderMapToCanvas(
-  context: CanvasRenderingContext2D,
-  map: GeneratedMap,
-  grid: boolean,
-): void {
-  if (map.type === 'dungeon') {
-    renderDungeon(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
-  } else {
-    renderForest(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
-  }
-}
-
 export async function createPng(map: GeneratedMap, grid: boolean): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = EXPORT_WIDTH;
@@ -37,7 +24,7 @@ export async function createPng(map: GeneratedMap, grid: boolean): Promise<Blob>
   const context = canvas.getContext('2d');
   if (!context)
     throw new Error('PNG export is unavailable because a drawing surface could not be created.');
-  renderMapToCanvas(context, map, grid);
+  renderMap(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);

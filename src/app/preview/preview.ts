@@ -14,8 +14,7 @@ import {
 } from '@angular/core';
 import { HEIGHT, WIDTH } from '../engine/model';
 import type { GeneratedMap } from '../engine/model';
-import { renderDungeon } from '../rendering/dungeon-renderer';
-import { renderForest } from '../rendering/forest-renderer';
+import { renderMap } from '../rendering/render-map';
 import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from '../rendering/resolution';
 import { Icon } from '../icon';
 
@@ -67,13 +66,7 @@ export class Preview {
       this.image.width = EXPORT_WIDTH;
       this.image.height = EXPORT_HEIGHT;
       const context = this.image.getContext('2d');
-      if (context) {
-        if (map.type === 'dungeon') {
-          renderDungeon(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
-        } else {
-          renderForest(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
-        }
-      }
+      if (context) renderMap(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
       untracked(() => this.paint());
     });
     afterNextRender({

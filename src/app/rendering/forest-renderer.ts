@@ -1,19 +1,12 @@
 import { HEIGHT, WIDTH, indexOf, isWalkable } from '../engine/model';
-import type { ForestCharacter, ForestClearing, ForestLayout, Point } from '../engine/model';
+import type { ForestCharacter, ForestClearing, ForestLayout } from '../engine/model';
 import { Random, deriveSeed } from '../engine/random';
 import { drawProp } from './props';
 import { FOREST_PALETTES } from './forest-palette';
 import type { DrawingContext } from './drawing-context';
-
-export interface ForestRenderOptions {
-  readonly grid: boolean;
-  readonly pixelsPerTile: number;
-}
-
-interface Edge {
-  readonly a: Point;
-  readonly b: Point;
-}
+import type { RenderOptions } from './render-options';
+import { boundaryLoops, traceBoundaries } from './boundaries';
+import { drawGrid } from './drawing-primitives';
 
 interface ForestAtmosphere {
   readonly background: string;
@@ -88,58 +81,6 @@ const atmospheres: Readonly<Record<ForestCharacter, ForestAtmosphere>> = {
     grid: '#a8e0c018',
   },
 };
-
-function boundaries(layout: ForestLayout): Edge[][] {
-  const edges: Edge[] = [];
-  for (let y = 0; y < HEIGHT; y++) {
-    for (let x = 0; x < WIDTH; x++) {
-      if (!isWalkable(layout, x, y)) continue;
-      if (!isWalkable(layout, x, y - 1)) edges.push({ a: { x, y }, b: { x: x + 1, y } });
-      if (!isWalkable(layout, x + 1, y))
-        edges.push({ a: { x: x + 1, y }, b: { x: x + 1, y: y + 1 } });
-      if (!isWalkable(layout, x, y + 1))
-        edges.push({ a: { x: x + 1, y: y + 1 }, b: { x, y: y + 1 } });
-      if (!isWalkable(layout, x - 1, y)) edges.push({ a: { x, y: y + 1 }, b: { x, y } });
-    }
-  }
-  const pending = new Set(edges);
-  const starts = new Map<string, Edge[]>();
-  for (const edge of edges) {
-    const key = `${edge.a.x},${edge.a.y}`;
-    starts.set(key, [...(starts.get(key) ?? []), edge]);
-  }
-  const loops: Edge[][] = [];
-  for (const first of edges) {
-    if (!pending.has(first)) continue;
-    const loop: Edge[] = [];
-    let current: Edge | undefined = first;
-    while (current && pending.has(current)) {
-      loop.push(current);
-      pending.delete(current);
-      const dx: number = current.b.x - current.a.x;
-      const dy: number = current.b.y - current.a.y;
-      const candidates: Edge[] = (starts.get(`${current.b.x},${current.b.y}`) ?? []).filter(
-        (edge) => pending.has(edge),
-      );
-      current =
-        candidates.find((edge) => (edge.b.x - edge.a.x) * -dy + (edge.b.y - edge.a.y) * dx > 0) ??
-        candidates[0];
-    }
-    loops.push(loop);
-  }
-  return loops;
-}
-
-function trace(ctx: DrawingContext, loops: readonly (readonly Edge[])[]): void {
-  ctx.beginPath();
-  for (const loop of loops) {
-    const start = loop[0];
-    if (!start) continue;
-    ctx.moveTo(start.a.x, start.a.y);
-    for (const edge of loop) ctx.lineTo(edge.b.x, edge.b.y);
-    ctx.closePath();
-  }
-}
 
 function forestFloor(ctx: DrawingContext, map: ForestClearing, atmo: ForestAtmosphere): void {
   const routeSet = new Set(map.layout.route);
@@ -232,31 +173,31 @@ function clearingEdges(
   layout: ForestLayout,
   contour: readonly [string, string, string, string],
 ): void {
-  const loops = boundaries(layout);
+  const loops = boundaryLoops(layout);
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
   ctx.save();
   ctx.translate(0.06, 0.1);
-  trace(ctx, loops);
+  traceBoundaries(ctx, loops);
   ctx.strokeStyle = contour[0];
   ctx.lineWidth = 0.55;
   ctx.stroke();
   ctx.restore();
 
-  trace(ctx, loops);
+  traceBoundaries(ctx, loops);
   ctx.strokeStyle = contour[1];
   ctx.lineWidth = 0.42;
   ctx.stroke();
 
-  trace(ctx, loops);
+  traceBoundaries(ctx, loops);
   ctx.strokeStyle = contour[2];
   ctx.lineWidth = 0.32;
   ctx.stroke();
 
   ctx.save();
   ctx.translate(-0.06, -0.06);
-  trace(ctx, loops);
+  traceBoundaries(ctx, loops);
   ctx.strokeStyle = contour[3];
   ctx.lineWidth = 0.035;
   ctx.stroke();
@@ -266,7 +207,7 @@ function clearingEdges(
 export function renderForest(
   ctx: DrawingContext,
   map: ForestClearing,
-  options: ForestRenderOptions,
+  options: RenderOptions,
 ): void {
   const atmo = atmospheres[map.decoration.character];
   const palette = FOREST_PALETTES[map.decoration.character];
@@ -308,20 +249,6 @@ export function renderForest(
   );
   for (const prop of overProps) drawProp(ctx, prop, palette);
 
-  if (options.grid) {
-    ctx.beginPath();
-    ctx.lineWidth = 0.012;
-    ctx.strokeStyle = atmo.grid;
-    for (let x = 0; x <= WIDTH; x++) {
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, HEIGHT);
-    }
-    for (let y = 0; y <= HEIGHT; y++) {
-      ctx.moveTo(0, y);
-      ctx.lineTo(WIDTH, y);
-    }
-    ctx.stroke();
-  }
-
+  if (options.grid) drawGrid(ctx, atmo.grid);
   ctx.restore();
 }

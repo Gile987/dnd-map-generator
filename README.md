@@ -77,7 +77,7 @@ The root component provides one `WorkbenchSession` for its workbench. That servi
 
 `SettingsPanel` owns the settings form, detail action, accepted-style note, and their responsive styles. `MapPanel` owns the map header, grid control, generated-map summary, and its embedded `Preview`. Both receive readonly signal inputs and emit typed user actions to `App`; neither keeps a second settings state or accesses persistence. They use [native-element component selectors](https://angular.dev/guide/components/selectors#when-to-use-an-attribute-selector) on the existing `<aside>` and `<section>`, preserving landmarks and grid layout without extra wrappers. Page composition, export/message rows, and library integration stay in `App`.
 
-`renderDungeon(context, map, options)` and `renderForest(context, map, options)` are shared by the preview, export, and visual-review fixtures. Dungeons draw seeded slab fills and chips, continuous topology-derived wall contours, contact shadows, masonry joints, thresholds, architectural landmarks, props, restrained light, and the optional whole-map grid. Forests draw textured ground, a dirt path, clearing edges, trees, rocks, and undergrowth, with per-character ground tones, tree shapes, and prop palettes. All artwork is original Canvas vector drawing; there are no external images, fonts, asset licenses or runtime fetches.
+`renderMap(context, map, options)` is the shared drawing entry point for preview, PNG export, and library thumbnails. Its exhaustive map-type dispatch calls `renderDungeon` or `renderForest` through one `RenderOptions` contract. The renderers share tile-boundary tracing and the grid path while retaining their own floor textures, wall/clearing-edge styles, palettes, and layer order. Preview and export retain 64 pixels per tile and the selected grid setting; thumbnails use 8 pixels per tile with no grid. Canvas creation, viewport handling, and image encoding remain with their consumers. Visual-review fixtures can still call the concrete renderers directly. Dungeons draw seeded slab fills and chips, continuous topology-derived wall contours, contact shadows, masonry joints, thresholds, architectural landmarks, props, restrained light, and the optional whole-map grid. Forests draw textured ground, a dirt path, clearing edges, trees, rocks, and undergrowth, with per-character ground tones, tree shapes, and prop palettes. All artwork is original Canvas vector drawing; there are no external images, fonts, asset licenses or runtime fetches.
 
 The showcase in `src/app/engine/showcase.ts` supplied the first renderer fixture: three rooms, two bent corridors, thresholds, and the prop collection. Its full export and close-up were inspected before implementing random generation.
 
@@ -85,7 +85,7 @@ The Angular app uses standalone OnPush components, Signals and computed state, s
 
 Canvas has a descriptive accessible label, an adjacent generated-map summary, keyboard controls, and visible focus feedback. It does not expose individual map tiles as accessible interactive elements. The workbench stacks above the preview on narrow screens.
 
-The `generateDungeon` and `renderDungeon` boundaries allow a separate forest generator later, without introducing a plugin framework or displaying an unfinished map type.
+Generation remains separate from rendering. Supporting another map type requires an explicit drawing branch in `renderMap`, without a plugin framework.
 
 ## Checks and visual review
 
