@@ -14,8 +14,8 @@ import {
   changeForestDensity,
   generateForestClearing,
   shuffleForestDetails,
-  validateForestSettings,
 } from './forest-generate';
+import { validateForestSettings } from './forest-validation';
 
 const budgets: Readonly<Record<Density, number>> = { Sparse: 0.05, Balanced: 0.1, Cluttered: 0.15 };
 
