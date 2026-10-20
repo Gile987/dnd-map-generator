@@ -49,7 +49,7 @@
     </div>
     @if (activeDraft.type === 'dungeon') {
     <div class="field room-field">
-      <label for="rooms">Rooms <span>4–8 CHAMBERS</span></label>
+      <label for="rooms">Rooms <span>{{ roomMin }}–{{ roomMax }} CHAMBERS</span></label>
       <div class="room-stepper">
         <button
           type="button"
@@ -62,8 +62,8 @@
         <input
           id="rooms"
           type="number"
-          min="4"
-          max="8"
+          [min]="roomMin"
+          [max]="roomMax"
           step="1"
           inputmode="numeric"
           [value]="activeDraft.rooms"

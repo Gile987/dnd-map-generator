@@ -1,4 +1,12 @@
-import { ALL_FOREST_CHARACTERS, HEIGHT, WIDTH, indexOf, isBlockingProp, isWalkable } from './model';
+import {
+  ALL_DENSITIES,
+  ALL_FOREST_CHARACTERS,
+  HEIGHT,
+  WIDTH,
+  indexOf,
+  isBlockingProp,
+  isWalkable,
+} from './model';
 import type { ForestClearing, ForestLayout, ForestSettings } from './model';
 import { isConnected, forestDistances } from './forest-layout';
 
@@ -62,8 +70,7 @@ export function validateForest(map: ForestClearing): string | undefined {
 export function validateForestSettings(settings: ForestSettings): string | undefined {
   if (!settings.seed.trim() || settings.seed.trim().length > 64)
     return 'Enter a seed between 1 and 64 characters.';
-  if (!['Sparse', 'Balanced', 'Cluttered'].includes(settings.density))
-    return 'Choose a valid decoration density.';
+  if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a valid decoration density.';
   if (!ALL_FOREST_CHARACTERS.includes(settings.character))
     return 'Choose a valid forest character.';
   return undefined;

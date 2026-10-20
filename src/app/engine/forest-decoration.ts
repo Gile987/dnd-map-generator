@@ -1,4 +1,4 @@
-import { HEIGHT, WIDTH, indexOf, isBlockingProp, isWalkable } from './model';
+import { DENSITY_BUDGETS, HEIGHT, WIDTH, indexOf, isBlockingProp, isWalkable } from './model';
 import type { Density, ForestCharacter, ForestDecoration, ForestLayout, Prop } from './model';
 import { Random, shuffleInPlace, streamSeed } from './random';
 import { NEIGHBORS_4, forestDistances } from './forest-layout';
@@ -13,8 +13,6 @@ const NEIGHBORS_8: readonly (readonly [number, number])[] = [
   [-1, 1],
   [1, 1],
 ];
-
-const budgets: Readonly<Record<Density, number>> = { Sparse: 0.05, Balanced: 0.1, Cluttered: 0.15 };
 
 interface EdgeRolls {
   readonly bush: number;
@@ -89,7 +87,7 @@ export function decorateForest(
   const blocked = new Set<number>();
   const routeSet = new Set(layout.route);
   const floorCount = layout.tiles.filter(Boolean).length;
-  const maxBlocking = Math.floor(floorCount * budgets[density]);
+  const maxBlocking = Math.floor(floorCount * DENSITY_BUDGETS[density]);
 
   placeTrees(layout, random, props, profile);
   placeClearingProps(layout, random, blocked, routeSet, maxBlocking, props, profile);
