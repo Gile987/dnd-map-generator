@@ -2,7 +2,7 @@ import { HEIGHT, WIDTH } from '../engine/model';
 import type { GeneratedMap } from '../engine/model';
 import { DEFAULT_FOREST_CHARACTER } from '../engine/model';
 import { validateDungeon } from '../engine/validation';
-import { validateForest } from '../engine/forest-generate';
+import { validateForest } from '../engine/forest-validation';
 
 export const SAVE_FORMAT_VERSION = '2.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';

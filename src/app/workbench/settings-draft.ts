@@ -7,7 +7,7 @@ import type {
   ForestClearing,
   ForestSettings,
 } from '../engine/model';
-import { validateForestSettings } from '../engine/forest-generate';
+import { validateForestSettings } from '../engine/forest-validation';
 import { validateSettings } from '../engine/validation';
 
 interface CommonDraft {
