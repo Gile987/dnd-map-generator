@@ -7,6 +7,7 @@ import type {
   ForestClearing,
   ForestSettings,
 } from '../engine/model';
+import { ROOM_MAX, ROOM_MIN } from '../engine/model';
 import { validateForestSettings } from '../engine/forest-validation';
 import { validateSettings } from '../engine/validation';
 
@@ -79,6 +80,8 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
   };
   const error =
     validateSettings(settings) ||
-    (!/^\d+$/.test(draft.rooms) ? 'Choose a whole number of rooms from 4 to 8.' : undefined);
+    (!/^\d+$/.test(draft.rooms)
+      ? `Choose a whole number of rooms from ${ROOM_MIN} to ${ROOM_MAX}.`
+      : undefined);
   return error ? { ok: false, error } : { ok: true, type: 'dungeon', settings };
 }

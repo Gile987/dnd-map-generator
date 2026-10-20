@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { ROOM_FALLBACK, ROOM_MAX, ROOM_MIN, normalizeRoomCount, stepRoomCount } from './room-count';
+import { ROOM_MAX, ROOM_MIN } from './engine/model';
+import { ROOM_FALLBACK, normalizeRoomCount, stepRoomCount } from './room-count';
 
 describe('room count normalization', () => {
   test('normalizes drafts to an in-range whole number', () => {

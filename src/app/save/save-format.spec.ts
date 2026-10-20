@@ -2,8 +2,20 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
-import { ALL_FOREST_CHARACTERS, indexOf } from '../engine/model';
-import type { GeneratedMap } from '../engine/model';
+import {
+  ALL_DENSITIES,
+  ALL_FOREST_CHARACTERS,
+  ALL_PRESETS,
+  ALL_PROP_KINDS,
+  indexOf,
+} from '../engine/model';
+import type {
+  DecorationPreset,
+  Density,
+  ForestCharacter,
+  GeneratedMap,
+  PropKind,
+} from '../engine/model';
 import {
   BACKUP_FORMAT,
   SAVE_FORMAT_VERSION,
@@ -15,10 +27,12 @@ import {
   normalizeName,
   parseBundle,
   parseSavedMap,
+  saveVocabulary,
+  mapUsesVocabulary,
   serializeBundle,
   uniqueById,
 } from './save-format';
-import type { SavedMap } from './save-format';
+import type { SavedMap, SaveVocabulary } from './save-format';
 
 const dungeon = generateDungeon({
   seed: 'mosslit-sanctum',
@@ -51,7 +65,10 @@ type MutableMap = {
   decoration: Record<string, unknown>;
 };
 
-function corruptRecord(base: GeneratedMap, mutate: (map: MutableMap) => void): unknown {
+function corruptRecord(
+  base: GeneratedMap,
+  mutate: (map: MutableMap) => void,
+): Record<string, unknown> {
   const clone: MutableMap = structuredClone({
     ...base,
     layout: { ...base.layout },
@@ -122,6 +139,134 @@ describe('save format', () => {
     expect(
       parseSavedMap(corruptRecord(forest.map, (m) => (m.decoration.density = 'SparseX'))),
     ).toBeUndefined();
+  });
+
+  test('save vocabulary is pinned per format version and rejects extra components', () => {
+    expect(saveVocabulary('1.0.0')).toBeDefined();
+    expect(saveVocabulary('2.0.0')).toBeDefined();
+    expect(saveVocabulary('0.9.0')).toBeUndefined();
+    expect(saveVocabulary('99.0.0')).toBeUndefined();
+    expect(saveVocabulary('1.0.0.99')).toBeUndefined();
+    expect(saveVocabulary('2.0.0.1')).toBeUndefined();
+    expect(saveVocabulary('banana')).toBeUndefined();
+  });
+
+  test('format vocabularies use fixed values independent of live engine lists', () => {
+    const format1 = saveVocabulary('1.0.0');
+    const format2 = saveVocabulary('2.0.0');
+    if (!format1 || !format2) throw new Error('Expected vocabularies');
+
+    expect(format2.densities).toEqual(['Sparse', 'Balanced', 'Cluttered']);
+    expect(format2.presets).toEqual(['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary']);
+    expect(format2.forestCharacters).toEqual(['Verdant', 'Autumn', 'Pines', 'Fey']);
+    expect(format2.propKinds).toEqual(format1.propKinds);
+    expect(format2.propKinds).not.toBe(format1.propKinds);
+  });
+
+  test('fixed historical schemas reject options from an extended engine vocabulary', () => {
+    const format1 = saveVocabulary('1.0.0');
+    const format2 = saveVocabulary('2.0.0');
+    if (!format1 || !format2) throw new Error('Expected vocabularies');
+
+    const extendedVocabulary: SaveVocabulary = {
+      densities: ['Sparse', 'Balanced', 'Cluttered', 'Dense'],
+      presets: ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary', 'FuturePreset'],
+      forestCharacters: ['Verdant', 'Autumn', 'Pines', 'Fey', 'Meadow'],
+      propKinds: [
+        'crate',
+        'barrel',
+        'rubble',
+        'rug',
+        'sconce',
+        'moss',
+        'sarcophagus',
+        'vine',
+        'broken_column',
+        'tree',
+        'boulder',
+        'fern',
+        'mushroom',
+        'bush',
+        'log',
+        'stump',
+        'flower',
+        'dragon',
+      ],
+    };
+
+    const futurePresetMap = corruptRecord(
+      dungeon.map,
+      (m) => (m.decoration.preset = 'FuturePreset'),
+    )['map'];
+    expect(mapUsesVocabulary(futurePresetMap, extendedVocabulary)).toBe(true);
+    expect(mapUsesVocabulary(futurePresetMap, format1)).toBe(false);
+    expect(mapUsesVocabulary(futurePresetMap, format2)).toBe(false);
+
+    const futureCharacterMap = corruptRecord(
+      forest.map,
+      (m) => (m.decoration.character = 'Meadow'),
+    )['map'];
+    expect(mapUsesVocabulary(futureCharacterMap, extendedVocabulary)).toBe(true);
+    expect(mapUsesVocabulary(futureCharacterMap, format1)).toBe(false);
+    expect(mapUsesVocabulary(futureCharacterMap, format2)).toBe(false);
+
+    const futureDensityMap = corruptRecord(dungeon.map, (m) => (m.decoration.density = 'Dense'))[
+      'map'
+    ];
+    expect(mapUsesVocabulary(futureDensityMap, extendedVocabulary)).toBe(true);
+    expect(mapUsesVocabulary(futureDensityMap, format1)).toBe(false);
+    expect(mapUsesVocabulary(futureDensityMap, format2)).toBe(false);
+
+    const futurePropMap = corruptRecord(dungeon.map, (m) => {
+      m.decoration.props = [{ x: 1, y: 1, kind: 'dragon', blocking: false, variation: 0.5 }];
+    })['map'];
+    expect(mapUsesVocabulary(futurePropMap, extendedVocabulary)).toBe(true);
+    expect(mapUsesVocabulary(futurePropMap, format1)).toBe(false);
+    expect(mapUsesVocabulary(futurePropMap, format2)).toBe(false);
+  });
+
+  test('parseSavedMap rejects records with unsupported version components', () => {
+    const valid = record(dungeon.map);
+    expect(parseSavedMap({ ...valid, saveFormatVersion: '1.0.0.99' })).toBeUndefined();
+    expect(parseSavedMap({ ...valid, saveFormatVersion: '2.0.0.1' })).toBeUndefined();
+  });
+
+  test('parseSavedMap rejects future engine options even when isUsableMap accepts them', () => {
+    const originalPresets = [...ALL_PRESETS];
+    const originalDensities = [...ALL_DENSITIES];
+    const originalCharacters = [...ALL_FOREST_CHARACTERS];
+    const originalPropKinds = [...ALL_PROP_KINDS];
+
+    try {
+      (ALL_PRESETS as DecorationPreset[]).push('FuturePreset' as DecorationPreset);
+      (ALL_DENSITIES as Density[]).push('Dense' as Density);
+      (ALL_FOREST_CHARACTERS as ForestCharacter[]).push('Meadow' as ForestCharacter);
+      (ALL_PROP_KINDS as PropKind[]).push('dragon' as PropKind);
+
+      const futureDungeon = corruptRecord(
+        dungeon.map,
+        (m) => (m.decoration.preset = 'FuturePreset'),
+      )['map'] as GeneratedMap;
+      expect(isUsableMap(futureDungeon)).toBe(true);
+      expect(parseSavedMap(record(futureDungeon, { saveFormatVersion: '1.0.0' }))).toBeUndefined();
+      expect(parseSavedMap(record(futureDungeon, { saveFormatVersion: '2.0.0' }))).toBeUndefined();
+
+      const futureForest = corruptRecord(forest.map, (m) => (m.decoration.character = 'Meadow'))[
+        'map'
+      ] as GeneratedMap;
+      expect(isUsableMap(futureForest)).toBe(true);
+      expect(parseSavedMap(record(futureForest, { saveFormatVersion: '1.0.0' }))).toBeUndefined();
+      expect(parseSavedMap(record(futureForest, { saveFormatVersion: '2.0.0' }))).toBeUndefined();
+    } finally {
+      (ALL_PRESETS as DecorationPreset[]).length = 0;
+      (ALL_PRESETS as DecorationPreset[]).push(...originalPresets);
+      (ALL_DENSITIES as Density[]).length = 0;
+      (ALL_DENSITIES as Density[]).push(...originalDensities);
+      (ALL_FOREST_CHARACTERS as ForestCharacter[]).length = 0;
+      (ALL_FOREST_CHARACTERS as ForestCharacter[]).push(...originalCharacters);
+      (ALL_PROP_KINDS as PropKind[]).length = 0;
+      (ALL_PROP_KINDS as PropKind[]).push(...originalPropKinds);
+    }
   });
 
   test('bounds prop variation to [0, 1)', () => {

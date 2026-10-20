@@ -1,5 +1,5 @@
-export const ROOM_MIN = 4;
-export const ROOM_MAX = 8;
+import { ROOM_MAX, ROOM_MIN } from './engine/model';
+
 export const ROOM_FALLBACK = 6;
 export const ROOM_DEFAULT = '6';
 

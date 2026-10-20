@@ -1,6 +1,13 @@
-import { HEIGHT, WIDTH } from '../engine/model';
+import {
+  ALL_DENSITIES,
+  ALL_FOREST_CHARACTERS,
+  ALL_PRESETS,
+  ALL_PROP_KINDS,
+  DEFAULT_FOREST_CHARACTER,
+  HEIGHT,
+  WIDTH,
+} from '../engine/model';
 import type { GeneratedMap } from '../engine/model';
-import { DEFAULT_FOREST_CHARACTER } from '../engine/model';
 import { validateDungeon } from '../engine/validation';
 import { validateForest } from '../engine/forest-validation';
 
@@ -30,31 +37,113 @@ export type ParseResult =
   | { readonly ok: true; readonly maps: readonly SavedMap[]; readonly skipped: number }
   | { readonly ok: false; readonly error: string };
 
-const DENSITIES: readonly string[] = ['Sparse', 'Balanced', 'Cluttered'];
-const PRESETS: readonly string[] = ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'];
-const FOREST_CHARACTERS: readonly string[] = ['Verdant', 'Autumn', 'Pines', 'Fey'];
-const PROP_KINDS: readonly string[] = [
-  'crate',
-  'barrel',
-  'rubble',
-  'rug',
-  'sconce',
-  'moss',
-  'sarcophagus',
-  'vine',
-  'broken_column',
-  'tree',
-  'boulder',
-  'fern',
-  'mushroom',
-  'bush',
-  'log',
-  'stump',
-  'flower',
-];
+export interface SaveVocabulary {
+  readonly densities: readonly string[];
+  readonly presets: readonly string[];
+  readonly forestCharacters: readonly string[];
+  readonly propKinds: readonly string[];
+}
+
+const FORMAT_2_VOCABULARY: SaveVocabulary = {
+  densities: ['Sparse', 'Balanced', 'Cluttered'],
+  presets: ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'],
+  forestCharacters: ['Verdant', 'Autumn', 'Pines', 'Fey'],
+  propKinds: [
+    'crate',
+    'barrel',
+    'rubble',
+    'rug',
+    'sconce',
+    'moss',
+    'sarcophagus',
+    'vine',
+    'broken_column',
+    'tree',
+    'boulder',
+    'fern',
+    'mushroom',
+    'bush',
+    'log',
+    'stump',
+    'flower',
+  ],
+};
+
+const FORMAT_1_VOCABULARY: SaveVocabulary = {
+  densities: ['Sparse', 'Balanced', 'Cluttered'],
+  presets: ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'],
+  forestCharacters: ['Verdant', 'Autumn', 'Pines', 'Fey'],
+  propKinds: [
+    'crate',
+    'barrel',
+    'rubble',
+    'rug',
+    'sconce',
+    'moss',
+    'sarcophagus',
+    'vine',
+    'broken_column',
+    'tree',
+    'boulder',
+    'fern',
+    'mushroom',
+    'bush',
+    'log',
+    'stump',
+    'flower',
+  ],
+};
+
+export function saveVocabulary(version: string): SaveVocabulary | undefined {
+  const parsed = parseVersion(version);
+  if (!parsed || parsed.length !== 3) return undefined;
+  if (parsed[0] === 1 && parsed[1] === 0 && parsed[2] === 0) return FORMAT_1_VOCABULARY;
+  if (parsed[0] === 2 && parsed[1] === 0 && parsed[2] === 0) return FORMAT_2_VOCABULARY;
+  return undefined;
+}
+
+export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boolean {
+  if (!isObject(map) || !isObject(map['decoration'])) return false;
+  const decoration = map['decoration'];
+  const type = map['type'];
+  if (
+    typeof decoration['density'] !== 'string' ||
+    !vocabulary.densities.includes(decoration['density'])
+  )
+    return false;
+  if (type === 'dungeon') {
+    if (
+      typeof decoration['preset'] !== 'string' ||
+      !vocabulary.presets.includes(decoration['preset'])
+    )
+      return false;
+  }
+  if (type === 'forest') {
+    if (
+      typeof decoration['character'] !== 'string' ||
+      !vocabulary.forestCharacters.includes(decoration['character'])
+    )
+      return false;
+  }
+  if (Array.isArray(decoration['props'])) {
+    for (const prop of decoration['props']) {
+      if (
+        !isObject(prop) ||
+        typeof prop['kind'] !== 'string' ||
+        !vocabulary.propKinds.includes(prop['kind'])
+      )
+        return false;
+    }
+  }
+  return true;
+}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function isIn(value: string, list: readonly string[]): boolean {
+  return list.includes(value);
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -79,7 +168,7 @@ function isProp(value: unknown): boolean {
     isFiniteNumber(value['x']) &&
     isFiniteNumber(value['y']) &&
     typeof value['kind'] === 'string' &&
-    PROP_KINDS.includes(value['kind']) &&
+    isIn(value['kind'], ALL_PROP_KINDS) &&
     typeof value['blocking'] === 'boolean' &&
     isUnitFraction(value['variation'])
   );
@@ -168,7 +257,7 @@ function isDecorationBase(value: unknown): boolean {
     Array.isArray(props) &&
     props.every(isProp) &&
     typeof density === 'string' &&
-    DENSITIES.includes(density) &&
+    isIn(density, ALL_DENSITIES) &&
     isNonNegativeInt(revision)
   );
 }
@@ -178,7 +267,7 @@ function isDungeonDecoration(value: unknown): boolean {
     isDecorationBase(value) &&
     isObject(value) &&
     typeof value['preset'] === 'string' &&
-    PRESETS.includes(value['preset'])
+    isIn(value['preset'], ALL_PRESETS)
   );
 }
 
@@ -187,7 +276,7 @@ function isForestDecoration(value: unknown): boolean {
     isObject(value) &&
     isDecorationBase(value) &&
     typeof value['character'] === 'string' &&
-    FOREST_CHARACTERS.includes(value['character'])
+    isIn(value['character'], ALL_FOREST_CHARACTERS)
   );
 }
 
@@ -246,6 +335,8 @@ export function parseSavedMap(value: unknown): SavedMap | undefined {
   if (typeof saveFormatVersion !== 'string' || !isSupportedVersion(saveFormatVersion))
     return undefined;
   if (typeof thumbnail !== 'string' || !thumbnail.startsWith('data:image/')) return undefined;
+  const vocabulary = saveVocabulary(saveFormatVersion);
+  if (!vocabulary) return undefined;
   let normalizedMap: unknown = map;
   if (
     isObject(map) &&
@@ -259,6 +350,7 @@ export function parseSavedMap(value: unknown): SavedMap | undefined {
       decoration: { ...map['decoration'], character: DEFAULT_FOREST_CHARACTER },
     };
   }
+  if (!mapUsesVocabulary(normalizedMap, vocabulary)) return undefined;
   if (!isUsableMap(normalizedMap)) return undefined;
   return {
     id,

@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { ALL_FOREST_CHARACTERS, ALL_PRESETS } from '../../engine/model';
-import type {
-  DecorationPreset,
-  Density,
-  ForestCharacter,
-  GeneratedMap,
-  MapType,
+import {
+  ALL_DENSITIES,
+  ALL_FOREST_CHARACTERS,
+  ALL_PRESETS,
+  ROOM_MAX,
+  ROOM_MIN,
 } from '../../engine/model';
+import type { DecorationPreset, ForestCharacter, GeneratedMap, MapType } from '../../engine/model';
 import { Icon } from '../../icon';
-import { ROOM_MAX, ROOM_MIN, normalizeRoomCount, stepRoomCount } from '../../room-count';
+import { normalizeRoomCount, stepRoomCount } from '../../room-count';
 import type { DraftChange, SettingsDraft } from '../settings-draft';
 
 const PRESET_DESCRIPTIONS: Readonly<Record<DecorationPreset, string>> = {
@@ -54,11 +54,13 @@ export class SettingsPanel {
   readonly resetRequested = output<void>();
   readonly shuffleRequested = output<void>();
 
-  protected readonly densities: readonly Density[] = ['Sparse', 'Balanced', 'Cluttered'];
+  protected readonly densities = ALL_DENSITIES;
   protected readonly presets = ALL_PRESETS;
   protected readonly characters = ALL_FOREST_CHARACTERS;
   protected readonly characterNames = CHARACTER_LABELS;
   protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest'];
+  protected readonly roomMin = ROOM_MIN;
+  protected readonly roomMax = ROOM_MAX;
   protected readonly invalidSeed = computed(
     () => this.attempted() && (!this.draft().seed.trim() || this.draft().seed.trim().length > 64),
   );

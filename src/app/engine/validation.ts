@@ -1,16 +1,29 @@
-import { HEIGHT, WIDTH, contains, indexOf, isBlockingProp, isFloor } from './model';
+import {
+  ALL_DENSITIES,
+  ALL_PRESETS,
+  HEIGHT,
+  ROOM_MAX,
+  ROOM_MIN,
+  WIDTH,
+  contains,
+  indexOf,
+  isBlockingProp,
+  isFloor,
+} from './model';
 import type { Dungeon, DungeonSettings, Layout, Point, Room } from './model';
 import { distances } from './topology';
 
 export function validateSettings(settings: DungeonSettings): string | undefined {
   if (!settings.seed.trim() || settings.seed.trim().length > 64)
     return 'Enter a seed between 1 and 64 characters.';
-  if (!Number.isInteger(settings.roomCount) || settings.roomCount < 4 || settings.roomCount > 8)
-    return 'Choose a whole number of rooms from 4 to 8.';
-  if (!['Sparse', 'Balanced', 'Cluttered'].includes(settings.density))
-    return 'Choose a valid decoration density.';
-  if (!['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'].includes(settings.preset))
-    return 'Choose a valid decoration preset.';
+  if (
+    !Number.isInteger(settings.roomCount) ||
+    settings.roomCount < ROOM_MIN ||
+    settings.roomCount > ROOM_MAX
+  )
+    return `Choose a whole number of rooms from ${ROOM_MIN} to ${ROOM_MAX}.`;
+  if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a valid decoration density.';
+  if (!ALL_PRESETS.includes(settings.preset)) return 'Choose a valid decoration preset.';
   return undefined;
 }
 

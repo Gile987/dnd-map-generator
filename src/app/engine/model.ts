@@ -1,5 +1,7 @@
 export const WIDTH = 40;
 export const HEIGHT = 30;
+export const ROOM_MIN = 4;
+export const ROOM_MAX = 8;
 export const GENERATOR_VERSION = '4.0.0';
 
 export type MapType = 'dungeon' | 'forest';
@@ -41,6 +43,14 @@ export interface Layout {
 }
 
 export type Density = 'Sparse' | 'Balanced' | 'Cluttered';
+
+export const ALL_DENSITIES: readonly Density[] = ['Sparse', 'Balanced', 'Cluttered'];
+
+export const DENSITY_BUDGETS: Readonly<Record<Density, number>> = {
+  Sparse: 0.05,
+  Balanced: 0.1,
+  Cluttered: 0.15,
+};
 
 export type DecorationPreset = 'Mosslit' | 'Crypt' | 'Storehouse' | 'Sanctuary';
 
@@ -99,6 +109,26 @@ export type PropKind =
   | 'log'
   | 'stump'
   | 'flower';
+
+export const ALL_PROP_KINDS: readonly PropKind[] = [
+  'crate',
+  'barrel',
+  'rubble',
+  'rug',
+  'sconce',
+  'moss',
+  'sarcophagus',
+  'vine',
+  'broken_column',
+  'tree',
+  'boulder',
+  'fern',
+  'mushroom',
+  'bush',
+  'log',
+  'stump',
+  'flower',
+];
 
 export interface Prop extends Point {
   readonly kind: PropKind;
