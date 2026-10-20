@@ -1,5 +1,8 @@
 import { HEIGHT, WIDTH, center, contains, indexOf, isFloor } from './model';
 import type { Connection, Landmark, Layout, Point, Room, Threshold } from './model';
+import { gridDistances as distances } from './grid-traversal';
+
+export { distances };
 
 export function carveLayout(rooms: readonly Room[], connections: readonly Connection[]): boolean[] {
   const tiles = Array<boolean>(WIDTH * HEIGHT).fill(false);
@@ -38,39 +41,6 @@ export function carveLayout(rooms: readonly Room[], connections: readonly Connec
     }
   }
   return tiles;
-}
-
-export function distances(
-  tiles: readonly boolean[],
-  start: Point,
-  blocked: ReadonlySet<number> = new Set(),
-): Map<number, number> {
-  const first = indexOf(start.x, start.y);
-  const result = new Map<number, number>();
-  if (!tiles[first] || blocked.has(first)) return result;
-  result.set(first, 0);
-  const queue = [first];
-  for (let i = 0; i < queue.length; i++) {
-    const current = queue[i];
-    if (current === undefined) continue;
-    const x = current % WIDTH;
-    const y = Math.floor(current / WIDTH);
-    for (const [nx, ny] of [
-      [x - 1, y],
-      [x + 1, y],
-      [x, y - 1],
-      [x, y + 1],
-    ]) {
-      if (nx === undefined || ny === undefined || nx < 0 || ny < 0 || nx >= WIDTH || ny >= HEIGHT)
-        continue;
-      const next = indexOf(nx, ny);
-      if (tiles[next] && !blocked.has(next) && !result.has(next)) {
-        result.set(next, (result.get(current) ?? 0) + 1);
-        queue.push(next);
-      }
-    }
-  }
-  return result;
 }
 
 export function findThresholds(tiles: readonly boolean[], rooms: readonly Room[]): Threshold[] {
