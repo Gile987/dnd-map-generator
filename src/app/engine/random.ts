@@ -33,3 +33,15 @@ export class Random {
     return min + Math.floor(this.next() * (max - min + 1));
   }
 }
+
+export function shuffleInPlace<T>(items: NonNullable<T>[], random: Pick<Random, 'int'>): void {
+  for (let i = items.length - 1; i > 0; i--) {
+    const swap = random.int(0, i);
+    const a = items[i];
+    const b = items[swap];
+    if (a !== undefined && b !== undefined) {
+      items[i] = b;
+      items[swap] = a;
+    }
+  }
+}

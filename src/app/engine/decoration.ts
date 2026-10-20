@@ -1,6 +1,6 @@
 import { center, indexOf, isBlockingProp, isFloor } from './model';
 import type { Decoration, DecorationPreset, Density, Dungeon, Layout, Prop } from './model';
-import { Random, streamSeed } from './random';
+import { Random, shuffleInPlace, streamSeed } from './random';
 import { isTraversable, reservedTiles } from './validation';
 
 const budgets: Readonly<Record<Density, number>> = { Sparse: 0.05, Balanced: 0.1, Cluttered: 0.15 };
@@ -101,15 +101,7 @@ export function decorate(
           candidates.push({ x, y });
       }
     }
-    for (let i = candidates.length - 1; i > 0; i--) {
-      const swap = random.int(0, i);
-      const a = candidates[i];
-      const b = candidates[swap];
-      if (a && b) {
-        candidates[i] = b;
-        candidates[swap] = a;
-      }
-    }
+    shuffleInPlace(candidates, random);
     const budget = Math.floor(room.width * room.height * budgets[density]);
     let placed = 0;
     for (const point of candidates) {

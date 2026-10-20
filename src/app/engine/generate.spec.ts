@@ -3,9 +3,34 @@ import { createHash } from 'node:crypto';
 import { generateDungeon } from './generate';
 import { changeDensity, changePreset, shuffleDetails } from './decoration';
 import { HEIGHT, WIDTH, center, indexOf } from './model';
-import type { DecorationPreset, Density, Dungeon, DungeonSettings } from './model';
-import { carveLayout, distances } from './topology';
+import type { DecorationPreset, Density, Dungeon, DungeonSettings, Point } from './model';
+import { carveLayout } from './topology';
 import { reservedTiles, validateDungeon } from './validation';
+
+function referenceDistances(
+  tiles: readonly boolean[],
+  start: Point,
+  blocked: ReadonlySet<number> = new Set(),
+): Map<number, number> {
+  const reached = new Map<number, number>();
+  const queue: { point: Point; distance: number }[] = [{ point: start, distance: 0 }];
+  while (queue.length) {
+    const entry = queue.shift();
+    if (!entry) break;
+    const { point, distance } = entry;
+    if (point.x < 0 || point.y < 0 || point.x >= WIDTH || point.y >= HEIGHT) continue;
+    const tile = indexOf(point.x, point.y);
+    if (!tiles[tile] || blocked.has(tile) || reached.has(tile)) continue;
+    reached.set(tile, distance);
+    queue.push(
+      { point: { x: point.x - 1, y: point.y }, distance: distance + 1 },
+      { point: { x: point.x + 1, y: point.y }, distance: distance + 1 },
+      { point: { x: point.x, y: point.y - 1 }, distance: distance + 1 },
+      { point: { x: point.x, y: point.y + 1 }, distance: distance + 1 },
+    );
+  }
+  return reached;
+}
 
 function validMap(settings: DungeonSettings): Dungeon {
   const result = generateDungeon(settings);
@@ -79,7 +104,7 @@ describe('deterministic dungeon generation', () => {
       );
       const reserved = reservedTiles(map.layout);
       expect([...blocked].some((tile) => reserved.has(tile))).toBe(false);
-      const reachable = distances(map.layout.tiles, map.layout.entrance, blocked);
+      const reachable = referenceDistances(map.layout.tiles, map.layout.entrance, blocked);
       expect(reachable.has(indexOf(map.layout.objective.x, map.layout.objective.y))).toBe(true);
       expect(reachable.size).toBe(map.layout.tiles.filter(Boolean).length - blocked.size);
       expect(blocked.size).toBeLessThanOrEqual(
@@ -117,8 +142,10 @@ describe('deterministic dungeon generation', () => {
     const ac = center(from);
     const bc = center(to);
     const target = indexOf(bc.x, bc.y);
-    const detour = distances(carveLayout(shortcut.layout.rooms, spanningTree), ac).get(target);
-    const improved = distances(shortcut.layout.tiles, ac).get(target);
+    const detour = referenceDistances(carveLayout(shortcut.layout.rooms, spanningTree), ac).get(
+      target,
+    );
+    const improved = referenceDistances(shortcut.layout.tiles, ac).get(target);
     if (detour === undefined || improved === undefined)
       throw new Error('the shortcut endpoints are unreachable');
     expect(detour - improved).toBeGreaterThanOrEqual(10);

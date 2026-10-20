@@ -1,6 +1,6 @@
 import { HEIGHT, WIDTH, indexOf, isBlockingProp, isWalkable } from './model';
 import type { Density, ForestCharacter, ForestDecoration, ForestLayout, Prop } from './model';
-import { Random, streamSeed } from './random';
+import { Random, shuffleInPlace, streamSeed } from './random';
 import { NEIGHBORS_4, forestDistances } from './forest-layout';
 
 const NEIGHBORS_8: readonly (readonly [number, number])[] = [
@@ -126,15 +126,7 @@ function placeTrees(
     }
   }
 
-  for (let i = candidates.length - 1; i > 0; i--) {
-    const swap = random.int(0, i);
-    const a = candidates[i];
-    const b = candidates[swap];
-    if (a && b) {
-      candidates[i] = b;
-      candidates[swap] = a;
-    }
-  }
+  shuffleInPlace(candidates, random);
 
   const treeCount = Math.min(candidates.length, profile.trees(random));
   const step = Math.max(1, Math.floor(candidates.length / treeCount));
@@ -217,15 +209,7 @@ function placeClearingProps(
     }
   }
 
-  for (let i = edgeCandidates.length - 1; i > 0; i--) {
-    const swap = random.int(0, i);
-    const a = edgeCandidates[i];
-    const b = edgeCandidates[swap];
-    if (a && b) {
-      edgeCandidates[i] = b;
-      edgeCandidates[swap] = a;
-    }
-  }
+  shuffleInPlace(edgeCandidates, random);
 
   const interiorCandidates: { x: number; y: number }[] = [];
   for (let y = 2; y < HEIGHT - 2; y++) {
@@ -242,15 +226,7 @@ function placeClearingProps(
       if (!nearForest) interiorCandidates.push({ x, y });
     }
   }
-  for (let i = interiorCandidates.length - 1; i > 0; i--) {
-    const swap = random.int(0, i);
-    const a = interiorCandidates[i];
-    const b = interiorCandidates[swap];
-    if (a && b) {
-      interiorCandidates[i] = b;
-      interiorCandidates[swap] = a;
-    }
-  }
+  shuffleInPlace(interiorCandidates, random);
 
   for (const point of edgeCandidates) {
     if (blocked.size >= maxBlocking) break;
@@ -320,15 +296,7 @@ function placeForestFloorProps(
       nonWalkable.push({ x, y });
     }
   }
-  for (let i = nonWalkable.length - 1; i > 0; i--) {
-    const swap = random.int(0, i);
-    const a = nonWalkable[i];
-    const b = nonWalkable[swap];
-    if (a && b) {
-      nonWalkable[i] = b;
-      nonWalkable[swap] = a;
-    }
-  }
+  shuffleInPlace(nonWalkable, random);
 
   const fernCount = profile.undergrowth[density];
   let ferns = 0;
@@ -366,15 +334,7 @@ function placeForestFloorProps(
       if (nearForest) walkable.push({ x, y });
     }
   }
-  for (let i = walkable.length - 1; i > 0; i--) {
-    const swap = random.int(0, i);
-    const a = walkable[i];
-    const b = walkable[swap];
-    if (a && b) {
-      walkable[i] = b;
-      walkable[swap] = a;
-    }
-  }
+  shuffleInPlace(walkable, random);
   let logs = 0;
   for (const point of walkable) {
     if (logs >= logCount) break;
