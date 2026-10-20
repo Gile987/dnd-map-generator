@@ -1,8 +1,9 @@
 import { HEIGHT, WIDTH, isFloor } from '../engine/model';
 import type { DecorationPreset, Dungeon, Layout, Point } from '../engine/model';
 import { Random, deriveSeed } from '../engine/random';
-import { drawProp, path } from './props';
-import type { DrawingContext } from './props';
+import { drawProp } from './props';
+import { path } from './drawing-primitives';
+import type { DrawingContext } from './drawing-context';
 
 export interface RenderOptions {
   readonly grid: boolean;

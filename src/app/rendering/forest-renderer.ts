@@ -1,8 +1,9 @@
 import { HEIGHT, WIDTH, indexOf, isWalkable } from '../engine/model';
 import type { ForestCharacter, ForestClearing, ForestLayout, Point } from '../engine/model';
 import { Random, deriveSeed } from '../engine/random';
-import { VERDANT_PALETTE, drawProp, forestTrees } from './props';
-import type { DrawingContext, ForestPalette } from './props';
+import { drawProp } from './props';
+import { FOREST_PALETTES } from './forest-palette';
+import type { DrawingContext } from './drawing-context';
 
 export interface ForestRenderOptions {
   readonly grid: boolean;
@@ -85,106 +86,6 @@ const atmospheres: Readonly<Record<ForestCharacter, ForestAtmosphere>> = {
     forestDark: [14, 30, 24],
     contour: ['#0a1a1480', '#1a3a2e', '#4a8a6a', '#b8e0c850'],
     grid: '#a8e0c018',
-  },
-};
-
-const palettes: Readonly<Record<ForestCharacter, ForestPalette>> = {
-  Verdant: VERDANT_PALETTE,
-  Autumn: {
-    trees: (variation) => forestTrees('Autumn', variation),
-    boulderMoss: false,
-    logMoss: false,
-    stumpMoss: false,
-    log: {
-      base: '#4e4434',
-      grain: '#6a5c48',
-      edge: '#2e2820',
-      rings: '#7a6c54',
-      end: '#5a4e3c',
-      endRing: '#7a6c54',
-    },
-    stump: {
-      bark: '#4e4434',
-      top: '#7a6c50',
-      ring: '#9a8c66',
-      crack: '#383024',
-      moss: '#8a9a4a60',
-    },
-    mushroomStem: '#8a7860',
-    mushroomCaps: ['#c85040', '#b87050', '#d09060'],
-    mushroomGlow: null,
-    bushClumps: ['#a8742e', '#8a5a24'],
-    bushSheen: '#c8985840',
-    bushChips: '#c8905050',
-    fernStems: ['#8a7a34', '#9a8a3e'],
-    fernLeaves: '#b0a04080',
-    flowerStems: '#8a7a3a',
-    flowerPetals: ['#d06080', '#e0a040', '#c07840', '#e0d060', '#d08858'],
-    flowerCenters: '#e8e090',
-  },
-  Pines: {
-    trees: (variation) => forestTrees('Pines', variation),
-    boulderMoss: true,
-    logMoss: false,
-    stumpMoss: false,
-    log: {
-      base: '#4a4038',
-      grain: '#625648',
-      edge: '#28221e',
-      rings: '#72655a',
-      end: '#544a40',
-      endRing: '#72655a',
-    },
-    stump: {
-      bark: '#4a4034',
-      top: '#74644a',
-      ring: '#948466',
-      crack: '#332c22',
-      moss: '#4a7a4a60',
-    },
-    mushroomStem: '#7a6e60',
-    mushroomCaps: ['#a86848', '#986048', '#b88858'],
-    mushroomGlow: null,
-    bushClumps: ['#2e5e3e', '#265036'],
-    bushSheen: '#5a9a7040',
-    bushChips: '#5a9a7050',
-    fernStems: ['#3a6a34', '#46763e'],
-    fernLeaves: '#569a4e80',
-    flowerStems: '#4a6a44',
-    flowerPetals: ['#c8b890', '#b8a880', '#d0c0a0', '#a89878', '#c0b090'],
-    flowerCenters: '#e0d8b0',
-  },
-  Fey: {
-    trees: (variation) => forestTrees('Fey', variation),
-    boulderMoss: true,
-    logMoss: false,
-    stumpMoss: true,
-    log: {
-      base: '#4e4a3a',
-      grain: '#6a6450',
-      edge: '#2c2a20',
-      rings: '#7e7860',
-      end: '#5a5444',
-      endRing: '#7e7860',
-    },
-    stump: {
-      bark: '#4e4a3a',
-      top: '#7a7458',
-      ring: '#9a9470',
-      crack: '#363226',
-      moss: '#5ab89070',
-    },
-    mushroomStem: '#7a8a80',
-    mushroomCaps: ['#8ad8c0', '#c8a0e8', '#e8d890'],
-    mushroomGlow: '#b8e8d840',
-    bushClumps: ['#3a8a6a', '#2e7a62'],
-    bushSheen: '#68c8a850',
-    bushChips: '#68c8a850',
-    fernStems: ['#3a9a6a', '#4aad7a'],
-    fernLeaves: '#68c89880',
-    flowerStems: '#4a9a6a',
-    flowerPetals: ['#e8d890', '#c8a0e8', '#8ad8c0', '#f0f0c0', '#e8a8d0'],
-    flowerCenters: '#f8f8c0',
   },
 };
 
@@ -368,7 +269,7 @@ export function renderForest(
   options: ForestRenderOptions,
 ): void {
   const atmo = atmospheres[map.decoration.character];
-  const palette = palettes[map.decoration.character];
+  const palette = FOREST_PALETTES[map.decoration.character];
   ctx.save();
   ctx.setTransform(options.pixelsPerTile, 0, 0, options.pixelsPerTile, 0, 0);
 
