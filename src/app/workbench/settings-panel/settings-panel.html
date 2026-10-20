@@ -1,0 +1,190 @@
+<div class="panel-heading">
+  <span class="section-number">01</span>
+  <h2>{{ map().type === 'dungeon' ? 'Shape your dungeon' : 'Shape your clearing' }}</h2>
+</div>
+
+<fieldset class="map-type-field" [disabled]="disabled()">
+  <legend class="sr-only">Map type</legend>
+  <div class="map-type-options">
+    @for (type of mapTypes; track type) {
+    <label [class.selected]="map().type === type"
+      ><input
+        type="radio"
+        name="mapType"
+        [value]="type"
+        [checked]="map().type === type"
+        (change)="mapTypeChanged.emit(type)"
+        [disabled]="disabled()"
+      /><forge-icon [name]="type === 'dungeon' ? 'layers' : 'tree'" /><span
+        >{{ type === 'dungeon' ? 'Dungeon' : 'Forest' }}</span
+      ></label
+    >
+    }
+  </div>
+</fieldset>
+
+<form (submit)="submit($event)" novalidate>
+  <fieldset [disabled]="disabled()">
+    <legend class="sr-only">Map generation settings</legend>
+    <div class="field seed-field">
+      <label for="seed">World seed <span>YOUR MAP'S FINGERPRINT</span></label>
+      <input
+        id="seed"
+        type="text"
+        [value]="draft().seed"
+        (input)="editSeed($event)"
+        maxlength="64"
+        autocomplete="off"
+        spellcheck="false"
+        [attr.aria-invalid]="invalidSeed()"
+        aria-describedby="seed-hint settings-error"
+      />
+      <div class="field-bottom">
+        <span id="seed-hint">Same seed. Same adventure.</span
+        ><button class="text-button" type="button" (click)="randomizeRequested.emit()">
+          <forge-icon name="shuffle" />Randomize seed
+        </button>
+      </div>
+    </div>
+    @if (map().type === 'dungeon') {
+    <div class="field room-field">
+      <label for="rooms">Rooms <span>4–8 CHAMBERS</span></label>
+      <div class="room-stepper">
+        <button
+          type="button"
+          aria-label="Fewer rooms"
+          (click)="stepRooms(-1)"
+          [disabled]="atMinRooms()"
+        >
+          <forge-icon name="minus" />
+        </button>
+        <input
+          id="rooms"
+          type="number"
+          min="4"
+          max="8"
+          step="1"
+          inputmode="numeric"
+          [value]="draft().rooms"
+          (input)="editRooms($event)"
+          [attr.aria-invalid]="invalidRooms()"
+          aria-describedby="room-hint settings-error"
+        />
+        <button
+          type="button"
+          aria-label="More rooms"
+          (click)="stepRooms(1)"
+          [disabled]="atMaxRooms()"
+        >
+          <forge-icon name="plus" />
+        </button>
+      </div>
+      <p class="field-hint" id="room-hint">Connected chambers. Unexpected turns.</p>
+    </div>
+    <fieldset class="preset-field">
+      <legend>Character <span>THE DUNGEON'S IDENTITY</span></legend>
+      @let selectedPreset = draft().preset;
+      <div class="preset-options">
+        @for (preset of presets; track preset) {
+        <label [class.selected]="selectedPreset === preset"
+          ><input
+            type="radio"
+            name="preset"
+            [value]="preset"
+            [checked]="selectedPreset === preset"
+            (change)="draftChanged.emit({ preset: preset })"
+          /><span>{{ preset }}</span></label
+        >
+        }
+      </div>
+      <p class="field-hint">{{ draftStyleDescription() }}</p>
+    </fieldset>
+    } @if (map().type === 'forest') {
+    <fieldset class="preset-field">
+      <legend>Character <span>THE CLEARING'S IDENTITY</span></legend>
+      @let selectedCharacter = draft().character;
+      <div class="preset-options">
+        @for (item of characters; track item) {
+        <label [class.selected]="selectedCharacter === item"
+          ><input
+            type="radio"
+            name="character"
+            [value]="item"
+            [checked]="selectedCharacter === item"
+            (change)="draftChanged.emit({ character: item })"
+          /><span>{{ characterNames[item] }}</span></label
+        >
+        }
+      </div>
+      <p class="field-hint">{{ draftStyleDescription() }}</p>
+    </fieldset>
+    }
+    <fieldset class="density-field">
+      <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
+      @let selectedDensity = draft().density;
+      <div class="density-options">
+        @for (density of densities; track density) {
+        <label [class.selected]="selectedDensity === density"
+          ><input
+            type="radio"
+            name="density"
+            [value]="density"
+            [checked]="selectedDensity === density"
+            (change)="draftChanged.emit({ density: density })"
+          /><span>{{ density }}</span></label
+        >
+        }
+      </div>
+      <p class="field-hint">{{ densityDescription() }}</p>
+    </fieldset>
+    @if (pending()) {
+    <div class="pending-settings" aria-live="polite">
+      <p class="pending"><span></span>Settings changed. Generate to apply.</p>
+      <button class="text-button" type="button" (click)="resetRequested.emit()">
+        Reset changes
+      </button>
+    </div>
+    }
+    <button class="generate-button" type="submit" [disabled]="disabled() || !pending()">
+      <forge-icon [name]="map().type === 'dungeon' ? 'spark' : 'tree'" />{{ generating() ?
+      map().type === 'dungeon' ? 'Forging your dungeon…' : 'Growing your clearing…' : map().type ===
+      'dungeon' ? 'Generate dungeon' : 'Generate forest' }}<forge-icon
+        class="generate-arrow"
+        name="arrow"
+      />
+    </button>
+    <p class="generate-note">
+      {{ pending() ? 'Generate applies your pending settings.' : 'Randomize the seed for a different
+      map.' }}
+    </p>
+  </fieldset>
+</form>
+<div class="details-section">
+  <div class="panel-heading">
+    <span class="section-number">02</span>
+    <h2>Make it feel lived in</h2>
+  </div>
+  <p>
+    {{ map().type === 'dungeon' ? 'Love the layout? Give its rooms a different kind of character.' :
+    'Love the clearing? Give it a different woodland character.' }}
+  </p>
+  <button
+    class="shuffle-button"
+    type="button"
+    (click)="shuffleRequested.emit()"
+    [disabled]="disabled()"
+  >
+    <forge-icon name="shuffle" />Shuffle details<span>↗</span>
+  </button>
+  <span class="preserve-note"
+    ><forge-icon name="lock" />{{ map().type === 'dungeon' ? 'Your rooms and paths stay put.' :
+    'Your clearing and path stay put.' }}</span
+  >
+</div>
+<div class="style-note">
+  <span class="style-swatch"></span>
+  <div>
+    <strong>{{ styleLabel() }}</strong>
+    <p>{{ styleDescription() }}</p>
+  </div>
+</div>

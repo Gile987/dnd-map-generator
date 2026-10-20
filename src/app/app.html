@@ -26,231 +26,29 @@
   </section>
 
   <div class="workbench" [attr.aria-busy]="busy() !== null">
-    <aside class="settings-panel" aria-label="Map settings">
-      <div class="panel-heading">
-        <span class="section-number">01</span>
-        <h2>{{ mapType() === 'dungeon' ? 'Shape your dungeon' : 'Shape your clearing' }}</h2>
-      </div>
+    <aside
+      forge-settings-panel
+      [map]="map()"
+      [draft]="draft()"
+      [pending]="pending()"
+      [disabled]="busy() !== null"
+      [generating]="busy() === 'generation'"
+      [attempted]="attempted()"
+      (draftChanged)="updateDraft($event)"
+      (mapTypeChanged)="selectMapType($event)"
+      (generateRequested)="generate()"
+      (randomizeRequested)="randomizeSeed()"
+      (resetRequested)="resetChanges()"
+      (shuffleRequested)="shuffle()"
+    ></aside>
 
-      <fieldset class="map-type-field" [disabled]="busy() !== null">
-        <legend class="sr-only">Map type</legend>
-        <div class="map-type-options">
-          @for (type of mapTypes; track type) {
-          <label [class.selected]="mapType() === type"
-            ><input
-              type="radio"
-              name="mapType"
-              [value]="type"
-              [checked]="mapType() === type"
-              (change)="selectMapType(type)"
-              [disabled]="busy() !== null"
-            /><forge-icon [name]="type === 'dungeon' ? 'layers' : 'tree'" /><span
-              >{{ type === 'dungeon' ? 'Dungeon' : 'Forest' }}</span
-            ></label
-          >
-          }
-        </div>
-      </fieldset>
-
-      <form (submit)="submit($event)" novalidate>
-        <fieldset [disabled]="busy() !== null">
-          <legend class="sr-only">Map generation settings</legend>
-          <div class="field seed-field">
-            <label for="seed">World seed <span>YOUR MAP'S FINGERPRINT</span></label>
-            <input
-              id="seed"
-              type="text"
-              [value]="seed()"
-              (input)="editSeed($event)"
-              maxlength="64"
-              autocomplete="off"
-              spellcheck="false"
-              [attr.aria-invalid]="invalidSeed()"
-              aria-describedby="seed-hint settings-error"
-            />
-            <div class="field-bottom">
-              <span id="seed-hint">Same seed. Same adventure.</span
-              ><button class="text-button" type="button" (click)="randomizeSeed()">
-                <forge-icon name="shuffle" />Randomize seed
-              </button>
-            </div>
-          </div>
-          @if (mapType() === 'dungeon') {
-          <div class="field room-field">
-            <label for="rooms">Rooms <span>4–8 CHAMBERS</span></label>
-            <div class="room-stepper">
-              <button
-                type="button"
-                aria-label="Fewer rooms"
-                (click)="stepRooms(-1)"
-                [disabled]="atMinRooms()"
-              >
-                <forge-icon name="minus" />
-              </button>
-              <input
-                id="rooms"
-                type="number"
-                min="4"
-                max="8"
-                step="1"
-                inputmode="numeric"
-                [value]="rooms()"
-                (input)="editRooms($event)"
-                [attr.aria-invalid]="invalidRooms()"
-                aria-describedby="room-hint settings-error"
-              />
-              <button
-                type="button"
-                aria-label="More rooms"
-                (click)="stepRooms(1)"
-                [disabled]="atMaxRooms()"
-              >
-                <forge-icon name="plus" />
-              </button>
-            </div>
-            <p class="field-hint" id="room-hint">Connected chambers. Unexpected turns.</p>
-          </div>
-          <fieldset class="preset-field">
-            <legend>Character <span>THE DUNGEON'S IDENTITY</span></legend>
-            @let selectedPreset = preset();
-            <div class="preset-options">
-              @for (preset of presets; track preset) {
-              <label [class.selected]="selectedPreset === preset"
-                ><input
-                  type="radio"
-                  name="preset"
-                  [value]="preset"
-                  [checked]="selectedPreset === preset"
-                  (change)="selectPreset(preset)"
-                /><span>{{ preset }}</span></label
-              >
-              }
-            </div>
-            <p class="field-hint">{{ draftStyleDescription() }}</p>
-          </fieldset>
-          } @if (mapType() === 'forest') {
-          <fieldset class="preset-field">
-            <legend>Character <span>THE CLEARING'S IDENTITY</span></legend>
-            @let selectedCharacter = character();
-            <div class="preset-options">
-              @for (item of characters; track item) {
-              <label [class.selected]="selectedCharacter === item"
-                ><input
-                  type="radio"
-                  name="character"
-                  [value]="item"
-                  [checked]="selectedCharacter === item"
-                  (change)="selectCharacter(item)"
-                /><span>{{ characterNames[item] }}</span></label
-              >
-              }
-            </div>
-            <p class="field-hint">{{ draftStyleDescription() }}</p>
-          </fieldset>
-          }
-          <fieldset class="density-field">
-            <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
-            @let selectedDensity = density();
-            <div class="density-options">
-              @for (density of densities; track density) {
-              <label [class.selected]="selectedDensity === density"
-                ><input
-                  type="radio"
-                  name="density"
-                  [value]="density"
-                  [checked]="selectedDensity === density"
-                  (change)="selectDensity(density)"
-                /><span>{{ density }}</span></label
-              >
-              }
-            </div>
-            <p class="field-hint">{{ densityDescription() }}</p>
-          </fieldset>
-          @if (pending()) {
-          <div class="pending-settings" aria-live="polite">
-            <p class="pending"><span></span>Settings changed. Generate to apply.</p>
-            <button class="text-button" type="button" (click)="resetChanges()">
-              Reset changes
-            </button>
-          </div>
-          }
-          <button class="generate-button" type="submit" [disabled]="busy() !== null || !pending()">
-            <forge-icon [name]="mapType() === 'dungeon' ? 'spark' : 'tree'" />{{ busy() ===
-            'generation' ? mapType() === 'dungeon' ? 'Forging your dungeon…' : 'Growing your
-            clearing…' : mapType() === 'dungeon' ? 'Generate dungeon' : 'Generate forest'
-            }}<forge-icon class="generate-arrow" name="arrow" />
-          </button>
-          <p class="generate-note">
-            {{ pending() ? 'Generate applies your pending settings.' : 'Randomize the seed for a
-            different map.' }}
-          </p>
-        </fieldset>
-      </form>
-      <div class="details-section">
-        <div class="panel-heading">
-          <span class="section-number">02</span>
-          <h2>Make it feel lived in</h2>
-        </div>
-        <p>
-          {{ mapType() === 'dungeon' ? 'Love the layout? Give its rooms a different kind of
-          character.' : 'Love the clearing? Give it a different woodland character.' }}
-        </p>
-        <button
-          class="shuffle-button"
-          type="button"
-          (click)="shuffle()"
-          [disabled]="busy() !== null"
-        >
-          <forge-icon name="shuffle" />Shuffle details<span>↗</span>
-        </button>
-        <span class="preserve-note"
-          ><forge-icon name="lock" />{{ mapType() === 'dungeon' ? 'Your rooms and paths stay put.' :
-          'Your clearing and path stay put.' }}</span
-        >
-      </div>
-      <div class="style-note">
-        <span class="style-swatch"></span>
-        <div>
-          <strong>{{ styleLabel() }}</strong>
-          <p>{{ styleDescription() }}</p>
-        </div>
-      </div>
-    </aside>
-
-    <section class="map-panel" aria-labelledby="map-title">
-      <div class="map-toolbar">
-        <div class="map-heading">
-          <span class="map-icon"
-            ><forge-icon [name]="map().type === 'dungeon' ? 'layers' : 'tree'"
-          /></span>
-          <div>
-            <h2 id="map-title">{{ mapTypeLabel() }}</h2>
-            <span>{{ mapSummary().type }} <b> / </b> 40 × 30 TILES</span>
-          </div>
-        </div>
-        <label class="grid-toggle"
-          ><input
-            #gridToggle
-            type="checkbox"
-            [checked]="grid()"
-            (change)="grid.set(gridToggle.checked)"
-            [disabled]="busy() !== null" /><forge-icon name="grid" /><span>Grid</span
-          ><span class="toggle-track" aria-hidden="true"><span></span></span
-        ></label>
-      </div>
-      <forge-preview [map]="map()" [grid]="grid()" />
-      <div class="map-meta" id="map-summary">
-        <div>
-          <span>GENERATED SEED</span><strong class="seed-summary">{{ mapSummary().seed }}</strong>
-        </div>
-        <div>
-          <span>{{ map().type === 'dungeon' ? 'ROOMS' : 'CLEARING' }}</span
-          ><strong>{{ mapSummary().rooms }}</strong>
-        </div>
-        <div><span>DETAILS</span><strong>{{ mapSummary().details }}</strong></div>
-        <div class="map-size"><span>MAP SIZE</span><strong>40 × 30 tiles</strong></div>
-      </div>
-    </section>
+    <section
+      forge-map-panel
+      [map]="map()"
+      [grid]="grid()"
+      [disabled]="busy() !== null"
+      (gridChanged)="grid.set($event)"
+    ></section>
   </div>
 
   <div class="export-row">

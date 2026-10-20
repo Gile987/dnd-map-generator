@@ -1,0 +1,32 @@
+<div class="map-toolbar">
+  <div class="map-heading">
+    <span class="map-icon"
+      ><forge-icon [name]="map().type === 'dungeon' ? 'layers' : 'tree'"
+    /></span>
+    <div>
+      <h2 id="map-title">{{ mapTypeLabel() }}</h2>
+      <span>{{ mapSummary().type }} <b> / </b> 40 × 30 TILES</span>
+    </div>
+  </div>
+  <label class="grid-toggle"
+    ><input
+      #gridToggle
+      type="checkbox"
+      [checked]="grid()"
+      (change)="gridChanged.emit(gridToggle.checked)"
+      [disabled]="disabled()" /><forge-icon name="grid" /><span>Grid</span
+    ><span class="toggle-track" aria-hidden="true"><span></span></span
+  ></label>
+</div>
+<forge-preview [map]="map()" [grid]="grid()" />
+<div class="map-meta" id="map-summary">
+  <div>
+    <span>GENERATED SEED</span><strong class="seed-summary">{{ mapSummary().seed }}</strong>
+  </div>
+  <div>
+    <span>{{ map().type === 'dungeon' ? 'ROOMS' : 'CLEARING' }}</span
+    ><strong>{{ mapSummary().rooms }}</strong>
+  </div>
+  <div><span>DETAILS</span><strong>{{ mapSummary().details }}</strong></div>
+  <div class="map-size"><span>MAP SIZE</span><strong>40 × 30 tiles</strong></div>
+</div>
