@@ -7,7 +7,7 @@ import { Library } from './save/library';
 import { MapPanel } from './workbench/map-panel/map-panel';
 import { SettingsPanel } from './workbench/settings-panel/settings-panel';
 import { WorkbenchSession } from './workbench/workbench-session';
-import type { SettingsDraft } from './workbench/workbench-session';
+import type { DraftChange } from './workbench/settings-draft';
 
 type Operation = 'generation' | 'details' | 'export';
 
@@ -55,7 +55,10 @@ export class App {
     if (this.busy()) return;
     const values = crypto.getRandomValues(new Uint32Array(2));
     this.updateDraft({
-      seed: `${this.mapType()}-${Array.from(values, (value) => value.toString(16).padStart(8, '0')).join('')}`,
+      type: this.mapType(),
+      changes: {
+        seed: `${this.mapType()}-${Array.from(values, (value) => value.toString(16).padStart(8, '0')).join('')}`,
+      },
     });
   }
 
@@ -99,9 +102,9 @@ export class App {
     });
   }
 
-  protected updateDraft(changes: Partial<SettingsDraft>): void {
+  protected updateDraft(change: DraftChange): void {
     if (this.busy()) return;
-    this.session.updateDraft(changes);
+    this.session.updateDraft(change);
     this.attempted.set(false);
     this.error.set('');
   }

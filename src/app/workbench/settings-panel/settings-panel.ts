@@ -9,7 +9,7 @@ import type {
 } from '../../engine/model';
 import { Icon } from '../../icon';
 import { ROOM_MAX, ROOM_MIN, normalizeRoomCount, stepRoomCount } from '../../room-count';
-import type { SettingsDraft } from '../workbench-session';
+import type { DraftChange, SettingsDraft } from '../settings-draft';
 
 const PRESET_DESCRIPTIONS: Readonly<Record<DecorationPreset, string>> = {
   Mosslit: 'Cool slate. Soft moss. A warm glow.',
@@ -47,7 +47,7 @@ export class SettingsPanel {
   readonly disabled = input(false);
   readonly generating = input(false);
   readonly attempted = input(false);
-  readonly draftChanged = output<Partial<SettingsDraft>>();
+  readonly draftChanged = output<DraftChange>();
   readonly mapTypeChanged = output<MapType>();
   readonly generateRequested = output<void>();
   readonly randomizeRequested = output<void>();
@@ -62,17 +62,28 @@ export class SettingsPanel {
   protected readonly invalidSeed = computed(
     () => this.attempted() && (!this.draft().seed.trim() || this.draft().seed.trim().length > 64),
   );
-  protected readonly invalidRooms = computed(
-    () =>
+  protected readonly invalidRooms = computed(() => {
+    const draft = this.draft();
+    return (
       this.attempted() &&
-      this.map().type === 'dungeon' &&
-      (!/^\d+$/.test(this.draft().rooms) ||
-        Number(this.draft().rooms) < ROOM_MIN ||
-        Number(this.draft().rooms) > ROOM_MAX),
-  );
-  private readonly roomDraft = computed(() => normalizeRoomCount(this.draft().rooms));
-  protected readonly atMinRooms = computed(() => this.roomDraft() <= ROOM_MIN);
-  protected readonly atMaxRooms = computed(() => this.roomDraft() >= ROOM_MAX);
+      draft.type === 'dungeon' &&
+      (!/^\d+$/.test(draft.rooms) ||
+        Number(draft.rooms) < ROOM_MIN ||
+        Number(draft.rooms) > ROOM_MAX)
+    );
+  });
+  private readonly roomDraft = computed(() => {
+    const draft = this.draft();
+    return draft.type === 'dungeon' ? normalizeRoomCount(draft.rooms) : undefined;
+  });
+  protected readonly atMinRooms = computed(() => {
+    const rooms = this.roomDraft();
+    return rooms !== undefined && rooms <= ROOM_MIN;
+  });
+  protected readonly atMaxRooms = computed(() => {
+    const rooms = this.roomDraft();
+    return rooms !== undefined && rooms >= ROOM_MAX;
+  });
   protected readonly densityDescription = computed(
     () =>
       ({
@@ -81,11 +92,12 @@ export class SettingsPanel {
         Cluttered: 'Storied spaces, with paths kept clear.',
       })[this.draft().density],
   );
-  protected readonly draftStyleDescription = computed(() =>
-    this.map().type === 'dungeon'
-      ? PRESET_DESCRIPTIONS[this.draft().preset]
-      : CHARACTER_DESCRIPTIONS[this.draft().character],
-  );
+  protected readonly draftStyleDescription = computed(() => {
+    const draft = this.draft();
+    return draft.type === 'dungeon'
+      ? PRESET_DESCRIPTIONS[draft.preset]
+      : CHARACTER_DESCRIPTIONS[draft.character];
+  });
   protected readonly styleDescription = computed(() => {
     const map = this.map();
     return map.type === 'dungeon'
@@ -107,16 +119,21 @@ export class SettingsPanel {
 
   protected editSeed(event: Event): void {
     if (event.target instanceof HTMLInputElement)
-      this.draftChanged.emit({ seed: event.target.value });
+      this.draftChanged.emit({ type: this.draft().type, changes: { seed: event.target.value } });
   }
 
   protected editRooms(event: Event): void {
-    if (event.target instanceof HTMLInputElement)
-      this.draftChanged.emit({ rooms: event.target.value });
+    if (this.draft().type === 'dungeon' && event.target instanceof HTMLInputElement)
+      this.draftChanged.emit({ type: 'dungeon', changes: { rooms: event.target.value } });
   }
 
   protected stepRooms(delta: number): void {
-    this.draftChanged.emit({ rooms: stepRoomCount(this.draft().rooms, delta) });
+    const draft = this.draft();
+    if (draft.type === 'dungeon')
+      this.draftChanged.emit({
+        type: 'dungeon',
+        changes: { rooms: stepRoomCount(draft.rooms, delta) },
+      });
   }
 
   protected submit(event: SubmitEvent): void {

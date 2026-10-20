@@ -37,7 +37,7 @@ describe('workbench session transitions', () => {
       const first = firstInjector.get(WorkbenchSession);
       const second = secondInjector.get(WorkbenchSession);
       expect(first).not.toBe(second);
-      first.updateDraft({ seed: 'first-session' });
+      first.updateDraft({ type: 'dungeon', changes: { seed: 'first-session' } });
       expect(first.generate().ok).toBe(true);
       first.selectMapType('forest');
       expect(second.mapType()).toBe('dungeon');
@@ -53,11 +53,17 @@ describe('workbench session transitions', () => {
   test('retains independent raw drafts and resets only the active type', () => {
     const session = new WorkbenchSession();
     const dungeon = session.map();
-    session.updateDraft({ seed: 'dungeon-draft', rooms: '4.5', preset: 'Crypt' });
+    session.updateDraft({
+      type: 'dungeon',
+      changes: { seed: 'dungeon-draft', rooms: '4.5', preset: 'Crypt' },
+    });
     expect(session.map()).toBe(dungeon);
     session.selectMapType('forest');
     const forest = session.map();
-    session.updateDraft({ seed: 'forest-draft', character: 'Fey', density: 'Sparse' });
+    session.updateDraft({
+      type: 'forest',
+      changes: { seed: 'forest-draft', character: 'Fey', density: 'Sparse' },
+    });
     expect(session.map()).toBe(forest);
     session.selectMapType('dungeon');
     expect(session.draft()).toMatchObject({ seed: 'dungeon-draft', rooms: '4.5', preset: 'Crypt' });
@@ -75,24 +81,52 @@ describe('workbench session transitions', () => {
     expect(session.pending()).toBe(true);
   });
 
+  test.each(['dungeon', 'forest'] as const)(
+    'ignores late %s edits after switching map type',
+    (type) => {
+      const session = new WorkbenchSession();
+      session.selectMapType(type);
+      const sourceDraft = session.draft();
+      const sourceMap = session.map();
+      session.selectMapType(type === 'dungeon' ? 'forest' : 'dungeon');
+      const activeDraft = session.draft();
+      const activeMap = session.map();
+      session.updateDraft(
+        type === 'dungeon'
+          ? { type: 'dungeon', changes: { seed: 'late-dungeon', rooms: '', preset: 'Crypt' } }
+          : { type: 'forest', changes: { seed: 'late-forest', character: 'Fey' } },
+      );
+      expect(session.draft()).toBe(activeDraft);
+      expect(session.map()).toBe(activeMap);
+      expect(session.pending()).toBe(false);
+      session.selectMapType(type);
+      expect(session.draft()).toBe(sourceDraft);
+      expect(session.map()).toBe(sourceMap);
+      expect(session.pending()).toBe(false);
+    },
+  );
+
   test('invalid drafts keep the accepted map and raw input, and a corrected draft can generate', () => {
     const session = new WorkbenchSession();
     const original = session.map();
-    session.updateDraft({ seed: '', rooms: '4.5' });
+    session.updateDraft({ type: 'dungeon', changes: { seed: '', rooms: '4.5' } });
     expect(session.generate()).toEqual({
       ok: false,
       error: 'Enter a seed between 1 and 64 characters.',
     });
     expect(session.map()).toBe(original);
     expect(session.draft().seed).toBe('');
-    session.updateDraft({ seed: 'configured-crypt' });
+    session.updateDraft({ type: 'dungeon', changes: { seed: 'configured-crypt' } });
     expect(session.generate()).toEqual({
       ok: false,
       error: 'Choose a whole number of rooms from 4 to 8.',
     });
     expect(session.map()).toBe(original);
-    expect(session.draft().rooms).toBe('4.5');
-    session.updateDraft({ rooms: '4', preset: 'Crypt', density: 'Cluttered' });
+    expect(session.draft()).toMatchObject({ type: 'dungeon', rooms: '4.5' });
+    session.updateDraft({
+      type: 'dungeon',
+      changes: { rooms: '4', preset: 'Crypt', density: 'Cluttered' },
+    });
     expect(session.generate()).toEqual({ ok: true, layoutChanged: true });
     const generated = session.map();
     if (generated.type !== 'dungeon') throw new Error('Expected dungeon');
@@ -118,8 +152,8 @@ describe('workbench session transitions', () => {
       const original = session.map();
       session.updateDraft(
         type === 'dungeon'
-          ? { preset: 'Crypt', density: 'Cluttered' }
-          : { character: 'Autumn', density: 'Cluttered' },
+          ? { type: 'dungeon', changes: { preset: 'Crypt', density: 'Cluttered' } }
+          : { type: 'forest', changes: { character: 'Autumn', density: 'Cluttered' } },
       );
       const draft = session.draft();
       session.shuffle();
@@ -160,11 +194,29 @@ describe('workbench session transitions', () => {
       session.selectMapType(type);
       session.shuffle();
       const original = session.map();
-      session.updateDraft({ seed: 'session-new-layout' });
+      const dungeonGeneration = vi.spyOn(dungeonEngine, 'generateDungeon');
+      const forestGeneration = vi.spyOn(forestEngine, 'generateForestClearing');
+      session.updateDraft({ type, changes: { seed: 'session-new-layout' } });
       expect(session.generate()).toEqual({ ok: true, layoutChanged: true });
       const generated = session.map();
       expect(generated.layout).not.toEqual(original.layout);
       expect(generated.seed).toBe('session-new-layout');
+      if (type === 'dungeon') {
+        expect(dungeonGeneration).toHaveBeenCalledExactlyOnceWith({
+          seed: 'session-new-layout',
+          roomCount: 6,
+          density: 'Balanced',
+          preset: 'Mosslit',
+        });
+        expect(forestGeneration).not.toHaveBeenCalled();
+      } else {
+        expect(forestGeneration).toHaveBeenCalledExactlyOnceWith({
+          seed: 'session-new-layout',
+          density: 'Balanced',
+          character: 'Verdant',
+        });
+        expect(dungeonGeneration).not.toHaveBeenCalled();
+      }
       expect(generated.decoration.revision).toBe(0);
       expect(session.pending()).toBe(false);
       session.selectMapType(otherType);
@@ -177,9 +229,12 @@ describe('workbench session transitions', () => {
   test('opening a saved forest restores accepted controls and preserves the other type draft', () => {
     const session = new WorkbenchSession();
     const dungeon = session.map();
-    session.updateDraft({ seed: 'kept-dungeon-draft', rooms: '4.5' });
+    session.updateDraft({ type: 'dungeon', changes: { seed: 'kept-dungeon-draft', rooms: '4.5' } });
     session.selectMapType('forest');
-    session.updateDraft({ seed: 'discarded-forest-draft', character: 'Fey' });
+    session.updateDraft({
+      type: 'forest',
+      changes: { seed: 'discarded-forest-draft', character: 'Fey' },
+    });
     const saved = forestEngine.generateForestClearing({
       seed: 'saved-autumn',
       density: 'Sparse',
@@ -208,7 +263,7 @@ describe('workbench session transitions', () => {
       const session = new WorkbenchSession();
       session.selectMapType(type);
       const original = session.map();
-      session.updateDraft({ seed: 'retry-layout' });
+      session.updateDraft({ type, changes: { seed: 'retry-layout' } });
       const draft = session.draft();
       if (type === 'dungeon')
         vi.spyOn(dungeonEngine, 'generateDungeon').mockReturnValueOnce({
@@ -245,7 +300,7 @@ describe('workbench session transitions', () => {
     const session = new WorkbenchSession();
     session.selectMapType('forest');
     const original = session.map();
-    session.updateDraft({ character: 'Fey', density: 'Cluttered' });
+    session.updateDraft({ type: 'forest', changes: { character: 'Fey', density: 'Cluttered' } });
     const draft = session.draft();
     vi.spyOn(forestEngine, 'changeForestCharacter').mockImplementationOnce((map) => map);
     expect(session.generate()).toEqual({
@@ -264,7 +319,7 @@ describe('workbench session transitions', () => {
   test('an unexpected engine exception leaves the accepted map and draft available for retry', () => {
     const session = new WorkbenchSession();
     const original = session.map();
-    session.updateDraft({ seed: 'retry-after-exception' });
+    session.updateDraft({ type: 'dungeon', changes: { seed: 'retry-after-exception' } });
     const draft = session.draft();
     vi.spyOn(dungeonEngine, 'generateDungeon').mockImplementationOnce(() => {
       throw new Error('Drawing-independent engine failure');

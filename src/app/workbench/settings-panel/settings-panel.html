@@ -1,3 +1,4 @@
+@let activeDraft = draft();
 <div class="panel-heading">
   <span class="section-number">01</span>
   <h2>{{ map().type === 'dungeon' ? 'Shape your dungeon' : 'Shape your clearing' }}</h2>
@@ -31,7 +32,7 @@
       <input
         id="seed"
         type="text"
-        [value]="draft().seed"
+        [value]="activeDraft.seed"
         (input)="editSeed($event)"
         maxlength="64"
         autocomplete="off"
@@ -46,7 +47,7 @@
         </button>
       </div>
     </div>
-    @if (map().type === 'dungeon') {
+    @if (activeDraft.type === 'dungeon') {
     <div class="field room-field">
       <label for="rooms">Rooms <span>4–8 CHAMBERS</span></label>
       <div class="room-stepper">
@@ -65,7 +66,7 @@
           max="8"
           step="1"
           inputmode="numeric"
-          [value]="draft().rooms"
+          [value]="activeDraft.rooms"
           (input)="editRooms($event)"
           [attr.aria-invalid]="invalidRooms()"
           aria-describedby="room-hint settings-error"
@@ -83,7 +84,7 @@
     </div>
     <fieldset class="preset-field">
       <legend>Character <span>THE DUNGEON'S IDENTITY</span></legend>
-      @let selectedPreset = draft().preset;
+      @let selectedPreset = activeDraft.preset;
       <div class="preset-options">
         @for (preset of presets; track preset) {
         <label [class.selected]="selectedPreset === preset"
@@ -92,17 +93,17 @@
             name="preset"
             [value]="preset"
             [checked]="selectedPreset === preset"
-            (change)="draftChanged.emit({ preset: preset })"
+            (change)="draftChanged.emit({ type: 'dungeon', changes: { preset: preset } })"
           /><span>{{ preset }}</span></label
         >
         }
       </div>
       <p class="field-hint">{{ draftStyleDescription() }}</p>
     </fieldset>
-    } @if (map().type === 'forest') {
+    } @if (activeDraft.type === 'forest') {
     <fieldset class="preset-field">
       <legend>Character <span>THE CLEARING'S IDENTITY</span></legend>
-      @let selectedCharacter = draft().character;
+      @let selectedCharacter = activeDraft.character;
       <div class="preset-options">
         @for (item of characters; track item) {
         <label [class.selected]="selectedCharacter === item"
@@ -111,7 +112,7 @@
             name="character"
             [value]="item"
             [checked]="selectedCharacter === item"
-            (change)="draftChanged.emit({ character: item })"
+            (change)="draftChanged.emit({ type: 'forest', changes: { character: item } })"
           /><span>{{ characterNames[item] }}</span></label
         >
         }
@@ -121,7 +122,7 @@
     }
     <fieldset class="density-field">
       <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
-      @let selectedDensity = draft().density;
+      @let selectedDensity = activeDraft.density;
       <div class="density-options">
         @for (density of densities; track density) {
         <label [class.selected]="selectedDensity === density"
@@ -130,7 +131,7 @@
             name="density"
             [value]="density"
             [checked]="selectedDensity === density"
-            (change)="draftChanged.emit({ density: density })"
+            (change)="draftChanged.emit({ type: activeDraft.type, changes: { density: density } })"
           /><span>{{ density }}</span></label
         >
         }

@@ -1,0 +1,84 @@
+import type {
+  DecorationPreset,
+  Density,
+  Dungeon,
+  DungeonSettings,
+  ForestCharacter,
+  ForestClearing,
+  ForestSettings,
+} from '../engine/model';
+import { validateForestSettings } from '../engine/forest-generate';
+import { validateSettings } from '../engine/validation';
+
+interface CommonDraft {
+  readonly seed: string;
+  readonly density: Density;
+}
+
+export interface DungeonDraft extends CommonDraft {
+  readonly type: 'dungeon';
+  readonly rooms: string;
+  readonly preset: DecorationPreset;
+}
+
+export interface ForestDraft extends CommonDraft {
+  readonly type: 'forest';
+  readonly character: ForestCharacter;
+}
+
+export interface SettingsDrafts {
+  readonly dungeon: DungeonDraft;
+  readonly forest: ForestDraft;
+}
+
+export type SettingsDraft = DungeonDraft | ForestDraft;
+
+export type DraftChange =
+  | { readonly type: 'dungeon'; readonly changes: Partial<Omit<DungeonDraft, 'type'>> }
+  | { readonly type: 'forest'; readonly changes: Partial<Omit<ForestDraft, 'type'>> };
+
+type ParsedDraft =
+  | { readonly ok: true; readonly type: 'dungeon'; readonly settings: DungeonSettings }
+  | { readonly ok: true; readonly type: 'forest'; readonly settings: ForestSettings }
+  | { readonly ok: false; readonly error: string };
+
+export function dungeonDraftForMap(map: Dungeon): DungeonDraft {
+  return {
+    type: 'dungeon',
+    seed: map.seed,
+    rooms: String(map.layout.rooms.length),
+    density: map.decoration.density,
+    preset: map.decoration.preset,
+  };
+}
+
+export function forestDraftForMap(map: ForestClearing): ForestDraft {
+  return {
+    type: 'forest',
+    seed: map.seed,
+    density: map.decoration.density,
+    character: map.decoration.character,
+  };
+}
+
+export function parseDraft(draft: SettingsDraft): ParsedDraft {
+  if (draft.type === 'forest') {
+    const settings: ForestSettings = {
+      seed: draft.seed,
+      density: draft.density,
+      character: draft.character,
+    };
+    const error = validateForestSettings(settings);
+    return error ? { ok: false, error } : { ok: true, type: 'forest', settings };
+  }
+  const settings: DungeonSettings = {
+    seed: draft.seed,
+    roomCount: Number(draft.rooms),
+    density: draft.density,
+    preset: draft.preset,
+  };
+  const error =
+    validateSettings(settings) ||
+    (!/^\d+$/.test(draft.rooms) ? 'Choose a whole number of rooms from 4 to 8.' : undefined);
+  return error ? { ok: false, error } : { ok: true, type: 'dungeon', settings };
+}
