@@ -19,7 +19,7 @@ canvas.dragging {
   cursor: grabbing;
 }
 canvas:focus-visible {
-  outline: 2px solid #d6bc7d;
+  outline: 2px solid var(--map-focus-ring-color);
   outline-offset: -4px;
 }
 .north {

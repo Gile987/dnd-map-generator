@@ -7,8 +7,8 @@
     "build": "ng build",
     "test": "vitest run",
     "typecheck:tests": "tsc -p tsconfig.tests.json",
-    "format": "prettier --write src tests scripts *.json *.config.ts README.md",
-    "format:check": "prettier --check src tests scripts *.json *.config.ts README.md",
+    "format": "prettier --write src tests scripts .github *.json *.config.ts README.md",
+    "format:check": "prettier --check src tests scripts .github *.json *.config.ts README.md",
     "test:e2e": "playwright test"
   },
   "engines": {

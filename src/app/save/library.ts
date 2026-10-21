@@ -11,7 +11,7 @@ import type { GeneratedMap } from '../engine/model';
 import { downloadBlob } from '../browser/download';
 import { Icon } from '../icon';
 import { createThumbnail } from '../rendering/thumbnail';
-import { SAVE_FORMAT_VERSION, defaultMapName, mapSummary, parseBundle } from './save-format';
+import { defaultMapName, mapSummary, parseBundle } from './save-format';
 import type { SavedMap } from './save-format';
 import { SaveStore } from './save-store';
 
@@ -34,7 +34,6 @@ export class Library {
   protected readonly editDraft = signal('');
   protected readonly notice = signal('');
   protected readonly error = signal('');
-  protected readonly saveFormatVersion = SAVE_FORMAT_VERSION;
 
   protected readonly saved = computed(() =>
     [...this.store.saved()].sort((a, b) => {

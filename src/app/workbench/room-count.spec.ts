@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { ROOM_MAX, ROOM_MIN } from './engine/model';
+import { ROOM_MAX, ROOM_MIN } from '../engine/model';
 import { ROOM_FALLBACK, normalizeRoomCount, stepRoomCount } from './room-count';
 
 describe('room count normalization', () => {

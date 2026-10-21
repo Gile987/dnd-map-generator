@@ -1,6 +1,6 @@
-@use 'sass:color';
-
 :root {
+  --focus-ring-color: #a17e3c;
+  --map-focus-ring-color: #d6bc7d;
   color-scheme: light;
   font-family:
     'Segoe UI',
@@ -40,7 +40,7 @@ button:disabled {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible {
-  outline: 2px solid #a17e3c;
+  outline: 2px solid var(--focus-ring-color);
   outline-offset: 4px;
 }
 button {
