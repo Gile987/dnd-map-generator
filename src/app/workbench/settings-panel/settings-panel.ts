@@ -6,31 +6,17 @@ import {
   ROOM_MAX,
   ROOM_MIN,
 } from '../../engine/model';
-import type { DecorationPreset, ForestCharacter, GeneratedMap, MapType } from '../../engine/model';
+import type { GeneratedMap, MapType } from '../../engine/model';
 import { Icon } from '../../icon';
+import {
+  CHARACTER_DESCRIPTIONS,
+  CHARACTER_LABELS,
+  DENSITY_DESCRIPTIONS,
+  PRESET_DESCRIPTIONS,
+  PRESET_LABELS,
+} from '../presentation';
 import { normalizeRoomCount, stepRoomCount } from '../room-count';
 import type { DraftChange, SettingsDraft } from '../settings-draft';
-
-const PRESET_DESCRIPTIONS: Readonly<Record<DecorationPreset, string>> = {
-  Mosslit: 'Cool slate. Soft moss. A warm glow.',
-  Crypt: 'Stone sarcophagi and subdued lantern light.',
-  Storehouse: 'Crates, barrels, and worn runners.',
-  Sanctuary: 'Moss, vines, and broken architecture.',
-};
-
-const CHARACTER_DESCRIPTIONS: Readonly<Record<ForestCharacter, string>> = {
-  Verdant: 'Lush broadleaf woodland with ferns and mossy logs.',
-  Autumn: 'Gold and russet canopies over fallen leaves.',
-  Pines: 'Ancient evergreens on a needle-covered floor.',
-  Fey: 'Unusual trees, flowering moss, and faint glimmers.',
-};
-
-const CHARACTER_LABELS: Readonly<Record<ForestCharacter, string>> = {
-  Verdant: 'Verdant woodland',
-  Autumn: 'Autumn grove',
-  Pines: 'Ancient pines',
-  Fey: 'Fey glade',
-};
 
 @Component({
   selector: 'aside[forge-settings-panel]',
@@ -87,12 +73,7 @@ export class SettingsPanel {
     return rooms !== undefined && rooms >= ROOM_MAX;
   });
   protected readonly densityDescription = computed(
-    () =>
-      ({
-        Sparse: 'Quiet spaces, room to imagine.',
-        Balanced: 'A little character. Plenty of space.',
-        Cluttered: 'Storied spaces, with paths kept clear.',
-      })[this.draft().density],
+    () => DENSITY_DESCRIPTIONS[this.draft().density],
   );
   protected readonly draftStyleDescription = computed(() => {
     const draft = this.draft();
@@ -109,14 +90,7 @@ export class SettingsPanel {
   protected readonly styleLabel = computed(() => {
     const map = this.map();
     if (map.type === 'forest') return CHARACTER_LABELS[map.decoration.character];
-    return (
-      {
-        Mosslit: 'Mosslit stone',
-        Crypt: 'Ancient crypt',
-        Storehouse: 'Abandoned storehouse',
-        Sanctuary: 'Overgrown sanctuary',
-      } as const
-    )[map.decoration.preset];
+    return PRESET_LABELS[map.decoration.preset];
   });
 
   protected editSeed(event: Event): void {
