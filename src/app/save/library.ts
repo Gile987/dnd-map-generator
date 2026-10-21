@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import type { GeneratedMap } from '../engine/model';
+import { downloadBlob } from '../browser/download';
 import { Icon } from '../icon';
 import { createThumbnail } from '../rendering/thumbnail';
 import { SAVE_FORMAT_VERSION, defaultMapName, mapSummary, parseBundle } from './save-format';
@@ -114,20 +115,18 @@ export class Library {
   }
 
   protected downloadBackup(): void {
-    const bundle = this.store.exportBundle();
-    const blob = new Blob([bundle], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
     try {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'encounter-map-forge-saves.json';
-      document.body.append(link);
-      link.click();
-      link.remove();
-    } finally {
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      const bundle = this.store.exportBundle();
+      downloadBlob(
+        new Blob([bundle], { type: 'application/json' }),
+        'encounter-map-forge-saves.json',
+      );
+      this.error.set('');
+      this.notice.set('Backup downloaded.');
+    } catch {
+      this.notice.set('');
+      this.error.set('This backup could not be downloaded. Please try again.');
     }
-    this.notice.set('Backup downloaded.');
   }
 
   protected async importBackup(event: Event): Promise<void> {

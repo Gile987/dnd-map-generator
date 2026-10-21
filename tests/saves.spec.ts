@@ -4,6 +4,67 @@ import { expect, test } from '@playwright/test';
 const itemByName = (page: import('@playwright/test').Page, name: string) =>
   page.locator('.saved-item').filter({ has: page.getByText(name, { exact: true }) });
 
+test('a successful backup clears a failed import error and shows its notice', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#save-name').fill('Backup recovery');
+  await page.getByRole('button', { name: 'Save map', exact: true }).click();
+  await expect(itemByName(page, 'Backup recovery')).toBeVisible();
+  await page.setInputFiles('.import-label input', {
+    name: 'invalid.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('not json'),
+  });
+  await expect(page.locator('.library-message .error')).toContainText('not valid JSON');
+  const pendingDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download backup', exact: true }).click();
+  const download = await pendingDownload;
+  expect(download.suggestedFilename()).toBe('encounter-map-forge-saves.json');
+  expect(JSON.parse(readFileSync(await download.path(), 'utf8'))).toMatchObject({
+    maps: [{ name: 'Backup recovery' }],
+  });
+  await expect(page.locator('.library-message .error')).toBeEmpty();
+  await expect(page.locator('.library-message .notice')).toHaveText('Backup downloaded.');
+  await expect(page.locator('a[href^="blob:"]')).toHaveCount(0);
+});
+
+test('a backup object-URL failure is reported and permits retry without changing saved maps', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.locator('#save-name').fill('Retry backup');
+  await page.getByRole('button', { name: 'Save map', exact: true }).click();
+  await expect(itemByName(page, 'Retry backup')).toBeVisible();
+  await page.evaluate(() => {
+    const original = URL.createObjectURL;
+    URL.createObjectURL = function () {
+      URL.createObjectURL = original;
+      throw new Error('Object URLs are unavailable.');
+    };
+  });
+  await page.getByRole('button', { name: 'Download backup', exact: true }).click();
+  await expect(page.locator('.library-message .error')).toContainText(
+    'backup could not be downloaded',
+  );
+  await expect(page.locator('.library-message .notice')).toBeEmpty();
+  await page.locator('.library').screenshot({ path: 'artifacts/ar09/backup-error.png' });
+  await expect(page.locator('a[href^="blob:"]')).toHaveCount(0);
+  await expect(page.locator('.saved-item')).toHaveCount(1);
+  await expect(itemByName(page, 'Retry backup')).toBeVisible();
+  expect(errors).toEqual([]);
+  const pendingDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download backup', exact: true }).click();
+  const download = await pendingDownload;
+  expect(JSON.parse(readFileSync(await download.path(), 'utf8'))).toMatchObject({
+    maps: [{ name: 'Retry backup' }],
+  });
+  await expect(page.locator('.library-message .error')).toBeEmpty();
+  await expect(page.locator('.library-message .notice')).toHaveText('Backup downloaded.');
+  expect(errors).toEqual([]);
+  await page.locator('.library').screenshot({ path: 'artifacts/ar09/backup-recovered.png' });
+});
+
 test('imports a v3 library, reopens its original settings, and exports format-2 records', async ({
   page,
 }) => {
