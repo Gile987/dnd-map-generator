@@ -220,6 +220,35 @@ test('export failure is reported and controls recover', async ({ page }) => {
   await expect(page.locator('#settings-error')).toBeEmpty();
 });
 
+test('a PNG object-URL failure preserves the draft and allows export retry', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.getByLabel('World seed').fill('pending-download-draft');
+  await page.evaluate(() => {
+    const original = URL.createObjectURL;
+    URL.createObjectURL = function () {
+      URL.createObjectURL = original;
+      throw new Error('Object URLs are unavailable.');
+    };
+  });
+  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await expect(page.locator('#settings-error')).toContainText('Object URLs are unavailable.');
+  await expect(page.getByRole('button', { name: 'Export PNG', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeEnabled();
+  await expect(page.getByLabel('World seed')).toHaveValue('pending-download-draft');
+  await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
+  await expect(page.locator('a[href^="blob:"]')).toHaveCount(0);
+  const pendingDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  expect((await pendingDownload).suggestedFilename()).toBe(
+    'encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0.png',
+  );
+  await expect(page.locator('#settings-error')).toBeEmpty();
+  await expect(page.getByLabel('World seed')).toHaveValue('pending-download-draft');
+  expect(errors).toEqual([]);
+});
+
 test('map-type selector switches between dungeon and forest, preserves per-type maps', async ({
   page,
 }) => {

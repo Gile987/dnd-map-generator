@@ -1,6 +1,7 @@
 import { renderMap } from './render-map';
 import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from './resolution';
 import type { GeneratedMap } from '../engine/model';
+import { downloadBlob } from '../browser/download';
 
 export function exportFilename(map: GeneratedMap): string {
   const seed =
@@ -35,15 +36,5 @@ export async function createPng(map: GeneratedMap, grid: boolean): Promise<Blob>
 
 export async function downloadPng(map: GeneratedMap, grid: boolean): Promise<void> {
   const blob = await createPng(map, grid);
-  const url = URL.createObjectURL(blob);
-  try {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = exportFilename(map);
-    document.body.append(link);
-    link.click();
-    link.remove();
-  } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
-  }
+  downloadBlob(blob, exportFilename(map));
 }
