@@ -1,15 +1,5 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": { "noEmit": true, "types": ["node"] },
-  "include": [
-    "src/app/*.ts",
-    "src/app/browser/**/*.ts",
-    "src/app/engine/**/*.ts",
-    "src/app/rendering/**/*.ts",
-    "src/app/save/**/*.ts",
-    "src/app/workbench/**/*.ts",
-    "tests/**/*.ts",
-    "scripts/**/*.ts",
-    "*.config.ts"
-  ]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts", "*.config.ts"]
 }
