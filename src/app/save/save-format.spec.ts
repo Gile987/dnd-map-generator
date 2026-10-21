@@ -21,18 +21,18 @@ import {
   SAVE_FORMAT_VERSION,
   defaultMapName,
   duplicateName,
-  isUsableMap,
   makeSavedMap,
   mapSummary,
   normalizeName,
   parseBundle,
   parseSavedMap,
   saveVocabulary,
-  mapUsesVocabulary,
   serializeBundle,
   uniqueById,
 } from './save-format';
-import type { SavedMap, SaveVocabulary } from './save-format';
+import type { SavedMap } from './save-format';
+import { isUsableMap, mapUsesVocabulary } from './map-schema';
+import type { SaveVocabulary } from './map-schema';
 
 const dungeon = generateDungeon({
   seed: 'mosslit-sanctum',
@@ -156,6 +156,9 @@ describe('save format', () => {
     const format2 = saveVocabulary('2.0.0');
     if (!format1 || !format2) throw new Error('Expected vocabularies');
 
+    expect(format1.mapTypes).toEqual(['dungeon', 'forest']);
+    expect(format2.mapTypes).toEqual(['dungeon', 'forest']);
+    expect(format2.mapTypes).not.toBe(format1.mapTypes);
     expect(format2.densities).toEqual(['Sparse', 'Balanced', 'Cluttered']);
     expect(format2.presets).toEqual(['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary']);
     expect(format2.forestCharacters).toEqual(['Verdant', 'Autumn', 'Pines', 'Fey']);
@@ -169,6 +172,7 @@ describe('save format', () => {
     if (!format1 || !format2) throw new Error('Expected vocabularies');
 
     const extendedVocabulary: SaveVocabulary = {
+      mapTypes: ['dungeon', 'forest', 'cave'],
       densities: ['Sparse', 'Balanced', 'Cluttered', 'Dense'],
       presets: ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary', 'FuturePreset'],
       forestCharacters: ['Verdant', 'Autumn', 'Pines', 'Fey', 'Meadow'],
@@ -193,6 +197,11 @@ describe('save format', () => {
         'dragon',
       ],
     };
+
+    const futureTypeMap = { ...forest.map, type: 'cave' };
+    expect(mapUsesVocabulary(futureTypeMap, extendedVocabulary)).toBe(true);
+    expect(mapUsesVocabulary(futureTypeMap, format1)).toBe(false);
+    expect(mapUsesVocabulary(futureTypeMap, format2)).toBe(false);
 
     const futurePresetMap = corruptRecord(
       dungeon.map,
