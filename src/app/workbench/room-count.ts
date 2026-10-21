@@ -1,7 +1,6 @@
-import { ROOM_MAX, ROOM_MIN } from './engine/model';
+import { ROOM_MAX, ROOM_MIN } from '../engine/model';
 
 export const ROOM_FALLBACK = 6;
-export const ROOM_DEFAULT = '6';
 
 export function normalizeRoomCount(value: string): number {
   const trimmed = value.trim();

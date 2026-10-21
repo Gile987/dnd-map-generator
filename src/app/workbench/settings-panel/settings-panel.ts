@@ -8,7 +8,7 @@ import {
 } from '../../engine/model';
 import type { DecorationPreset, ForestCharacter, GeneratedMap, MapType } from '../../engine/model';
 import { Icon } from '../../icon';
-import { normalizeRoomCount, stepRoomCount } from '../../room-count';
+import { normalizeRoomCount, stepRoomCount } from '../room-count';
 import type { DraftChange, SettingsDraft } from '../settings-draft';
 
 const PRESET_DESCRIPTIONS: Readonly<Record<DecorationPreset, string>> = {

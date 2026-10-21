@@ -216,31 +216,6 @@ export function isBlockingProp(kind: PropKind): boolean {
   );
 }
 
-export function isForestProp(kind: PropKind): boolean {
-  return (
-    kind === 'tree' ||
-    kind === 'boulder' ||
-    kind === 'fern' ||
-    kind === 'mushroom' ||
-    kind === 'bush' ||
-    kind === 'log' ||
-    kind === 'stump' ||
-    kind === 'flower'
-  );
-}
-
 export function center(room: Room): Point {
   return { x: room.x + Math.floor(room.width / 2), y: room.y + Math.floor(room.height / 2) };
-}
-
-export function isDungeon(map: GeneratedMap): map is Dungeon {
-  return map.type === 'dungeon';
-}
-
-export function isForest(map: GeneratedMap): map is ForestClearing {
-  return map.type === 'forest';
-}
-
-export function mapDensity(map: GeneratedMap): Density {
-  return map.decoration.density;
 }
