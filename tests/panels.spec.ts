@@ -47,6 +47,11 @@ test('an export in progress disables both panels and preserves the pending draft
   page,
 }) => {
   await page.goto('/');
+  await page.locator('#save-name').fill('Rename during export');
+  await page.getByRole('button', { name: 'Save map', exact: true }).click();
+  await expect(page.locator('.saved-name')).toHaveText('Rename during export');
+  await page.getByRole('button', { name: 'Rename', exact: true }).click();
+  await page.locator('.rename-form input').fill('Keep this rename draft');
   const settings = page.getByRole('complementary', { name: 'Map settings' });
   const seed = settings.getByRole('textbox', { name: 'World seed' });
   await seed.fill('unapplied-panel-draft');
@@ -73,6 +78,9 @@ test('an export in progress disables both panels and preserves the pending draft
   for (const radio of await settings.getByRole('radio').all()) await expect(radio).toBeDisabled();
   await expect(page.getByRole('checkbox', { name: 'Grid', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Save map', exact: true })).toBeDisabled();
+  await expect(page.locator('.rename-form input')).toBeDisabled();
+  await expect(page.locator('.rename-form button[type=submit]')).toBeDisabled();
+  await expect(page.locator('.rename-form').getByRole('button', { name: 'Cancel' })).toBeDisabled();
   const downloadPromise = page.waitForEvent('download');
   await page.evaluate(() => document.dispatchEvent(new Event('release-export')));
   expect((await downloadPromise).suggestedFilename()).toBe(
@@ -83,6 +91,9 @@ test('an export in progress disables both panels and preserves the pending draft
   await expect(seed).toHaveValue('unapplied-panel-draft');
   await expect(settings.getByRole('button', { name: 'Generate dungeon' })).toBeEnabled();
   await expect(page.getByRole('checkbox', { name: 'Grid', exact: true })).toBeEnabled();
+  await expect(page.locator('.rename-form input')).toBeEnabled();
+  await expect(page.locator('.rename-form input')).toHaveValue('Keep this rename draft');
+  await expect(page.locator('.rename-form button[type=submit]')).toBeEnabled();
   await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
 });
 

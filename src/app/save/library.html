@@ -1,4 +1,4 @@
-<section class="library" aria-labelledby="library-title">
+<section class="library" aria-labelledby="library-title" [attr.aria-busy]="working()">
   <div class="library-heading">
     <div class="panel-heading">
       <span class="section-number">03</span>
@@ -8,6 +8,22 @@
       Your saved maps stay in this browser. Download a backup to keep them elsewhere.
     </p>
   </div>
+
+  @if (libraryProblem()) {
+  <div class="library-recovery">
+    <p role="alert">{{ libraryProblem() }}</p>
+    <div class="library-tools">
+      @if (recoveryData() !== null) {
+      <button class="text-button" type="button" (click)="downloadRecovery()" [disabled]="blocked()">
+        <forge-icon name="download" />Download recovery data
+      </button>
+      }
+      <button class="text-button" type="button" (click)="retryLibrary()" [disabled]="blocked()">
+        Retry library
+      </button>
+    </div>
+  </div>
+  }
 
   <div class="save-row">
     <label class="save-name-label" for="save-name">Save the current map</label>
@@ -21,9 +37,9 @@
         maxlength="64"
         autocomplete="off"
         spellcheck="false"
-        [disabled]="disabled()"
+        [disabled]="writeBlocked()"
       />
-      <button class="save-button" type="button" (click)="save()" [disabled]="disabled()">
+      <button class="save-button" type="button" (click)="save()" [disabled]="writeBlocked()">
         <forge-icon name="check" />Save map
       </button>
     </div>
@@ -34,7 +50,7 @@
       class="text-button"
       type="button"
       (click)="downloadBackup()"
-      [disabled]="disabled() || saved().length === 0"
+      [disabled]="blocked() || saved().length === 0"
     >
       <forge-icon name="download" />Download backup
     </button>
@@ -44,14 +60,16 @@
         type="file"
         accept=".json,application/json"
         (change)="importBackup($event)"
-        [disabled]="disabled()"
+        [disabled]="writeBlocked()"
       />
     </label>
   </div>
 
   @if (saved().length === 0) {
   <p class="library-empty">
-    Your library is empty. Generate a map you like, name it, and save it here.
+    @if (libraryProblem()) { No readable saved maps are available. Your displayed map can still be
+    exported as a PNG. } @else { Your library is empty. Generate a map you like, name it, and save
+    it here. }
   </p>
   } @else {
   <ul class="saved-list">
@@ -74,9 +92,10 @@
             [value]="editDraft()"
             (input)="editRename($event)"
             maxlength="64"
+            [disabled]="writeBlocked()"
           />
-          <button type="submit">Save</button>
-          <button type="button" (click)="cancelRename()">Cancel</button>
+          <button type="submit" [disabled]="writeBlocked()">Save</button>
+          <button type="button" (click)="cancelRename()" [disabled]="blocked()">Cancel</button>
         </form>
         } @else {
         <div class="saved-title">
@@ -87,7 +106,7 @@
             (click)="toggleFavorite(record)"
             [attr.aria-pressed]="record.favorite"
             [attr.aria-label]="record.favorite ? 'Remove from favorites' : 'Mark as favorite'"
-            [disabled]="disabled()"
+            [disabled]="writeBlocked()"
           >
             <forge-icon name="star" />
           </button>
@@ -100,12 +119,19 @@
         }
       </div>
       <div class="saved-actions">
-        <button type="button" (click)="openMap(record)" [disabled]="disabled()">Open</button>
-        <button type="button" (click)="startRename(record)" [disabled]="disabled()">Rename</button>
-        <button type="button" (click)="duplicateMap(record)" [disabled]="disabled()">
+        <button type="button" (click)="openMap(record)" [disabled]="blocked()">Open</button>
+        <button type="button" (click)="startRename(record)" [disabled]="writeBlocked()">
+          Rename
+        </button>
+        <button type="button" (click)="duplicateMap(record)" [disabled]="writeBlocked()">
           Duplicate
         </button>
-        <button type="button" class="danger" (click)="removeMap(record)" [disabled]="disabled()">
+        <button
+          type="button"
+          class="danger"
+          (click)="removeMap(record)"
+          [disabled]="writeBlocked()"
+        >
           Delete
         </button>
       </div>
