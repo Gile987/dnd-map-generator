@@ -81,6 +81,14 @@ test('an export in progress disables both panels and preserves the pending draft
   await expect(page.locator('.rename-form input')).toBeDisabled();
   await expect(page.locator('.rename-form button[type=submit]')).toBeDisabled();
   await expect(page.locator('.rename-form').getByRole('button', { name: 'Cancel' })).toBeDisabled();
+  const importInput = page.getByLabel('Import backup', { exact: true });
+  const importLabel = page.locator('.import-label');
+  await expect(importInput).toBeDisabled();
+  await expect(importLabel).toHaveCSS('opacity', '0.4');
+  await importLabel.hover();
+  await expect(importLabel).toHaveCSS('cursor', 'default');
+  await expect(importLabel).toHaveCSS('text-decoration-line', 'none');
+  await page.locator('.library').screenshot({ path: 'artifacts/qr04/disabled-desktop.png' });
   const downloadPromise = page.waitForEvent('download');
   await page.evaluate(() => document.dispatchEvent(new Event('release-export')));
   expect((await downloadPromise).suggestedFilename()).toBe(
@@ -94,6 +102,8 @@ test('an export in progress disables both panels and preserves the pending draft
   await expect(page.locator('.rename-form input')).toBeEnabled();
   await expect(page.locator('.rename-form input')).toHaveValue('Keep this rename draft');
   await expect(page.locator('.rename-form button[type=submit]')).toBeEnabled();
+  await expect(importInput).toBeEnabled();
+  await expect(importLabel).toHaveCSS('opacity', '1');
   await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
 });
 

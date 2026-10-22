@@ -140,22 +140,32 @@
     width: 12px;
     height: 12px;
   }
-  &:hover {
+  &:hover:not(:disabled):not(:has(input:disabled)) {
     color: #173f2f;
     text-decoration: underline;
   }
-  &:disabled {
+  &:disabled,
+  &:has(input:disabled) {
     opacity: 0.4;
   }
 }
 .import-label {
   position: relative;
+  cursor: pointer;
+  &:has(input:focus-visible) {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+  &:has(input:disabled) {
+    cursor: default;
+  }
   input {
     position: absolute;
     width: 1px;
     height: 1px;
     opacity: 0;
     overflow: hidden;
+    cursor: inherit;
   }
 }
 .library-empty {
