@@ -48,6 +48,29 @@
     serif;
   color: #7d887b;
 }
+.library-recovery {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #e3c8b6;
+  border-radius: 5px;
+  background: #fbefe4;
+  p {
+    margin: 0;
+    color: #99533e;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .library-tools {
+    flex-wrap: wrap;
+    margin-top: 10px;
+    gap: 8px 16px;
+  }
+  .text-button {
+    color: #425847;
+    font-size: 11px;
+    min-height: 24px;
+  }
+}
 .save-row {
   margin-top: 22px;
   display: flex;

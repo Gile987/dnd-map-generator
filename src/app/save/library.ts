@@ -34,6 +34,11 @@ export class Library {
   protected readonly editDraft = signal('');
   protected readonly notice = signal('');
   protected readonly error = signal('');
+  protected readonly working = signal(false);
+  protected readonly blocked = computed(() => this.disabled() || this.working());
+  protected readonly writeBlocked = computed(() => this.blocked() || !this.store.canWrite());
+  protected readonly libraryProblem = this.store.problem;
+  protected readonly recoveryData = this.store.recoveryData;
 
   protected readonly saved = computed(() =>
     [...this.store.saved()].sort((a, b) => {
@@ -53,26 +58,23 @@ export class Library {
     if (event.target instanceof HTMLInputElement) this.editDraft.set(event.target.value);
   }
 
-  protected save(): void {
-    const map = this.map();
-    let thumbnail: string;
-    try {
-      thumbnail = createThumbnail(map);
-    } catch {
-      this.error.set('A thumbnail for this map could not be created. Please try again.');
-      return;
-    }
-    const chosenName = this.name().trim() || defaultMapName(map);
-    try {
-      const record = this.store.add(map, chosenName, thumbnail);
-      this.name.set('');
-      this.error.set('');
-      this.notice.set(`Saved “${record.name}”.`);
-    } catch (error: unknown) {
-      this.error.set(
-        error instanceof Error ? error.message : 'This map could not be saved. Please try again.',
+  protected async save(): Promise<void> {
+    await this.runStore(async () => {
+      const map = this.map();
+      let thumbnail: string;
+      try {
+        thumbnail = createThumbnail(map);
+      } catch {
+        throw new Error('A thumbnail for this map could not be created. Please try again.');
+      }
+      const record = await this.store.add(
+        map,
+        this.name().trim() || defaultMapName(map),
+        thumbnail,
       );
-    }
+      this.name.set('');
+      return `Saved “${record.name}”.`;
+    });
   }
 
   protected openMap(record: SavedMap): void {
@@ -84,33 +86,58 @@ export class Library {
     this.editDraft.set(record.name);
   }
 
-  protected commitRename(event: SubmitEvent, record: SavedMap): void {
+  protected async commitRename(event: SubmitEvent, record: SavedMap): Promise<void> {
     event.preventDefault();
-    const name = this.editDraft().trim() || record.name;
-    if (this.runStore(() => this.store.rename(record.id, name))) {
+    await this.runStore(async () => {
+      const renamed = await this.store.rename(record.id, this.editDraft());
       this.editingId.set(null);
-      this.notice.set(`Renamed to “${name}”.`);
-    }
+      return `Renamed to “${renamed.name}”.`;
+    });
   }
 
   protected cancelRename(): void {
     this.editingId.set(null);
   }
 
-  protected removeMap(record: SavedMap): void {
-    if (this.runStore(() => this.store.remove(record.id))) {
-      this.notice.set(`Deleted “${record.name}”.`);
-    }
+  protected async removeMap(record: SavedMap): Promise<void> {
+    await this.runStore(async () => {
+      await this.store.remove(record.id);
+      return `Deleted “${record.name}”.`;
+    });
   }
 
-  protected duplicateMap(record: SavedMap): void {
-    if (this.runStore(() => this.store.duplicate(record.id))) {
-      this.notice.set(`Duplicated “${record.name}”.`);
-    }
+  protected async duplicateMap(record: SavedMap): Promise<void> {
+    await this.runStore(async () => {
+      await this.store.duplicate(record.id);
+      return `Duplicated “${record.name}”.`;
+    });
   }
 
-  protected toggleFavorite(record: SavedMap): void {
-    this.runStore(() => this.store.toggleFavorite(record.id));
+  protected async toggleFavorite(record: SavedMap): Promise<void> {
+    await this.runStore(async () => {
+      const favorite = await this.store.toggleFavorite(record.id);
+      return favorite ? 'Added to favorites.' : 'Removed from favorites.';
+    });
+  }
+
+  protected retryLibrary(): void {
+    if (this.blocked()) return;
+    this.store.reload();
+    this.error.set('');
+    this.notice.set(this.store.problem() ? '' : 'Library reloaded.');
+  }
+
+  protected downloadRecovery(): void {
+    const raw = this.store.recoveryData();
+    if (this.blocked() || raw === null) return;
+    try {
+      downloadBlob(new Blob([raw], { type: 'text/plain' }), 'encounter-map-forge-recovery.txt');
+      this.error.set('');
+      this.notice.set('Original library data downloaded.');
+    } catch {
+      this.notice.set('');
+      this.error.set('The recovery data could not be downloaded. Please try again.');
+    }
   }
 
   protected downloadBackup(): void {
@@ -134,38 +161,41 @@ export class Library {
     const file = target.files?.[0];
     if (!file) return;
     try {
-      const result = parseBundle(await file.text());
-      if (!result.ok) {
-        this.error.set(result.error);
-        return;
-      }
-      const { added, skipped: duplicateSkips } = this.store.importMaps(result.maps);
-      const skipped = result.skipped + duplicateSkips;
-      this.error.set('');
-      this.notice.set(
-        skipped > 0
+      await this.runStore(async () => {
+        let text: string;
+        try {
+          text = await file.text();
+        } catch {
+          throw new Error('That backup file could not be read.');
+        }
+        const result = parseBundle(text);
+        if (!result.ok) throw new Error(result.error);
+        const { added, skipped: duplicateSkips } = await this.store.importMaps(result.maps);
+        const skipped = result.skipped + duplicateSkips;
+        return skipped > 0
           ? `Imported ${added} ${added === 1 ? 'map' : 'maps'}; ${skipped} ${skipped === 1 ? 'entry' : 'entries'} skipped.`
-          : `Imported ${added} ${added === 1 ? 'map' : 'maps'}.`,
-      );
-    } catch {
-      this.error.set('That backup file could not be read.');
+          : `Imported ${added} ${added === 1 ? 'map' : 'maps'}.`;
+      });
     } finally {
       target.value = '';
     }
   }
 
-  private runStore(action: () => void): boolean {
+  private async runStore(action: () => Promise<string>): Promise<void> {
+    if (this.blocked()) return;
+    this.working.set(true);
+    this.notice.set('');
+    this.error.set('');
     try {
-      action();
-      this.error.set('');
-      return true;
+      this.notice.set(await action());
     } catch (error: unknown) {
       this.error.set(
         error instanceof Error
           ? error.message
           : 'This change could not be saved. Please try again.',
       );
-      return false;
+    } finally {
+      this.working.set(false);
     }
   }
 }
