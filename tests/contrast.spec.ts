@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import type { Locator } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 interface Reading {
   readonly state: string;
@@ -8,6 +8,18 @@ interface Reading {
   readonly foreground: string;
   readonly background: readonly number[];
   readonly ratio: number;
+}
+
+async function selectMapType(page: Page, type: 'Dungeon' | 'Forest'): Promise<void> {
+  await page.getByRole('radio', { name: type, exact: true }).check();
+  await expect(
+    page.getByRole('heading', {
+      name: type === 'Forest' ? 'Shape your clearing' : 'Shape your dungeon',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.locator('.workbench')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.getByRole('button', { name: 'Shuffle details' })).toBeEnabled();
 }
 
 async function checkContrast(
@@ -42,6 +54,8 @@ async function checkContrast(
       return 0.2126 * linear(value[0]) + 0.7152 * linear(value[1]) + 0.0722 * linear(value[2]);
     }
     return elements.map((element) => {
+      if (!element.isConnected)
+        throw new Error(`Detached contrast sample: ${element.tagName.toLowerCase()}#${element.id}`);
       const ancestors: Element[] = [];
       for (let current: Element | null = element; current; current = current.parentElement)
         ancestors.push(current);
@@ -50,7 +64,10 @@ async function checkContrast(
         const style = getComputedStyle(ancestor);
         if (style.backgroundImage !== 'none' || Number(style.opacity) !== 1)
           throw new Error(
-            'Contrast samples require solid backgrounds and opaque enabled elements.',
+            `Cannot measure ${element.tagName.toLowerCase()}#${element.id}.${element.className}: ` +
+              `${ancestor.tagName.toLowerCase()}#${ancestor.id}.${ancestor.className} has ` +
+              `background-image ${style.backgroundImage} and opacity ${style.opacity}. ` +
+              `Text: ${element.textContent?.trim()}`,
           );
         const layer = color(style.backgroundColor);
         if (background) background = over(layer, background);
@@ -132,9 +149,8 @@ for (const width of [1440, 768, 320]) {
     await checkContrast(saveName, 'save placeholder hover', readings, true);
     await saveName.focus();
     await checkContrast(saveName, 'save placeholder focus', readings, true);
-    for (const type of ['Dungeon', 'Forest']) {
-      await page.getByRole('radio', { name: type, exact: true }).check();
-      await expect(page.getByRole('button', { name: 'Shuffle details' })).toBeEnabled();
+    for (const type of ['Dungeon', 'Forest'] as const) {
+      await selectMapType(page, type);
       await checkContrast(
         page.locator(
           [
@@ -193,6 +209,8 @@ for (const width of [1440, 768, 320]) {
         await checkContrast(button, `${type} action keyboard focus`, readings);
       }
       await generate.click();
+      await expect(page.locator('.pending-settings')).toHaveCount(0);
+      await expect(page.locator('.workbench')).toHaveAttribute('aria-busy', 'false');
       await expect(generate).toBeDisabled();
       await checkContrast(
         page.locator('.status, .generate-note, .style-note p, .style-note strong'),
@@ -207,6 +225,7 @@ for (const width of [1440, 768, 320]) {
     await page.locator('#save-name').fill('Readable clearing');
     await page.getByRole('button', { name: 'Save map', exact: true }).click();
     await expect(page.locator('.saved-item')).toHaveCount(1);
+    await expect(page.locator('.library')).toHaveAttribute('aria-busy', 'false');
     await checkContrast(
       page.locator('.saved-meta > span, .saved-name, .library-message .notice'),
       'populated library',
@@ -244,6 +263,7 @@ for (const width of [1440, 768, 320]) {
       buffer: Buffer.from('invalid'),
     });
     await expect(page.locator('.library-message .error')).not.toBeEmpty();
+    await expect(page.locator('.library')).toHaveAttribute('aria-busy', 'false');
     await checkContrast(page.locator('.library-message .error'), 'library error', readings);
     await page.getByLabel('World seed').fill('');
     await page.getByRole('button', { name: 'Generate forest', exact: true }).click();
@@ -258,3 +278,58 @@ for (const width of [1440, 768, 320]) {
     });
   });
 }
+
+test('contrast sampling waits for the accepted map type when the change event is delayed', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { name: 'Shape your dungeon', exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    function holdChange(event: Event): void {
+      const input = event.target;
+      if (
+        !(input instanceof HTMLInputElement) ||
+        input.name !== 'mapType' ||
+        input.value !== 'forest'
+      )
+        return;
+      document.removeEventListener('change', holdChange, true);
+      event.stopImmediatePropagation();
+      document.documentElement.dataset['mapChangeHeld'] = 'true';
+      document.addEventListener(
+        'release-map-change',
+        () => input.dispatchEvent(new Event('change', { bubbles: true })),
+        { once: true },
+      );
+    }
+    document.addEventListener('change', holdChange, true);
+  });
+  let ready = false;
+  const switching = selectMapType(page, 'Forest').then(() => {
+    ready = true;
+  });
+  try {
+    await expect(page.locator('html')).toHaveAttribute('data-map-change-held', 'true');
+    await expect(page.getByRole('radio', { name: 'Forest', exact: true })).toBeChecked();
+    await expect(
+      page.getByRole('heading', { name: 'Shape your dungeon', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Shuffle details' })).toBeEnabled();
+    expect(ready).toBe(false);
+  } finally {
+    await page.evaluate(() => document.dispatchEvent(new Event('release-map-change')));
+    await switching;
+  }
+  expect(ready).toBe(true);
+  await expect(
+    page.getByRole('heading', { name: 'Shape your clearing', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('#rooms')).toHaveCount(0);
+  await checkContrast(
+    page.locator('#seed, .style-note p'),
+    'accepted forest after delayed change',
+    [],
+  );
+});
