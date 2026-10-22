@@ -296,6 +296,37 @@ describe('workbench session transitions', () => {
     expect(session.pending()).toBe(false);
   });
 
+  test.each(['dungeon', 'forest'] as const)(
+    '%s shuffle exhaustion retains accepted maps and drafts and permits a new layout',
+    (type) => {
+      const session = new WorkbenchSession();
+      session.selectMapType(type);
+      const original = session.map();
+      const map =
+        original.type === 'dungeon'
+          ? {
+              ...original,
+              decoration: { ...original.decoration, revision: Number.MAX_SAFE_INTEGER },
+            }
+          : {
+              ...original,
+              decoration: { ...original.decoration, revision: Number.MAX_SAFE_INTEGER },
+            };
+      session.openSaved(map);
+      session.updateDraft({ type, changes: { seed: 'revision-recovery' } });
+      const draft = session.draft();
+      expect(() => session.shuffle()).toThrow('detail revision limit');
+      expect(session.map()).toBe(map);
+      expect(session.draft()).toBe(draft);
+      expect(session.pending()).toBe(true);
+      expect(session.generate()).toEqual({ ok: true, layoutChanged: true });
+      expect(session.map().seed).toBe('revision-recovery');
+      expect(session.map().decoration.revision).toBe(0);
+      session.shuffle();
+      expect(session.map().decoration.revision).toBe(1);
+    },
+  );
+
   test('a rejected forest character does not partially commit a combined appearance change', () => {
     const session = new WorkbenchSession();
     session.selectMapType('forest');

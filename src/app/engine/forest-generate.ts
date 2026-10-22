@@ -1,4 +1,5 @@
 import { GENERATOR_VERSION } from './model';
+import { nextDetailRevision } from './decoration-revision';
 import type {
   Density,
   ForestCharacter,
@@ -71,7 +72,7 @@ export function generateForestClearing(
 }
 
 export function shuffleForestDetails(map: ForestClearing): ForestClearing {
-  const revision = map.decoration.revision + 1;
+  const revision = nextDetailRevision(map.decoration.revision);
   const decoration = decorateForest(
     map.layout,
     map.seed,

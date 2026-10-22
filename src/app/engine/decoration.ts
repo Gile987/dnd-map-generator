@@ -2,6 +2,7 @@ import { center, DENSITY_BUDGETS, indexOf, isBlockingProp, isFloor } from './mod
 import type { Decoration, DecorationPreset, Density, Dungeon, Layout, Prop } from './model';
 import { Random, shuffleInPlace, streamSeed } from './random';
 import { isTraversable, reservedTiles } from './validation';
+import { nextDetailRevision } from './decoration-revision';
 
 type PropChoice = Prop['kind'];
 
@@ -176,7 +177,7 @@ export function decorate(
 }
 
 export function shuffleDetails(map: Dungeon, density: Density = map.decoration.density): Dungeon {
-  const revision = map.decoration.revision + 1;
+  const revision = nextDetailRevision(map.decoration.revision);
   return {
     ...map,
     decoration: decorate(map.layout, map.seed, density, map.decoration.preset, revision),

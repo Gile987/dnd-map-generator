@@ -1,6 +1,7 @@
 import {
   ALL_DENSITIES,
   ALL_PRESETS,
+  DENSITY_BUDGETS,
   HEIGHT,
   ROOM_MAX,
   ROOM_MIN,
@@ -8,10 +9,13 @@ import {
   contains,
   indexOf,
   isBlockingProp,
+  isDungeonPropKind,
+  isTilePosition,
   isFloor,
 } from './model';
 import type { Dungeon, DungeonSettings, Layout, Point, Room } from './model';
 import { distances } from './topology';
+import { isDetailRevision } from './decoration-revision';
 
 export function validateSettings(settings: DungeonSettings): string | undefined {
   if (!settings.seed.trim() || settings.seed.trim().length > 64)
@@ -138,9 +142,13 @@ export function validateLayout(layout: Layout, roomCount: number): string | unde
 export function validateDungeon(map: Dungeon): string | undefined {
   const layoutError = validateLayout(map.layout, map.layout.rooms.length);
   if (layoutError) return layoutError;
+  if (!isDetailRevision(map.decoration.revision))
+    return 'The detail revision must be a nonnegative safe integer.';
   const reserved = reservedTiles(map.layout);
   const blocked = new Set<number>();
   for (const prop of map.decoration.props) {
+    if (!isTilePosition(prop.x, prop.y)) return 'A prop is outside the tile grid.';
+    if (!isDungeonPropKind(prop.kind)) return 'A prop is not supported by dungeon maps.';
     if (!isFloor(map.layout, prop.x, prop.y)) return 'A prop is outside the floor.';
     if (prop.blocking !== isBlockingProp(prop.kind))
       return 'A prop has an invalid movement classification.';
@@ -151,6 +159,13 @@ export function validateDungeon(map: Dungeon): string | undefined {
     if (!map.layout.rooms.some((room) => contains(room, prop)))
       return 'A blocking prop is outside a room.';
     blocked.add(tile);
+  }
+  for (const room of map.layout.rooms) {
+    const count = map.decoration.props.filter(
+      (prop) => prop.blocking && contains(room, prop),
+    ).length;
+    if (count > Math.floor(room.width * room.height * DENSITY_BUDGETS[map.decoration.density]))
+      return 'Dungeon decoration exceeds a room blocking budget.';
   }
   if (!isTraversable(map.layout, blocked)) return 'Decoration blocks access through the dungeon.';
   return undefined;

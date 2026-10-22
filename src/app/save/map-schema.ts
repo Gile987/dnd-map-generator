@@ -5,11 +5,15 @@ import {
   ALL_PROP_KINDS,
   DEFAULT_FOREST_CHARACTER,
   HEIGHT,
+  ROOM_MAX,
+  ROOM_MIN,
   WIDTH,
+  isTilePosition,
 } from '../engine/model';
 import type { GeneratedMap } from '../engine/model';
 import { validateDungeon } from '../engine/validation';
 import { validateForest } from '../engine/forest-validation';
+import { isDetailRevision } from '../engine/decoration-revision';
 
 export interface SaveVocabulary {
   readonly mapTypes: readonly string[];
@@ -69,11 +73,16 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function isNonNegativeInt(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
 function isPoint(value: unknown): boolean {
-  return isObject(value) && isFiniteNumber(value['x']) && isFiniteNumber(value['y']);
+  return (
+    isObject(value) &&
+    isFiniteNumber(value['x']) &&
+    isFiniteNumber(value['y']) &&
+    isTilePosition(value['x'], value['y'])
+  );
 }
 
 function isUnitFraction(value: unknown): value is number {
@@ -83,8 +92,7 @@ function isUnitFraction(value: unknown): value is number {
 function isProp(value: unknown): boolean {
   if (!isObject(value)) return false;
   return (
-    isFiniteNumber(value['x']) &&
-    isFiniteNumber(value['y']) &&
+    isPoint(value) &&
     typeof value['kind'] === 'string' &&
     isIn(value['kind'], ALL_PROP_KINDS) &&
     typeof value['blocking'] === 'boolean' &&
@@ -146,10 +154,14 @@ function isDungeonLayout(value: unknown): boolean {
   return (
     isTileField(tiles) &&
     Array.isArray(rooms) &&
+    rooms.length >= ROOM_MIN &&
+    rooms.length <= ROOM_MAX &&
     rooms.every(isRoom) &&
     Array.isArray(connections) &&
+    connections.length <= ROOM_MAX &&
     connections.every(isConnection) &&
     Array.isArray(thresholds) &&
+    thresholds.length <= WIDTH * HEIGHT * 2 &&
     thresholds.every(isThreshold) &&
     isLandmark(entrance) &&
     isLandmark(objective)
@@ -162,6 +174,7 @@ function isForestLayout(value: unknown): boolean {
   return (
     isTileField(tiles) &&
     Array.isArray(route) &&
+    route.length <= WIDTH * HEIGHT &&
     route.every((tile) => isNonNegativeInt(tile) && tile < WIDTH * HEIGHT) &&
     isPoint(pathStart) &&
     isPoint(pathEnd)
@@ -173,10 +186,11 @@ function isDecorationBase(value: unknown): boolean {
   const { props, density, revision } = value;
   return (
     Array.isArray(props) &&
+    props.length <= WIDTH * HEIGHT * 2 &&
     props.every(isProp) &&
     typeof density === 'string' &&
     isIn(density, ALL_DENSITIES) &&
-    isNonNegativeInt(revision)
+    isDetailRevision(revision)
   );
 }
 
@@ -203,7 +217,7 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
   const { type, version, seed, surfaceSeed, layout, decoration } = value;
   if (type !== 'dungeon' && type !== 'forest') return false;
   if (typeof version !== 'string' || !version) return false;
-  if (typeof seed !== 'string' || !seed.trim() || seed.trim().length > 64) return false;
+  if (typeof seed !== 'string' || !seed || seed !== seed.trim() || seed.length > 64) return false;
   if (!isFiniteNumber(surfaceSeed)) return false;
   if (!isObject(layout) || !isObject(decoration)) return false;
   if (type === 'dungeon') return isDungeonLayout(layout) && isDungeonDecoration(decoration);
@@ -240,7 +254,7 @@ export function parseSavedMapBody(
       decoration: { ...map['decoration'], character: DEFAULT_FOREST_CHARACTER },
     };
   }
-  if (!mapUsesVocabulary(normalizedMap, vocabulary)) return undefined;
   if (!isUsableMap(normalizedMap)) return undefined;
+  if (!mapUsesVocabulary(normalizedMap, vocabulary)) return undefined;
   return normalizedMap;
 }
