@@ -24,7 +24,7 @@
   font:
     10px 'Segoe UI',
     sans-serif;
-  color: #a99a70;
+  color: var(--text-accent);
   border: 1px solid #d8d6bc;
   border-radius: 50%;
   width: 23px;
@@ -57,7 +57,7 @@ form {
     border: 1px solid transparent;
     border-radius: 3px;
     cursor: pointer;
-    color: #7e8973;
+    color: var(--text-muted);
     &.selected {
       background: #fffef7;
       color: #3d5d41;
@@ -121,7 +121,7 @@ form {
     font-weight: 400;
     font-size: 10px;
     letter-spacing: 1.2px;
-    color: #8b937e;
+    color: var(--text-muted);
   }
 }
 .seed-field input {
@@ -151,7 +151,7 @@ form {
   margin-top: 9px;
   > span {
     font-size: 10px;
-    color: #8b9483;
+    color: var(--text-muted);
   }
 }
 .text-button {
@@ -222,7 +222,7 @@ form {
 }
 .field-hint {
   font-size: 10px;
-  color: #88927e;
+  color: var(--text-muted);
   margin: 9px 0 0;
   line-height: 1.5;
 }
@@ -234,7 +234,7 @@ form {
 }
 .pending {
   font-size: 10px;
-  color: #987239;
+  color: var(--text-accent);
   line-height: 1.5;
   display: flex;
   align-items: center;
@@ -280,7 +280,7 @@ form {
 }
 .generate-note {
   text-align: center;
-  color: #959b87;
+  color: var(--text-muted);
   font-size: 10px;
   margin: 10px 0 0;
 }
@@ -292,7 +292,7 @@ form {
     font-size: 17px;
   }
   > p {
-    color: #87927d;
+    color: var(--text-muted);
     font-size: 10px;
     line-height: 1.8;
     margin: 12px 0 15px;
@@ -328,7 +328,7 @@ form {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  color: #959d88;
+  color: var(--text-muted);
   font-size: 10px;
   margin-top: 10px;
   forge-icon {
@@ -347,7 +347,7 @@ form {
   border-radius: 0 0 9px 9px;
   min-height: 75px;
   strong {
-    color: #627456;
+    color: #536c4e;
     font:
       13px Georgia,
       serif;
@@ -355,7 +355,7 @@ form {
   p {
     margin: 5px 0 0;
     font-size: 10px;
-    color: #919a82;
+    color: var(--text-muted);
   }
 }
 .style-swatch {
