@@ -91,26 +91,7 @@ export type MapSettings =
   | (DungeonSettings & { readonly mapType: 'dungeon' })
   | (ForestSettings & { readonly mapType: 'forest' });
 
-export type PropKind =
-  | 'crate'
-  | 'barrel'
-  | 'rubble'
-  | 'rug'
-  | 'sconce'
-  | 'moss'
-  | 'sarcophagus'
-  | 'vine'
-  | 'broken_column'
-  | 'tree'
-  | 'boulder'
-  | 'fern'
-  | 'mushroom'
-  | 'bush'
-  | 'log'
-  | 'stump'
-  | 'flower';
-
-export const ALL_PROP_KINDS: readonly PropKind[] = [
+export const DUNGEON_PROP_KINDS = [
   'crate',
   'barrel',
   'rubble',
@@ -120,6 +101,9 @@ export const ALL_PROP_KINDS: readonly PropKind[] = [
   'sarcophagus',
   'vine',
   'broken_column',
+] as const;
+
+export const FOREST_PROP_KINDS = [
   'tree',
   'boulder',
   'fern',
@@ -128,7 +112,21 @@ export const ALL_PROP_KINDS: readonly PropKind[] = [
   'log',
   'stump',
   'flower',
-];
+] as const;
+
+export type DungeonPropKind = (typeof DUNGEON_PROP_KINDS)[number];
+export type ForestPropKind = (typeof FOREST_PROP_KINDS)[number];
+export type PropKind = DungeonPropKind | ForestPropKind;
+
+export const ALL_PROP_KINDS: readonly PropKind[] = [...DUNGEON_PROP_KINDS, ...FOREST_PROP_KINDS];
+
+export function isDungeonPropKind(kind: PropKind): kind is DungeonPropKind {
+  return DUNGEON_PROP_KINDS.some((candidate) => candidate === kind);
+}
+
+export function isForestPropKind(kind: PropKind): kind is ForestPropKind {
+  return FOREST_PROP_KINDS.some((candidate) => candidate === kind);
+}
 
 export interface Prop extends Point {
   readonly kind: PropKind;
@@ -185,6 +183,10 @@ export type ForestGenerationResult =
   | { readonly ok: false; readonly error: string };
 
 export const indexOf = (x: number, y: number): number => y * WIDTH + x;
+
+export function isTilePosition(x: number, y: number): boolean {
+  return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < WIDTH && y < HEIGHT;
+}
 
 export function isFloor(layout: Pick<Layout, 'tiles'>, x: number, y: number): boolean {
   return x >= 0 && y >= 0 && x < WIDTH && y < HEIGHT && layout.tiles[indexOf(x, y)] === true;

@@ -1,5 +1,10 @@
-import { HEIGHT, WIDTH, indexOf, isWalkable } from '../engine/model';
-import type { ForestCharacter, ForestClearing, ForestLayout } from '../engine/model';
+import { HEIGHT, WIDTH, indexOf, isForestPropKind, isWalkable } from '../engine/model';
+import type {
+  ForestCharacter,
+  ForestClearing,
+  ForestLayout,
+  ForestPropKind,
+} from '../engine/model';
 import { Random, deriveSeed } from '../engine/random';
 import { drawProp } from './props';
 import { FOREST_PALETTES } from './forest-palette';
@@ -7,6 +12,17 @@ import type { DrawingContext } from './drawing-context';
 import type { RenderOptions } from './render-options';
 import { boundaryLoops, traceBoundaries } from './boundaries';
 import { drawGrid } from './drawing-primitives';
+
+const PROP_LAYERS: Readonly<Record<ForestPropKind, 'ground' | 'object'>> = {
+  tree: 'object',
+  boulder: 'object',
+  fern: 'ground',
+  mushroom: 'ground',
+  bush: 'ground',
+  log: 'object',
+  stump: 'object',
+  flower: 'ground',
+};
 
 interface ForestAtmosphere {
   readonly background: string;
@@ -232,20 +248,12 @@ export function renderForest(
   clearingEdges(ctx, map.layout, atmo.contour);
 
   const underProps = map.decoration.props.filter(
-    (prop) =>
-      prop.kind === 'fern' ||
-      prop.kind === 'mushroom' ||
-      prop.kind === 'flower' ||
-      prop.kind === 'bush',
+    (prop) => isForestPropKind(prop.kind) && PROP_LAYERS[prop.kind] === 'ground',
   );
   for (const prop of underProps) drawProp(ctx, prop, palette);
 
   const overProps = map.decoration.props.filter(
-    (prop) =>
-      prop.kind === 'tree' ||
-      prop.kind === 'boulder' ||
-      prop.kind === 'log' ||
-      prop.kind === 'stump',
+    (prop) => isForestPropKind(prop.kind) && PROP_LAYERS[prop.kind] === 'object',
   );
   for (const prop of overProps) drawProp(ctx, prop, palette);
 
