@@ -33,7 +33,7 @@
   font:
     10px 'Segoe UI',
     sans-serif;
-  color: #a99a70;
+  color: var(--text-accent);
   border: 1px solid #d8d6bc;
   border-radius: 50%;
   width: 24px;
@@ -46,7 +46,7 @@
   font:
     italic 12px Georgia,
     serif;
-  color: #7d887b;
+  color: var(--text-muted);
 }
 .library-recovery {
   margin-top: 18px;
@@ -97,6 +97,10 @@
       monospace;
     color: #415c48;
     height: 42px;
+    &::placeholder {
+      color: var(--text-muted);
+      opacity: 1;
+    }
     &:focus {
       border-color: #6b8b70;
       background: #fffef7;
@@ -174,7 +178,7 @@
   border: 1px dashed #d5dcc7;
   border-radius: 6px;
   text-align: center;
-  color: #8b9483;
+  color: var(--text-muted);
   font-size: 11px;
   line-height: 1.6;
 }
@@ -248,7 +252,7 @@
   gap: 5px;
   align-items: center;
   font-size: 10px;
-  color: #8b9483;
+  color: var(--text-muted);
   > span + span::before {
     content: '·';
     margin-right: 5px;
@@ -279,7 +283,7 @@
       text-decoration: underline;
     }
     &.danger {
-      color: #a56b52;
+      color: #99533e;
       margin-left: auto;
       &:hover {
         color: #8a4a34;
@@ -338,7 +342,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #7d9074;
+    color: var(--text-muted);
     font-size: 10px;
     margin: 0;
   }

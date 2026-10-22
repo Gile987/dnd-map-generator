@@ -51,7 +51,7 @@
   font:
     italic 15px Georgia,
     serif;
-  color: #7b8576;
+  color: var(--text-muted);
   .small-star {
     color: #aa8e57;
     font-style: normal;
@@ -62,7 +62,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #7b8877;
+  color: var(--text-muted);
   font-size: 10px;
   letter-spacing: 1.6px;
   span {
@@ -92,7 +92,7 @@ main {
   font-size: 10px;
   font-weight: 650;
   letter-spacing: 2.1px;
-  color: #83917e;
+  color: var(--text-muted);
   margin: 0 0 12px;
   span {
     width: 17px;
@@ -111,7 +111,7 @@ h1 {
 }
 .intro-copy {
   margin: 13px 0 0;
-  color: #7d887b;
+  color: var(--text-muted);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -127,6 +127,7 @@ h1 {
     opacity: 0.7;
   }
   span {
+    color: var(--text-muted);
     font-size: 10px;
     letter-spacing: 1.4px;
     line-height: 1.8;
@@ -136,7 +137,7 @@ h1 {
     font:
       italic 12px Georgia,
       serif;
-    color: #7d887b;
+    color: var(--text-muted);
     letter-spacing: 0;
     margin-top: 3px;
   }
@@ -159,7 +160,7 @@ h1 {
   align-items: center;
   flex-wrap: wrap;
   gap: 18px;
-  color: #84917d;
+  color: var(--text-muted);
   > span {
     display: flex;
     align-items: center;
@@ -177,7 +178,7 @@ h1 {
     background: #d4dbc9;
   }
   .scale-note {
-    color: #9aa38d;
+    color: var(--text-muted);
   }
 }
 .objective-symbol {
@@ -206,7 +207,7 @@ h1 {
     font:
       italic 13px Georgia,
       serif;
-    color: #76866b;
+    color: var(--text-muted);
     small {
       display: block;
       font:
@@ -214,7 +215,7 @@ h1 {
         sans-serif;
       letter-spacing: 0.8px;
       margin-top: 6px;
-      color: #9ca28e;
+      color: var(--text-muted);
     }
   }
 }
@@ -260,7 +261,7 @@ h1 {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #7d9074;
+    color: var(--text-muted);
     font-size: 10px;
     line-height: 1.6;
     forge-icon {
@@ -276,7 +277,7 @@ footer {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: #a1a68e;
+  color: var(--text-muted);
   > span:first-child {
     font-size: 10px;
     letter-spacing: 1.8px;

@@ -1,0 +1,260 @@
+import { writeFile } from 'node:fs/promises';
+import { expect, test } from '@playwright/test';
+import type { Locator } from '@playwright/test';
+
+interface Reading {
+  readonly state: string;
+  readonly text: string;
+  readonly foreground: string;
+  readonly background: readonly number[];
+  readonly ratio: number;
+}
+
+async function checkContrast(
+  locator: Locator,
+  state: string,
+  readings: Reading[],
+  placeholder = false,
+): Promise<void> {
+  await expect(locator.first(), state).toBeVisible();
+  const measured = await locator.evaluateAll((elements, placeholder) => {
+    type Color = readonly [number, number, number, number];
+    function color(value: string): Color {
+      if (!/^rgba?\(/.test(value)) throw new Error(`Unsupported computed color: ${value}`);
+      const [r, g, b, a = 1] = value.match(/[\d.]+/g)?.map(Number) ?? [];
+      if (r === undefined || g === undefined || b === undefined)
+        throw new Error(`Invalid computed color: ${value}`);
+      return [r, g, b, a];
+    }
+    function over(top: Color, bottom: Color): Color {
+      return [
+        top[0] * top[3] + bottom[0] * (1 - top[3]),
+        top[1] * top[3] + bottom[1] * (1 - top[3]),
+        top[2] * top[3] + bottom[2] * (1 - top[3]),
+        1,
+      ];
+    }
+    function luminance(value: Color): number {
+      const linear = (channel: number) => {
+        const s = channel / 255;
+        return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * linear(value[0]) + 0.7152 * linear(value[1]) + 0.0722 * linear(value[2]);
+    }
+    return elements.map((element) => {
+      const ancestors: Element[] = [];
+      for (let current: Element | null = element; current; current = current.parentElement)
+        ancestors.push(current);
+      let background: Color | undefined;
+      for (const ancestor of ancestors.reverse()) {
+        const style = getComputedStyle(ancestor);
+        if (style.backgroundImage !== 'none' || Number(style.opacity) !== 1)
+          throw new Error(
+            'Contrast samples require solid backgrounds and opaque enabled elements.',
+          );
+        const layer = color(style.backgroundColor);
+        if (background) background = over(layer, background);
+        else if (layer[3] === 1) background = layer;
+      }
+      if (!background) throw new Error('A sample has no opaque background.');
+      const style = getComputedStyle(element, placeholder ? '::placeholder' : null);
+      const foreground = color(style.color);
+      const painted = over(
+        [foreground[0], foreground[1], foreground[2], foreground[3] * Number(style.opacity)],
+        background,
+      );
+      const a = luminance(painted);
+      const b = luminance(background);
+      return {
+        text: placeholder
+          ? (element.getAttribute('placeholder') ?? '')
+          : element instanceof HTMLInputElement
+            ? element.value
+            : (element.textContent?.trim() ?? ''),
+        foreground: style.color,
+        background: background.slice(0, 3),
+        ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+      };
+    });
+  }, placeholder);
+  expect(measured.length, state).toBeGreaterThan(0);
+  for (const reading of measured) {
+    const row = { ...reading, state };
+    readings.push(row);
+    expect.soft(reading.text.length, state).toBeGreaterThan(0);
+    expect.soft(reading.ratio, JSON.stringify(row)).toBeGreaterThanOrEqual(4.5);
+  }
+}
+
+for (const width of [1440, 768, 320]) {
+  test(`enabled interface text meets 4.5:1 contrast at ${width}px`, async ({ page }, testInfo) => {
+    const readings: Reading[] = [];
+    await page.setViewportSize({ width, height: 1100 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await checkContrast(
+      page.locator(
+        [
+          '.brand-subtitle',
+          '.header-note',
+          '.local-badge',
+          '.eyebrow',
+          '.intro-copy',
+          '.edition > span',
+          '.edition small',
+          '.legend > span:not(.legend-divider)',
+          '.export-action > span',
+          '.export-action small',
+          '.status',
+          'footer > span',
+          '.library-note',
+          '.library-empty',
+          '.save-name-label',
+          '.section-number',
+          '.map-heading > div > span',
+          '.map-meta > div > span',
+          '.map-meta strong',
+          '.grid-toggle',
+          '.pan-hint',
+          '.wheel-hint',
+          '.zoom-controls output',
+          '.fit',
+        ]
+          .map((selector) => `${selector}:visible`)
+          .join(','),
+      ),
+      'page and empty library',
+      readings,
+    );
+    const saveName = page.locator('#save-name');
+    await checkContrast(saveName, 'save placeholder', readings, true);
+    await saveName.hover();
+    await checkContrast(saveName, 'save placeholder hover', readings, true);
+    await saveName.focus();
+    await checkContrast(saveName, 'save placeholder focus', readings, true);
+    for (const type of ['Dungeon', 'Forest']) {
+      await page.getByRole('radio', { name: type, exact: true }).check();
+      await expect(page.getByRole('button', { name: 'Shuffle details' })).toBeEnabled();
+      await checkContrast(
+        page.locator(
+          [
+            '.field label > span',
+            '.preset-field legend > span',
+            '.density-field legend > span',
+            '.field-bottom > span',
+            '.field-hint',
+            '.generate-note',
+            '.details-section > p',
+            '.preserve-note',
+            '.style-note p',
+            '.style-note strong',
+            '#seed',
+            '#rooms',
+            '.map-type-options label > span',
+          ]
+            .map((selector) => `${selector}:visible`)
+            .join(','),
+        ),
+        `${type} settings`,
+        readings,
+      );
+      for (const label of await page
+        .locator('.preset-options label, .density-options label')
+        .all()) {
+        const input = label.locator('input');
+        const text = label.locator('span');
+        await checkContrast(text, `${type} option normal`, readings);
+        await label.hover();
+        await checkContrast(text, `${type} option hover`, readings);
+        await page.keyboard.press('Tab');
+        await input.focus();
+        expect(await input.evaluate((element) => element.matches(':focus-visible'))).toBe(true);
+        await checkContrast(text, `${type} option keyboard focus`, readings);
+        await input.check();
+        await checkContrast(text, `${type} option selected`, readings);
+      }
+      await checkContrast(page.locator('.pending'), `${type} pending notice`, readings);
+      const generate = page.getByRole('button', {
+        name: `Generate ${type.toLowerCase()}`,
+        exact: true,
+      });
+      for (const button of [
+        generate,
+        page.getByRole('button', { name: 'Shuffle details' }),
+        page.getByRole('button', { name: 'Export PNG', exact: true }),
+        page.getByRole('button', { name: 'Randomize seed', exact: true }),
+        page.getByRole('button', { name: 'Reset changes', exact: true }),
+      ]) {
+        await checkContrast(button, `${type} action normal`, readings);
+        await button.hover();
+        await checkContrast(button, `${type} action hover`, readings);
+        await page.keyboard.press('Tab');
+        await button.focus();
+        await checkContrast(button, `${type} action keyboard focus`, readings);
+      }
+      await generate.click();
+      await expect(generate).toBeDisabled();
+      await checkContrast(
+        page.locator('.status, .generate-note, .style-note p, .style-note strong'),
+        `${type} applied settings`,
+        readings,
+      );
+      await page.screenshot({
+        path: `artifacts/qr05/${type.toLowerCase()}-${width}.png`,
+        fullPage: true,
+      });
+    }
+    await page.locator('#save-name').fill('Readable clearing');
+    await page.getByRole('button', { name: 'Save map', exact: true }).click();
+    await expect(page.locator('.saved-item')).toHaveCount(1);
+    await checkContrast(
+      page.locator('.saved-meta > span, .saved-name, .library-message .notice'),
+      'populated library',
+      readings,
+    );
+    for (const action of await page
+      .locator('.saved-actions button, .library-tools button, .import-label, .save-button')
+      .all()) {
+      await checkContrast(action, 'library action normal', readings);
+      await action.hover();
+      await checkContrast(action, 'library action hover', readings);
+      await page.keyboard.press('Tab');
+      const input = action.locator('input');
+      if (await input.count()) await input.focus();
+      else await action.focus();
+      await checkContrast(action, 'library action keyboard focus', readings);
+    }
+    await page.getByRole('button', { name: 'Rename', exact: true }).click();
+    await checkContrast(
+      page.locator('.rename-form input, .rename-form button'),
+      'rename controls',
+      readings,
+    );
+    for (const button of await page.locator('.rename-form button').all()) {
+      await button.hover();
+      await checkContrast(button, 'rename action hover', readings);
+      await page.keyboard.press('Tab');
+      await button.focus();
+      await checkContrast(button, 'rename action keyboard focus', readings);
+    }
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.setInputFiles('.import-label input', {
+      name: 'invalid.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from('invalid'),
+    });
+    await expect(page.locator('.library-message .error')).not.toBeEmpty();
+    await checkContrast(page.locator('.library-message .error'), 'library error', readings);
+    await page.getByLabel('World seed').fill('');
+    await page.getByRole('button', { name: 'Generate forest', exact: true }).click();
+    await expect(page.locator('#settings-error')).not.toBeEmpty();
+    await checkContrast(page.locator('#settings-error, .pending'), 'settings error', readings);
+    await page.locator('.library').screenshot({ path: `artifacts/qr05/library-${width}.png` });
+    const path = `artifacts/qr05/contrast-${width}.json`;
+    await writeFile(path, JSON.stringify(readings, null, 2));
+    await testInfo.attach('contrast-readings', {
+      path,
+      contentType: 'application/json',
+    });
+  });
+}
