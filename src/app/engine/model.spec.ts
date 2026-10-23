@@ -43,6 +43,10 @@ describe('production option constants', () => {
       'log',
       'stump',
       'flower',
+      'tent',
+      'bedroll',
+      'fire_ring',
+      'supply_bundle',
     ]);
   });
 });

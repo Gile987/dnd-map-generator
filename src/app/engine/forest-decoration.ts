@@ -1,5 +1,13 @@
 import { DENSITY_BUDGETS, HEIGHT, WIDTH, indexOf, isBlockingProp, isWalkable } from './model';
-import type { Density, ForestCharacter, ForestDecoration, ForestLayout, Prop } from './model';
+import type {
+  Density,
+  ForestCharacter,
+  ForestDecoration,
+  ForestLayout,
+  ForestScene,
+  Prop,
+} from './model';
+import { placeCamp } from './forest-camp';
 import { Random, shuffleInPlace, streamSeed } from './random';
 import { NEIGHBORS_4, forestDistances } from './forest-layout';
 
@@ -80,6 +88,7 @@ export function decorateForest(
   character: ForestCharacter,
   density: Density,
   revision: number,
+  scene: ForestScene = 'None',
 ): ForestDecoration {
   const random = new Random(streamSeed(seed, 'forest-decoration', character, density, revision));
   const profile = profiles[character];
@@ -94,10 +103,19 @@ export function decorateForest(
   placeForestFloorProps(layout, random, density, blocked, routeSet, maxBlocking, props, profile);
 
   const reachable = forestDistances(layout.tiles, layout.pathStart, blocked);
-  if (!reachable.has(indexOf(layout.pathEnd.x, layout.pathEnd.y))) {
+  if (scene === 'None' && !reachable.has(indexOf(layout.pathEnd.x, layout.pathEnd.y))) {
     return { props: props.filter((p) => !p.blocking), density, character, revision };
   }
 
+  if (scene === 'Abandoned camp') {
+    return {
+      props: placeCamp(layout, props, seed, density, revision) ?? props,
+      density,
+      character,
+      revision,
+      scene,
+    };
+  }
   return { props, density, character, revision };
 }
 

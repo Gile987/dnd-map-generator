@@ -1,6 +1,7 @@
 import {
   ALL_DENSITIES,
   ALL_FOREST_CHARACTERS,
+  ALL_FOREST_SCENES,
   ALL_PRESETS,
   ALL_PROP_KINDS,
   DEFAULT_FOREST_CHARACTER,
@@ -20,6 +21,7 @@ export interface SaveVocabulary {
   readonly densities: readonly string[];
   readonly presets: readonly string[];
   readonly forestCharacters: readonly string[];
+  readonly forestScenes?: readonly string[];
   readonly propKinds: readonly string[];
 }
 
@@ -41,6 +43,12 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
       return false;
   }
   if (type === 'forest') {
+    if (
+      decoration['scene'] !== undefined &&
+      (typeof decoration['scene'] !== 'string' ||
+        !vocabulary.forestScenes?.includes(decoration['scene']))
+    )
+      return false;
     if (
       typeof decoration['character'] !== 'string' ||
       !vocabulary.forestCharacters.includes(decoration['character'])
@@ -208,7 +216,9 @@ function isForestDecoration(value: unknown): boolean {
     isObject(value) &&
     isDecorationBase(value) &&
     typeof value['character'] === 'string' &&
-    isIn(value['character'], ALL_FOREST_CHARACTERS)
+    isIn(value['character'], ALL_FOREST_CHARACTERS) &&
+    (value['scene'] === undefined ||
+      (typeof value['scene'] === 'string' && isIn(value['scene'], ALL_FOREST_SCENES)))
   );
 }
 

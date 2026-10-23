@@ -119,6 +119,28 @@
       </div>
       <p class="field-hint">{{ draftStyleDescription() }}</p>
     </fieldset>
+    } @if (activeDraft.type === 'forest') {
+    <fieldset class="preset-field">
+      <legend>Scene <span>A PLACE WITH A STORY</span></legend>
+      <div class="preset-options">
+        @for (scene of scenes; track scene) {
+        <label [class.selected]="(activeDraft.scene ?? 'None') === scene">
+          <input
+            type="radio"
+            name="scene"
+            [value]="scene"
+            [checked]="(activeDraft.scene ?? 'None') === scene"
+            (change)="draftChanged.emit({ type: 'forest', changes: { scene: scene } })"
+          />
+          <span>{{ scene }}</span>
+        </label>
+        }
+      </div>
+      <p class="field-hint">
+        {{ activeDraft.scene === 'Abandoned camp' ? 'Small tents, bedrolls, and a cold hearth beside
+        the path.' : 'An open clearing, ready for your story.' }}
+      </p>
+    </fieldset>
     }
     <fieldset class="density-field">
       <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>

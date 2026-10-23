@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import {
   ALL_DENSITIES,
   ALL_FOREST_CHARACTERS,
+  ALL_FOREST_SCENES,
   ALL_PRESETS,
   ROOM_MAX,
   ROOM_MIN,
@@ -43,6 +44,7 @@ export class SettingsPanel {
   protected readonly densities = ALL_DENSITIES;
   protected readonly presets = ALL_PRESETS;
   protected readonly characters = ALL_FOREST_CHARACTERS;
+  protected readonly scenes = ALL_FOREST_SCENES;
   protected readonly characterNames = CHARACTER_LABELS;
   protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest'];
   protected readonly roomMin = ROOM_MIN;

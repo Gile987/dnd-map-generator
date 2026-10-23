@@ -7,6 +7,7 @@ import type {
   ForestGenerationResult,
   ForestLayout,
   ForestSettings,
+  ForestScene,
 } from './model';
 import { Random, streamSeed } from './random';
 import { carvePath, createClearing, oppositeEdge, pointOnEdge } from './forest-layout';
@@ -57,7 +58,14 @@ export function generateForestClearing(
       seed,
       layout,
       surfaceSeed: streamSeed(seed, 'surface'),
-      decoration: decorateForest(layout, seed, settings.character, settings.density, 0),
+      decoration: decorateForest(
+        layout,
+        seed,
+        settings.character,
+        settings.density,
+        0,
+        settings.scene,
+      ),
     };
 
     const error = validateForest(map);
@@ -79,6 +87,7 @@ export function shuffleForestDetails(map: ForestClearing): ForestClearing {
     map.decoration.character,
     map.decoration.density,
     revision,
+    map.decoration.scene,
   );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
@@ -93,6 +102,7 @@ export function changeForestDensity(map: ForestClearing, density: Density): Fore
     map.decoration.character,
     density,
     map.decoration.revision,
+    map.decoration.scene,
   );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
@@ -110,9 +120,30 @@ export function changeForestCharacter(
     character,
     map.decoration.density,
     map.decoration.revision,
+    map.decoration.scene,
   );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
   if (error) return map;
   return updated;
+}
+
+export function changeForestScene(map: ForestClearing, scene: ForestScene): ForestClearing {
+  return changeForestAppearance(map, { ...map.decoration, scene });
+}
+
+export function changeForestAppearance(
+  map: ForestClearing,
+  settings: Pick<ForestSettings, 'density' | 'character' | 'scene'>,
+): ForestClearing {
+  const decoration = decorateForest(
+    map.layout,
+    map.seed,
+    settings.character,
+    settings.density,
+    map.decoration.revision,
+    settings.scene,
+  );
+  const updated: ForestClearing = { ...map, decoration };
+  return validateForest(updated) ? map : updated;
 }

@@ -32,7 +32,7 @@ export class MapPanel {
     }
     return {
       seed: map.seed,
-      rooms: 'Open clearing',
+      rooms: map.decoration.scene === 'Abandoned camp' ? 'Abandoned camp' : 'Open clearing',
       details: `${map.decoration.character} · ${map.decoration.density} r${map.decoration.revision}`,
       type: 'FOREST CLEARING',
     };

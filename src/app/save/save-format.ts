@@ -2,7 +2,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '2.0.0';
+export const SAVE_FORMAT_VERSION = '3.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -80,12 +80,20 @@ const FORMAT_1_VOCABULARY: SaveVocabulary = {
   ],
 };
 
+const FORMAT_3_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_2_VOCABULARY,
+  forestScenes: ['None', 'Abandoned camp'],
+  propKinds: [...FORMAT_2_VOCABULARY.propKinds, 'tent', 'bedroll', 'fire_ring', 'supply_bundle'],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
     case '1.0.0':
       return FORMAT_1_VOCABULARY;
     case '2.0.0':
       return FORMAT_2_VOCABULARY;
+    case '3.0.0':
+      return FORMAT_3_VOCABULARY;
     default:
       return undefined;
   }
@@ -203,7 +211,8 @@ export function mapSummary(map: GeneratedMap): string {
   if (map.type === 'dungeon') {
     return `${map.layout.rooms.length} rooms · ${map.decoration.preset} · ${map.decoration.density} r${map.decoration.revision}`;
   }
-  return `${map.decoration.character} · ${map.decoration.density} r${map.decoration.revision}`;
+  const scene = map.decoration.scene === 'Abandoned camp' ? ' · Abandoned camp' : '';
+  return `${map.decoration.character}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
 }
 
 export function uniqueById(
