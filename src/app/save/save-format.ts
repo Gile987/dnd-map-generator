@@ -80,36 +80,19 @@ const FORMAT_1_VOCABULARY: SaveVocabulary = {
   ],
 };
 
-export function saveVocabulary(version: string): SaveVocabulary | undefined {
-  const parsed = parseVersion(version);
-  if (!parsed || parsed.length !== 3) return undefined;
-  if (parsed[0] === 1 && parsed[1] === 0 && parsed[2] === 0) return FORMAT_1_VOCABULARY;
-  if (parsed[0] === 2 && parsed[1] === 0 && parsed[2] === 0) return FORMAT_2_VOCABULARY;
-  return undefined;
+export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
+  switch (version) {
+    case '1.0.0':
+      return FORMAT_1_VOCABULARY;
+    case '2.0.0':
+      return FORMAT_2_VOCABULARY;
+    default:
+      return undefined;
+  }
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
-}
-
-function parseVersion(version: string): readonly number[] | undefined {
-  const parts = version.split('.');
-  if (parts.length === 0 || parts.some((part) => !/^\d+$/.test(part))) return undefined;
-  return parts.map(Number);
-}
-
-function isSupportedVersion(version: unknown): boolean {
-  if (typeof version !== 'string') return false;
-  const candidate = parseVersion(version);
-  const current = parseVersion(SAVE_FORMAT_VERSION);
-  if (!candidate || !current) return false;
-  const length = Math.max(candidate.length, current.length);
-  for (let i = 0; i < length; i++) {
-    const a = candidate[i] ?? 0;
-    const b = current[i] ?? 0;
-    if (a !== b) return a <= b;
-  }
-  return true;
 }
 
 export function parseSavedMap(value: unknown): SavedMap | undefined {
@@ -119,8 +102,6 @@ export function parseSavedMap(value: unknown): SavedMap | undefined {
   if (typeof name !== 'string' || !name.trim() || name.length > NAME_MAX) return undefined;
   if (typeof favorite !== 'boolean') return undefined;
   if (typeof savedAt !== 'string') return undefined;
-  if (typeof saveFormatVersion !== 'string' || !isSupportedVersion(saveFormatVersion))
-    return undefined;
   if (typeof thumbnail !== 'string' || !thumbnail.startsWith('data:image/')) return undefined;
   const vocabulary = saveVocabulary(saveFormatVersion);
   if (!vocabulary) return undefined;
@@ -148,7 +129,7 @@ export function parseBundle(text: string): ParseResult {
   if (data['format'] !== BACKUP_FORMAT) {
     return { ok: false, error: 'That file is not an Encounter Map Forge backup.' };
   }
-  if (!isSupportedVersion(data['saveFormatVersion'])) {
+  if (!saveVocabulary(data['saveFormatVersion'])) {
     return {
       ok: false,
       error: 'That backup uses a save format this version of Encounter Map Forge cannot read.',
