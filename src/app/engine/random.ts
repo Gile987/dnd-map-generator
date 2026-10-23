@@ -9,7 +9,7 @@ export function hashSeed(text: string): number {
 }
 
 export type SeedStream =
-  'layout' | 'decoration' | 'surface' | 'forest-layout' | 'forest-decoration';
+  'layout' | 'decoration' | 'surface' | 'forest-layout' | 'forest-decoration' | 'forest-camp';
 
 export function streamSeed(seed: string, kind: SeedStream, ...parts: (string | number)[]): number {
   return hashSeed([GENERATOR_VERSION, seed, kind, ...parts].join(':'));

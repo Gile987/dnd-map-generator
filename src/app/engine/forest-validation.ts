@@ -1,6 +1,7 @@
 import {
   ALL_DENSITIES,
   ALL_FOREST_CHARACTERS,
+  ALL_FOREST_SCENES,
   DENSITY_BUDGETS,
   HEIGHT,
   WIDTH,
@@ -14,6 +15,7 @@ import type { ForestClearing, ForestLayout, ForestSettings, Point } from './mode
 import { isConnected, forestDistances } from './forest-layout';
 import type { Edge } from './forest-layout';
 import { isDetailRevision } from './decoration-revision';
+import { CAMP_PROP_KINDS } from './forest-camp';
 
 function edgeOf(point: Point): Edge | undefined {
   if (!isTilePosition(point.x, point.y)) return undefined;
@@ -70,6 +72,29 @@ function routeIsValid(layout: ForestLayout): boolean {
 export function validateForest(map: ForestClearing): string | undefined {
   const layoutError = forestLayoutError(map.layout);
   if (layoutError) return layoutError;
+  if (!ALL_FOREST_SCENES.includes(map.decoration.scene ?? 'None'))
+    return 'Choose a valid forest scene.';
+  const camp = map.decoration.props.filter((prop) => CAMP_PROP_KINDS.includes(prop.kind));
+  if (map.decoration.scene === 'Abandoned camp') {
+    if (
+      camp.length !== 6 ||
+      camp.filter((p) => p.kind === 'tent').length !== 2 ||
+      camp.filter((p) => p.kind === 'bedroll').length !== 2 ||
+      camp.filter((p) => p.kind === 'fire_ring').length !== 1 ||
+      camp.filter((p) => p.kind === 'supply_bundle').length !== 1
+    )
+      return 'A complete camp could not fit beside the path. Try another seed.';
+    for (const prop of camp) {
+      if (
+        !isWalkable(map.layout, prop.x, prop.y) ||
+        map.layout.route.includes(indexOf(prop.x, prop.y)) ||
+        map.decoration.props.some(
+          (other) => other !== prop && other.x === prop.x && other.y === prop.y,
+        )
+      )
+        return 'Camp objects need clear ground beside the path.';
+    }
+  } else if (camp.length) return 'Camp objects require an abandoned camp scene.';
   if (!isDetailRevision(map.decoration.revision))
     return 'The detail revision must be a nonnegative safe integer.';
   const route = new Set(map.layout.route);
@@ -110,5 +135,6 @@ export function validateForestSettings(settings: ForestSettings): string | undef
   if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a valid decoration density.';
   if (!ALL_FOREST_CHARACTERS.includes(settings.character))
     return 'Choose a valid forest character.';
+  if (!ALL_FOREST_SCENES.includes(settings.scene ?? 'None')) return 'Choose a valid forest scene.';
   return undefined;
 }

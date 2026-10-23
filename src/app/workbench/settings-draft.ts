@@ -6,6 +6,7 @@ import type {
   ForestCharacter,
   ForestClearing,
   ForestSettings,
+  ForestScene,
 } from '../engine/model';
 import { ROOM_MAX, ROOM_MIN } from '../engine/model';
 import { validateForestSettings } from '../engine/forest-validation';
@@ -25,6 +26,7 @@ export interface DungeonDraft extends CommonDraft {
 export interface ForestDraft extends CommonDraft {
   readonly type: 'forest';
   readonly character: ForestCharacter;
+  readonly scene?: ForestScene;
 }
 
 export interface SettingsDrafts {
@@ -59,6 +61,7 @@ export function forestDraftForMap(map: ForestClearing): ForestDraft {
     seed: map.seed,
     density: map.decoration.density,
     character: map.decoration.character,
+    ...(map.decoration.scene ? { scene: map.decoration.scene } : {}),
   };
 }
 
@@ -68,6 +71,7 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
       seed: draft.seed,
       density: draft.density,
       character: draft.character,
+      ...(draft.scene ? { scene: draft.scene } : {}),
     };
     const error = validateForestSettings(settings);
     return error ? { ok: false, error } : { ok: true, type: 'forest', settings };

@@ -2,6 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { changeDensity, changePreset, shuffleDetails } from '../engine/decoration';
 import {
   changeForestCharacter,
+  changeForestAppearance,
   changeForestDensity,
   generateForestClearing,
   shuffleForestDetails,
@@ -80,7 +81,8 @@ export class WorkbenchSession {
       return (
         this.layoutPending() ||
         draft.density !== decoration.density ||
-        draft.character !== decoration.character
+        draft.character !== decoration.character ||
+        (draft.scene ?? 'None') !== (decoration.scene ?? 'None')
       );
     }
     const draft = state.drafts.dungeon;
@@ -150,6 +152,11 @@ export class WorkbenchSession {
         const result = generateForestClearing(settings);
         if (!result.ok) return result;
         forest = result.map;
+      } else if (
+        settings.scene === 'Abandoned camp' ||
+        forest.decoration.scene === 'Abandoned camp'
+      ) {
+        forest = changeForestAppearance(forest, settings);
       } else {
         if (settings.density !== forest.decoration.density)
           forest = changeForestDensity(forest, settings.density);
@@ -184,6 +191,13 @@ export class WorkbenchSession {
       next.decoration.character !== parsed.settings.character
     ) {
       return { ok: false, error: 'That forest character could not be applied. Try another seed.' };
+    }
+    if (
+      next.type === 'forest' &&
+      parsed.type === 'forest' &&
+      (next.decoration.scene ?? 'None') !== (parsed.settings.scene ?? 'None')
+    ) {
+      return { ok: false, error: 'That camp could not fit beside the path. Try another seed.' };
     }
     this.accept(next, true);
     return { ok: true, layoutChanged };

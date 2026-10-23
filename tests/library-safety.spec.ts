@@ -189,7 +189,7 @@ for (const kind of ['unreadable', 'duplicate', 'malformed'] as const) {
       const download = await pendingBackup;
       const parsed: unknown = JSON.parse(readFileSync(await download.path(), 'utf8'));
       expect(parsed).toMatchObject({
-        saveFormatVersion: '2.0.0',
+        saveFormatVersion: '3.0.0',
         maps: [expect.objectContaining({ id: record['id'] })],
       });
     } else {

@@ -46,6 +46,7 @@ export class Preview {
       m.seed +
       ', ' +
       m.decoration.character +
+      (m.decoration.scene === 'Abandoned camp' ? ', abandoned camp scene' : '') +
       ' character. A path connects two map edges through the clearing. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
     );
   });

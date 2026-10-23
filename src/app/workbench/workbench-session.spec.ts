@@ -363,3 +363,55 @@ describe('workbench session transitions', () => {
     expect(session.map().seed).toBe('retry-after-exception');
   });
 });
+test('forest scene drafts apply atomically and restore through reset, switching and opening', () => {
+  const session = new WorkbenchSession();
+  session.selectMapType('forest');
+  const original = session.map();
+  session.updateDraft({ type: 'forest', changes: { scene: 'Abandoned camp' } });
+  expect(session.map()).toBe(original);
+  expect(session.pending()).toBe(true);
+  session.selectMapType('dungeon');
+  session.selectMapType('forest');
+  expect(session.draft()).toMatchObject({ scene: 'Abandoned camp' });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const camp = session.map();
+  expect(camp.decoration).toMatchObject({ scene: 'Abandoned camp', revision: 0 });
+  expect(camp.layout).toBe(original.layout);
+  session.updateDraft({ type: 'forest', changes: { scene: 'None' } });
+  session.shuffle();
+  expect(session.map().decoration).toMatchObject({ scene: 'Abandoned camp', revision: 1 });
+  expect(session.draft()).toMatchObject({ scene: 'None' });
+  session.resetChanges();
+  expect(session.draft()).toMatchObject({ scene: 'Abandoned camp' });
+  session.updateDraft({ type: 'forest', changes: { scene: 'None' } });
+  expect(session.generate().ok).toBe(true);
+  expect(session.map().decoration).not.toHaveProperty('scene');
+  session.openSaved(camp);
+  expect(session.draft()).toMatchObject({ scene: 'Abandoned camp' });
+  expect(session.pending()).toBe(false);
+});
+
+test('a rejected camp leaves the accepted map and combined draft intact', () => {
+  const session = new WorkbenchSession();
+  session.selectMapType('forest');
+  const original = session.map();
+  session.updateDraft({
+    type: 'forest',
+    changes: { scene: 'Abandoned camp', character: 'Fey', density: 'Sparse' },
+  });
+  const draft = session.draft();
+  const rejected = vi
+    .spyOn(forestEngine, 'changeForestAppearance')
+    .mockImplementationOnce((map) => map);
+  expect(session.generate().ok).toBe(false);
+  expect(session.map()).toBe(original);
+  expect(session.draft()).toBe(draft);
+  expect(session.pending()).toBe(true);
+  rejected.mockRestore();
+  expect(session.generate().ok).toBe(true);
+  expect(session.map().decoration).toMatchObject({
+    scene: 'Abandoned camp',
+    character: 'Fey',
+    density: 'Sparse',
+  });
+});
