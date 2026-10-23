@@ -64,6 +64,8 @@ export const ALL_PRESETS: readonly DecorationPreset[] = [
 ];
 
 export type ForestCharacter = 'Verdant' | 'Autumn' | 'Pines' | 'Fey';
+export type DungeonScene = 'None' | 'Forgotten study';
+export const ALL_DUNGEON_SCENES: readonly DungeonScene[] = ['None', 'Forgotten study'];
 export type ForestScene = 'None' | 'Abandoned camp';
 export const ALL_FOREST_SCENES: readonly ForestScene[] = ['None', 'Abandoned camp'];
 
@@ -81,6 +83,7 @@ export interface DungeonSettings {
   readonly roomCount: number;
   readonly density: Density;
   readonly preset: DecorationPreset;
+  readonly scene?: DungeonScene;
 }
 
 export interface ForestSettings {
@@ -104,6 +107,9 @@ export const DUNGEON_PROP_KINDS = [
   'sarcophagus',
   'vine',
   'broken_column',
+  'desk',
+  'bookshelf',
+  'scroll_case',
 ] as const;
 
 export const FOREST_PROP_KINDS = [
@@ -145,6 +151,7 @@ export interface Decoration {
   readonly props: readonly Prop[];
   readonly density: Density;
   readonly preset: DecorationPreset;
+  readonly scene?: DungeonScene;
   readonly revision: number;
 }
 
@@ -224,7 +231,9 @@ export function isBlockingProp(kind: PropKind): boolean {
     kind === 'log' ||
     kind === 'stump' ||
     kind === 'tent' ||
-    kind === 'supply_bundle'
+    kind === 'supply_bundle' ||
+    kind === 'desk' ||
+    kind === 'bookshelf'
   );
 }
 

@@ -1,5 +1,6 @@
 import {
   ALL_DENSITIES,
+  ALL_DUNGEON_SCENES,
   ALL_PRESETS,
   DENSITY_BUDGETS,
   HEIGHT,
@@ -28,6 +29,8 @@ export function validateSettings(settings: DungeonSettings): string | undefined 
     return `Choose a whole number of rooms from ${ROOM_MIN} to ${ROOM_MAX}.`;
   if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a valid decoration density.';
   if (!ALL_PRESETS.includes(settings.preset)) return 'Choose a valid decoration preset.';
+  if (!ALL_DUNGEON_SCENES.includes(settings.scene ?? 'None'))
+    return 'Choose a valid dungeon scene.';
   return undefined;
 }
 
@@ -142,6 +145,29 @@ export function validateLayout(layout: Layout, roomCount: number): string | unde
 export function validateDungeon(map: Dungeon): string | undefined {
   const layoutError = validateLayout(map.layout, map.layout.rooms.length);
   if (layoutError) return layoutError;
+  if (!ALL_DUNGEON_SCENES.includes(map.decoration.scene ?? 'None'))
+    return 'Choose a valid dungeon scene.';
+  const study = map.decoration.props.filter(
+    (p) => p.kind === 'desk' || p.kind === 'bookshelf' || p.kind === 'scroll_case',
+  );
+  if (map.decoration.scene === 'Forgotten study') {
+    if (study.length !== 3 || new Set(study.map((p) => p.kind)).size !== 3)
+      return 'A complete study could not fit. Try another seed or decoration density.';
+    const desk = study.find((p) => p.kind === 'desk');
+    const room = desk && map.layout.rooms.find((room) => contains(room, desk));
+    const reserved = reservedTiles(map.layout);
+    if (
+      !room ||
+      !map.decoration.props.some((p) => p.kind === 'rug' && contains(room, p)) ||
+      study.some(
+        (p) =>
+          !contains(room, p) ||
+          reserved.has(indexOf(p.x, p.y)) ||
+          map.decoration.props.some((other) => other !== p && other.x === p.x && other.y === p.y),
+      )
+    )
+      return 'Study objects need a clear room away from doors and landmarks.';
+  } else if (study.length) return 'Study objects require a Forgotten study scene.';
   if (!isDetailRevision(map.decoration.revision))
     return 'The detail revision must be a nonnegative safe integer.';
   const reserved = reservedTiles(map.layout);

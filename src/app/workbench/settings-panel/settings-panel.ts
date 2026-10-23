@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import {
   ALL_DENSITIES,
+  ALL_DUNGEON_SCENES,
   ALL_FOREST_CHARACTERS,
   ALL_FOREST_SCENES,
   ALL_PRESETS,
@@ -44,7 +45,19 @@ export class SettingsPanel {
   protected readonly densities = ALL_DENSITIES;
   protected readonly presets = ALL_PRESETS;
   protected readonly characters = ALL_FOREST_CHARACTERS;
-  protected readonly scenes = ALL_FOREST_SCENES;
+  protected readonly scenes = computed(() =>
+    this.draft().type === 'dungeon' ? ALL_DUNGEON_SCENES : ALL_FOREST_SCENES,
+  );
+  protected readonly sceneDescription = computed(() => {
+    const draft = this.draft();
+    if (draft.type === 'dungeon')
+      return draft.scene === 'Forgotten study'
+        ? 'A writing desk, bookshelves, and scattered scrolls in one quiet room.'
+        : 'Rooms ready for your story.';
+    return draft.scene === 'Abandoned camp'
+      ? 'Small tents, bedrolls, and a cold hearth beside the path.'
+      : 'An open clearing, ready for your story.';
+  });
   protected readonly characterNames = CHARACTER_LABELS;
   protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest'];
   protected readonly roomMin = ROOM_MIN;
@@ -98,6 +111,16 @@ export class SettingsPanel {
   protected editSeed(event: Event): void {
     if (event.target instanceof HTMLInputElement)
       this.draftChanged.emit({ type: this.draft().type, changes: { seed: event.target.value } });
+  }
+
+  protected selectScene(value: string): void {
+    if (this.draft().type === 'dungeon') {
+      const scene = ALL_DUNGEON_SCENES.find((scene) => scene === value);
+      if (scene) this.draftChanged.emit({ type: 'dungeon', changes: { scene } });
+    } else {
+      const scene = ALL_FOREST_SCENES.find((scene) => scene === value);
+      if (scene) this.draftChanged.emit({ type: 'forest', changes: { scene } });
+    }
   }
 
   protected editRooms(event: Event): void {

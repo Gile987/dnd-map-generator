@@ -38,7 +38,10 @@ export class Preview {
         m.seed +
         ', ' +
         m.layout.rooms.length +
-        ' connected rooms. Stairs mark the entrance; a circular stone dais marks the objective. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
+        (m.decoration.scene === 'Forgotten study'
+          ? ' connected rooms, Forgotten study scene.'
+          : ' connected rooms.') +
+        ' Stairs mark the entrance; a circular stone dais marks the objective. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
       );
     }
     return (

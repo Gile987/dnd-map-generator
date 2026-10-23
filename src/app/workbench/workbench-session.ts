@@ -1,5 +1,10 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { changeDensity, changePreset, shuffleDetails } from '../engine/decoration';
+import {
+  changeDensity,
+  changePreset,
+  changeDungeonAppearance,
+  shuffleDetails,
+} from '../engine/decoration';
 import {
   changeForestCharacter,
   changeForestAppearance,
@@ -90,7 +95,8 @@ export class WorkbenchSession {
     return (
       this.layoutPending() ||
       draft.density !== decoration.density ||
-      draft.preset !== decoration.preset
+      draft.preset !== decoration.preset ||
+      (draft.scene ?? 'None') !== (decoration.scene ?? 'None')
     );
   });
   private readonly parsedDraft = computed(() => parseDraft(this.draft()));
@@ -171,6 +177,11 @@ export class WorkbenchSession {
         const result = generateDungeon(settings);
         if (!result.ok) return result;
         dungeon = result.map;
+      } else if (
+        settings.scene === 'Forgotten study' ||
+        dungeon.decoration.scene === 'Forgotten study'
+      ) {
+        dungeon = changeDungeonAppearance(dungeon, settings);
       } else {
         if (settings.density !== dungeon.decoration.density)
           dungeon = changeDensity(dungeon, settings.density);
@@ -183,6 +194,17 @@ export class WorkbenchSession {
       return {
         ok: false,
         error: 'Those decoration settings could not be applied. Try another density.',
+      };
+    }
+    if (
+      next.type === 'dungeon' &&
+      parsed.type === 'dungeon' &&
+      next.decoration.preset !== parsed.settings.preset
+    ) {
+      return {
+        ok: false,
+        error:
+          'Those dungeon settings could not be applied. Try another seed or decoration density.',
       };
     }
     if (
@@ -199,6 +221,15 @@ export class WorkbenchSession {
     ) {
       return { ok: false, error: 'That camp could not fit beside the path. Try another seed.' };
     }
+    if (
+      next.type === 'dungeon' &&
+      parsed.type === 'dungeon' &&
+      (next.decoration.scene ?? 'None') !== (parsed.settings.scene ?? 'None')
+    )
+      return {
+        ok: false,
+        error: 'That study could not fit. Try another seed or decoration density.',
+      };
     this.accept(next, true);
     return { ok: true, layoutChanged };
   }

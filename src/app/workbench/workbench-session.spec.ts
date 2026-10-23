@@ -2,11 +2,62 @@ import '@angular/compiler';
 import { Injector } from '@angular/core';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import * as dungeonEngine from '../engine/generate';
+import * as dungeonDecoration from '../engine/decoration';
 import * as forestEngine from '../engine/forest-generate';
 import type { MapType } from '../engine/model';
 import { WorkbenchSession } from './workbench-session';
 
 afterEach(() => vi.restoreAllMocks());
+
+test('a rejected preset change in a study preserves its draft and can be retried', () => {
+  const session = new WorkbenchSession();
+  session.updateDraft({ type: 'dungeon', changes: { scene: 'Forgotten study' } });
+  expect(session.generate().ok).toBe(true);
+  const original = session.map();
+  session.updateDraft({ type: 'dungeon', changes: { preset: 'Crypt' } });
+  const draft = session.draft();
+  vi.spyOn(dungeonDecoration, 'changeDungeonAppearance').mockImplementationOnce((map) => map);
+  expect(session.generate().ok).toBe(false);
+  expect(session.map()).toBe(original);
+  expect(session.draft()).toBe(draft);
+  expect(session.pending()).toBe(true);
+  expect(session.generate().ok).toBe(true);
+  expect(session.map().decoration).toMatchObject({ preset: 'Crypt', scene: 'Forgotten study' });
+});
+
+test('dungeon study drafts apply together, survive shuffles and restore when opened', () => {
+  const session = new WorkbenchSession();
+  const original = session.map();
+  session.updateDraft({ type: 'dungeon', changes: { scene: 'Forgotten study' } });
+  expect(session.map()).toBe(original);
+  session.selectMapType('forest');
+  session.selectMapType('dungeon');
+  expect(session.draft()).toMatchObject({ scene: 'Forgotten study' });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const study = session.map();
+  expect(study.decoration).toMatchObject({ scene: 'Forgotten study', revision: 0 });
+  expect(study.layout).toBe(original.layout);
+  session.updateDraft({ type: 'dungeon', changes: { scene: 'None' } });
+  session.shuffle();
+  expect(session.map().decoration).toMatchObject({ scene: 'Forgotten study', revision: 1 });
+  expect(session.draft()).toMatchObject({ scene: 'None' });
+  session.resetChanges();
+  expect(session.draft()).toMatchObject({ scene: 'Forgotten study' });
+  session.updateDraft({
+    type: 'dungeon',
+    changes: { scene: 'None', preset: 'Crypt', density: 'Cluttered' },
+  });
+  expect(session.generate().ok).toBe(true);
+  expect(session.map().decoration).toMatchObject({
+    preset: 'Crypt',
+    density: 'Cluttered',
+    revision: 1,
+  });
+  expect(session.map().decoration).not.toHaveProperty('scene');
+  session.openSaved(study);
+  expect(session.draft()).toMatchObject({ scene: 'Forgotten study' });
+  expect(session.pending()).toBe(false);
+});
 
 describe('workbench session transitions', () => {
   test('generates each initial map once and restores the same accepted models when switching', () => {

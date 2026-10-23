@@ -3,6 +3,7 @@ import type {
   Density,
   Dungeon,
   DungeonSettings,
+  DungeonScene,
   ForestCharacter,
   ForestClearing,
   ForestSettings,
@@ -21,6 +22,7 @@ export interface DungeonDraft extends CommonDraft {
   readonly type: 'dungeon';
   readonly rooms: string;
   readonly preset: DecorationPreset;
+  readonly scene?: DungeonScene;
 }
 
 export interface ForestDraft extends CommonDraft {
@@ -52,6 +54,7 @@ export function dungeonDraftForMap(map: Dungeon): DungeonDraft {
     rooms: String(map.layout.rooms.length),
     density: map.decoration.density,
     preset: map.decoration.preset,
+    ...(map.decoration.scene ? { scene: map.decoration.scene } : {}),
   };
 }
 
@@ -81,6 +84,7 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
     roomCount: Number(draft.rooms),
     density: draft.density,
     preset: draft.preset,
+    ...(draft.scene ? { scene: draft.scene } : {}),
   };
   const error =
     validateSettings(settings) ||
