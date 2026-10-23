@@ -1,7 +1,7 @@
 import '@angular/compiler';
 import { Injector } from '@angular/core';
-import type { DestroyableInjector } from '@angular/core';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import type { DestroyableInjector, Signal } from '@angular/core';
+import { afterEach, beforeEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
 import { SAVE_STORAGE_KEY, makeSavedMap, parseBundle } from './save-format';
@@ -78,6 +78,10 @@ afterEach(() => {
 });
 
 describe('saved-map persistence', () => {
+  test('exposes saved records through a readonly signal and collection', () => {
+    expectTypeOf<SaveStore['saved']>().toEqualTypeOf<Signal<readonly SavedMap[]>>();
+  });
+
   test.each(['add', 'remove', 'rename', 'duplicate', 'favorite', 'import'] as const)(
     'a failed %s write preserves disk and signal state, then permits retry',
     async (operation) => {
