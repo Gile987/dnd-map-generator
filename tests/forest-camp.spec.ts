@@ -5,8 +5,11 @@ import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
 import { PNG } from './png';
 
 async function snapshot(page: Page, name: string) {
+  await expect(page.locator('.workbench')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.locator('.library')).toHaveAttribute('aria-busy', 'false');
   await page.locator('#save-name').fill(name);
   await page.getByRole('button', { name: 'Save map', exact: true }).click();
+  await expect(page.locator('.library-message .notice')).toHaveText(`Saved “${name}”.`);
   await expect(page.locator('.saved-name').getByText(name, { exact: true })).toBeVisible();
   const stored: unknown = JSON.parse(
     (await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY)) ?? '[]',
