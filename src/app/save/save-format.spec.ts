@@ -234,10 +234,76 @@ describe('save format', () => {
     expect(mapUsesVocabulary(futurePropMap, format2)).toBe(false);
   });
 
-  test('parseSavedMap rejects records with unsupported version components', () => {
-    const valid = record(dungeon.map);
-    expect(parseSavedMap({ ...valid, saveFormatVersion: '1.0.0.99' })).toBeUndefined();
-    expect(parseSavedMap({ ...valid, saveFormatVersion: '2.0.0.1' })).toBeUndefined();
+  describe('supported save-format versions', () => {
+    for (const header of ['1.0.0', '2.0.0']) {
+      test.each(['1.0.0', '2.0.0'])(
+        `accepts header ${header} with record version %s and preserves the map`,
+        (saveFormatVersion) => {
+          const saved = record(dungeon.map, { saveFormatVersion });
+          expect(parseBundle(bundle([saved], header))).toEqual({
+            ok: true,
+            maps: [{ ...saved, saveFormatVersion: '2.0.0' }],
+            skipped: 0,
+          });
+        },
+      );
+    }
+
+    test.each(
+      [
+        undefined,
+        null,
+        2,
+        true,
+        {},
+        [],
+        '',
+        'banana',
+        '1',
+        '1.0',
+        '1.0.0.99',
+        '2.0.0.0',
+        '2.0.0.1',
+        '1.9.0',
+        '0.0.0',
+        '2.0.1',
+        '3.0.0',
+        '99.0.0',
+        '01.0.0',
+        '1.00.0',
+        '1.0.00',
+        '02.0.0',
+        '2.00.0',
+        '2.0.00',
+        ' 1.0.0',
+        '2.0.0 ',
+        '2.0.0\n',
+        '1.0.0-alpha',
+        '2.0.0+build',
+      ].map((saveFormatVersion) => ({ saveFormatVersion })),
+    )(
+      'rejects unsupported version $saveFormatVersion at the header or record boundary',
+      ({ saveFormatVersion }) => {
+        const good = record(dungeon.map);
+        expect(
+          parseBundle(JSON.stringify({ format: BACKUP_FORMAT, saveFormatVersion, maps: [good] })),
+        ).toEqual({
+          ok: false,
+          error: 'That backup uses a save format this version of Encounter Map Forge cannot read.',
+        });
+        const unsupported = { ...good, saveFormatVersion };
+        expect(parseSavedMap(unsupported)).toBeUndefined();
+        expect(parseBundle(bundle([unsupported]))).toEqual({
+          ok: false,
+          error: 'None of the maps in that backup could be read. They may use a newer save format.',
+        });
+        expect(parseBundle(bundle([good, { ...unsupported, id: 'unsupported-record' }]))).toEqual({
+          ok: true,
+          maps: [good],
+          skipped: 1,
+        });
+      },
+    );
   });
 
   test('parseSavedMap rejects future engine options even when isUsableMap accepts them', () => {

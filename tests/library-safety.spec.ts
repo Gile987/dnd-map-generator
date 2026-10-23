@@ -269,33 +269,134 @@ test('a blocked library read can be retried without replacing the stored maps', 
   await expect(page.getByRole('button', { name: 'Save map', exact: true })).toBeEnabled();
 });
 
-test('an import storage failure keeps the library intact and permits retrying the same file', async ({
+for (const failure of [
+  { kind: 'unreadable file', message: 'That backup file could not be read.' },
+  { kind: 'malformed JSON', message: 'That backup is not valid JSON.' },
+  { kind: 'foreign backup', message: 'That file is not an Encounter Map Forge backup.' },
+  {
+    kind: 'future format',
+    message: 'That backup uses a save format this version of Encounter Map Forge cannot read.',
+  },
+] as const) {
+  test(`import reports ${failure.kind} and recovers without changing existing maps`, async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await save(page, 'Keep before import');
+    const before = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
+    const fixture = readFileSync('src/app/save/fixtures/forest-v3.json');
+    let buffer = fixture;
+    if (failure.kind === 'unreadable file') {
+      await page.evaluate(() => {
+        const original = File.prototype.text;
+        File.prototype.text = function () {
+          File.prototype.text = original;
+          return Promise.reject(new DOMException('Read failed', 'NotReadableError'));
+        };
+      });
+    } else if (failure.kind === 'malformed JSON') {
+      buffer = Buffer.from('{ damaged backup');
+    } else {
+      const bundle: Record<string, unknown> = JSON.parse(fixture.toString('utf8'));
+      if (failure.kind === 'foreign backup') bundle['format'] = 'other';
+      else bundle['saveFormatVersion'] = '99.0.0';
+      buffer = Buffer.from(JSON.stringify(bundle));
+    }
+    const input = page.locator('.import-label input');
+    await input.setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer });
+    await expect(page.locator('.library-message .error')).toHaveText(failure.message);
+    await expect(page.locator('.library-message .notice')).toBeEmpty();
+    await expect(page.locator('.saved-item')).toHaveCount(1);
+    await expect(item(page, 'Keep before import')).toBeVisible();
+    expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY)).toBe(before);
+    await expect(input).toHaveValue('');
+    await expect(input).toBeEnabled();
+    await input.setInputFiles({
+      name: 'backup.json',
+      mimeType: 'application/json',
+      buffer: fixture,
+    });
+    await expect(page.locator('.library-message .notice')).toHaveText('Imported 3 maps.');
+    await expect(page.locator('.library-message .error')).toBeEmpty();
+    await expect(page.locator('.saved-item')).toHaveCount(4);
+    await page.reload();
+    await expect(page.locator('.saved-item')).toHaveCount(4);
+    await expect(item(page, 'Keep before import')).toBeVisible();
+  });
+}
+
+test('unsupported backup headers reject valid records without changing the library', async ({
   page,
 }) => {
   await page.goto('/');
-  await save(page, 'Keep before import');
-  await page.evaluate(() => {
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = function () {
-      throw new DOMException('Quota exceeded', 'QuotaExceededError');
-    };
-    document.addEventListener('allow-library-write', () => {
-      Storage.prototype.setItem = original;
+  await save(page, 'Keep before version rejection');
+  const before = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
+  const fixture = readFileSync('src/app/save/fixtures/forest-v3.json', 'utf8');
+  const bundle: Record<string, unknown> = JSON.parse(fixture);
+  const input = page.locator('.import-label input');
+  for (const saveFormatVersion of ['1', '1.0.0.99', '1.9.0', '0.0.0', '2.0.0.0', '01.0.0']) {
+    await input.setInputFiles({
+      name: 'backup.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({ ...bundle, saveFormatVersion })),
     });
-  });
-  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-v3.json');
-  await expect(page.locator('.library-message .error')).toContainText('local storage');
-  await expect(page.locator('.saved-item')).toHaveCount(1);
-  await expect(page.locator('.import-label input')).toHaveValue('');
-  await page.evaluate(() => document.dispatchEvent(new Event('allow-library-write')));
-  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-v3.json');
-  await expect(page.locator('.saved-item')).toHaveCount(4);
+    await expect(page.locator('.library-message .error')).toHaveText(
+      'That backup uses a save format this version of Encounter Map Forge cannot read.',
+    );
+    await expect(input).toHaveValue('');
+    await expect(input).toBeEnabled();
+    await expect(page.locator('.saved-item')).toHaveCount(1);
+    await expect(item(page, 'Keep before version rejection')).toBeVisible();
+    expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY)).toBe(before);
+  }
+  await input.setInputFiles('src/app/save/fixtures/forest-v3.json');
+  await expect(page.locator('.library-message .notice')).toHaveText('Imported 3 maps.');
   await expect(page.locator('.library-message .error')).toBeEmpty();
-  await expect(page.locator('.library-message .notice')).toContainText('Imported 3 maps');
   await page.reload();
   await expect(page.locator('.saved-item')).toHaveCount(4);
-  await expect(item(page, 'Keep before import')).toBeVisible();
+  await expect(item(page, 'Keep before version rejection')).toBeVisible();
 });
+
+for (const failure of ['QuotaExceededError', 'SecurityError'] as const) {
+  test(`an import ${failure} keeps the library intact and permits retrying the same file`, async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await save(page, 'Keep before import');
+    const before = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
+    await page.evaluate(
+      ({ key, failure }) => {
+        const original = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (name, value) {
+          if (name === key) throw new DOMException('Write failed', failure);
+          original.call(this, name, value);
+        };
+        document.addEventListener('allow-library-write', () => {
+          Storage.prototype.setItem = original;
+        });
+      },
+      { key: SAVE_STORAGE_KEY, failure },
+    );
+    await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-v3.json');
+    await expect(page.locator('.library-message .error')).toHaveText(
+      'Your browser could not write to local storage. It may be full or blocked.',
+    );
+    await expect(page.locator('.library-message .notice')).toBeEmpty();
+    await expect(page.locator('.saved-item')).toHaveCount(1);
+    await expect(item(page, 'Keep before import')).toBeVisible();
+    expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY)).toBe(before);
+    await expect(page.locator('.import-label input')).toHaveValue('');
+    await expect(page.locator('.import-label input')).toBeEnabled();
+    await page.evaluate(() => document.dispatchEvent(new Event('allow-library-write')));
+    await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-v3.json');
+    await expect(page.locator('.saved-item')).toHaveCount(4);
+    await expect(page.locator('.library-message .error')).toBeEmpty();
+    await expect(page.locator('.library-message .notice')).toContainText('Imported 3 maps');
+    await page.reload();
+    await expect(page.locator('.saved-item')).toHaveCount(4);
+    await expect(item(page, 'Keep before import')).toBeVisible();
+  });
+}
 
 test('a blank rename in a stale tab keeps the latest saved name', async ({ page, context }) => {
   await page.goto('/');
