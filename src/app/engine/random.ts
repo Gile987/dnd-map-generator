@@ -9,7 +9,13 @@ export function hashSeed(text: string): number {
 }
 
 export type SeedStream =
-  'layout' | 'decoration' | 'surface' | 'forest-layout' | 'forest-decoration' | 'forest-camp';
+  | 'layout'
+  | 'decoration'
+  | 'surface'
+  | 'forest-layout'
+  | 'forest-decoration'
+  | 'forest-camp'
+  | 'dungeon-study';
 
 export function streamSeed(seed: string, kind: SeedStream, ...parts: (string | number)[]): number {
   return hashSeed([GENERATOR_VERSION, seed, kind, ...parts].join(':'));

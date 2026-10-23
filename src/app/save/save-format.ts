@@ -2,7 +2,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '3.0.0';
+export const SAVE_FORMAT_VERSION = '4.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -86,6 +86,12 @@ const FORMAT_3_VOCABULARY: SaveVocabulary = {
   propKinds: [...FORMAT_2_VOCABULARY.propKinds, 'tent', 'bedroll', 'fire_ring', 'supply_bundle'],
 };
 
+const FORMAT_4_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_3_VOCABULARY,
+  dungeonScenes: ['None', 'Forgotten study'],
+  propKinds: [...FORMAT_3_VOCABULARY.propKinds, 'desk', 'bookshelf', 'scroll_case'],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
     case '1.0.0':
@@ -94,6 +100,8 @@ export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
       return FORMAT_2_VOCABULARY;
     case '3.0.0':
       return FORMAT_3_VOCABULARY;
+    case '4.0.0':
+      return FORMAT_4_VOCABULARY;
     default:
       return undefined;
   }
@@ -209,7 +217,8 @@ export function makeSavedMap(
 
 export function mapSummary(map: GeneratedMap): string {
   if (map.type === 'dungeon') {
-    return `${map.layout.rooms.length} rooms · ${map.decoration.preset} · ${map.decoration.density} r${map.decoration.revision}`;
+    const scene = map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : '';
+    return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? ' · Abandoned camp' : '';
   return `${map.decoration.character}${scene} · ${map.decoration.density} r${map.decoration.revision}`;

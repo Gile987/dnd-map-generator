@@ -13,7 +13,8 @@ export function exportFilename(map: GeneratedMap): string {
   const type = map.type;
   if (type === 'dungeon') {
     const preset = map.decoration.preset.toLowerCase();
-    return `encounter-${seed}-${preset}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+    const scene = map.decoration.scene === 'Forgotten study' ? '-forgotten-study' : '';
+    return `encounter-${seed}-${preset}${scene}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? '-abandoned-camp' : '';
   return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}${scene}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;

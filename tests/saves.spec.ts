@@ -65,7 +65,7 @@ test('a backup object-URL failure is reported and permits retry without changing
   await page.locator('.library').screenshot({ path: 'artifacts/ar09/backup-recovered.png' });
 });
 
-test('imports a v3 library, reopens its original settings, and exports format-3 records', async ({
+test('imports a v3 library, reopens its original settings, and exports format-4 records', async ({
   page,
 }) => {
   await page.goto('/');
@@ -85,15 +85,15 @@ test('imports a v3 library, reopens its original settings, and exports format-3 
   const download = await downloadPromise;
   const path = await download.path();
   expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
-    saveFormatVersion: '3.0.0',
+    saveFormatVersion: '4.0.0',
     maps: Array.from({ length: 3 }, () => ({
-      saveFormatVersion: '3.0.0',
+      saveFormatVersion: '4.0.0',
       map: { version: '3.0.0', decoration: { character: 'Verdant' } },
     })),
   });
 });
 
-test('a Fey save survives a format-3 backup round trip and refresh', async ({ page }) => {
+test('a Fey save survives a format-4 backup round trip and refresh', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
   await page.getByRole('radio', { name: 'Fey glade', exact: true }).check();
@@ -107,8 +107,8 @@ test('a Fey save survives a format-3 backup round trip and refresh', async ({ pa
   const download = await downloadPromise;
   const path = await download.path();
   expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
-    saveFormatVersion: '3.0.0',
-    maps: [{ saveFormatVersion: '3.0.0', map: { decoration: { character: 'Fey' } } }],
+    saveFormatVersion: '4.0.0',
+    maps: [{ saveFormatVersion: '4.0.0', map: { decoration: { character: 'Fey' } } }],
   });
   await itemByName(page, 'Fey backup').getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByText('Your library is empty.')).toBeVisible();

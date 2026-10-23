@@ -1,7 +1,17 @@
 import { center, DENSITY_BUDGETS, indexOf, isBlockingProp, isFloor } from './model';
-import type { Decoration, DecorationPreset, Density, Dungeon, Layout, Prop } from './model';
+import type {
+  Decoration,
+  DecorationPreset,
+  Density,
+  Dungeon,
+  DungeonScene,
+  DungeonSettings,
+  Layout,
+  Prop,
+} from './model';
 import { Random, shuffleInPlace, streamSeed } from './random';
-import { isTraversable, reservedTiles } from './validation';
+import { isTraversable, reservedTiles, validateDungeon } from './validation';
+import { placeStudy } from './dungeon-study';
 import { nextDetailRevision } from './decoration-revision';
 
 type PropChoice = Prop['kind'];
@@ -81,6 +91,7 @@ export function decorate(
   density: Density,
   preset: DecorationPreset,
   revision: number,
+  scene: DungeonScene = 'None',
 ): Decoration {
   const random = new Random(streamSeed(seed, 'decoration', preset, density, revision));
   const palette = palettes[preset];
@@ -173,39 +184,65 @@ export function decorate(
       }
     }
   }
-  return { props, density, preset, revision };
+  return scene === 'Forgotten study'
+    ? {
+        props: placeStudy(layout, props, seed, density, preset, revision) ?? props,
+        density,
+        preset,
+        revision,
+        scene,
+      }
+    : { props, density, preset, revision };
 }
 
 export function shuffleDetails(map: Dungeon, density: Density = map.decoration.density): Dungeon {
   const revision = nextDetailRevision(map.decoration.revision);
-  return {
-    ...map,
-    decoration: decorate(map.layout, map.seed, density, map.decoration.preset, revision),
-  };
+  return redecorate(map, density, map.decoration.preset, revision, map.decoration.scene);
 }
 
 export function changeDensity(map: Dungeon, density: Density): Dungeon {
-  return {
-    ...map,
-    decoration: decorate(
-      map.layout,
-      map.seed,
-      density,
-      map.decoration.preset,
-      map.decoration.revision,
-    ),
-  };
+  return redecorate(
+    map,
+    density,
+    map.decoration.preset,
+    map.decoration.revision,
+    map.decoration.scene,
+  );
 }
 
 export function changePreset(map: Dungeon, preset: DecorationPreset): Dungeon {
-  return {
+  return redecorate(
+    map,
+    map.decoration.density,
+    preset,
+    map.decoration.revision,
+    map.decoration.scene,
+  );
+}
+
+export function changeDungeonAppearance(
+  map: Dungeon,
+  settings: Pick<DungeonSettings, 'density' | 'preset' | 'scene'>,
+): Dungeon {
+  return redecorate(
+    map,
+    settings.density,
+    settings.preset,
+    map.decoration.revision,
+    settings.scene,
+  );
+}
+
+function redecorate(
+  map: Dungeon,
+  density: Density,
+  preset: DecorationPreset,
+  revision: number,
+  scene: DungeonScene = 'None',
+): Dungeon {
+  const updated: Dungeon = {
     ...map,
-    decoration: decorate(
-      map.layout,
-      map.seed,
-      map.decoration.density,
-      preset,
-      map.decoration.revision,
-    ),
+    decoration: decorate(map.layout, map.seed, density, preset, revision, scene),
   };
+  return scene === 'Forgotten study' && validateDungeon(updated) ? map : updated;
 }

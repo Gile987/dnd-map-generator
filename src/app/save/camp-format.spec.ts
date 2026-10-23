@@ -19,10 +19,11 @@ function campRecord() {
   );
 }
 
-test('a camp round-trips through format 3 without changing its saved model', () => {
+test('a camp round-trips through format 4 without changing its saved model', () => {
   const record = campRecord();
-  expect(record.saveFormatVersion).toBe('3.0.0');
+  expect(record.saveFormatVersion).toBe('4.0.0');
   expect(parseSavedMap(record)).toEqual(record);
+  expect(parseSavedMap({ ...record, saveFormatVersion: '3.0.0' })).toEqual(record);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (const saveFormatVersion of ['1.0.0', '2.0.0']) {
     expect(parseSavedMap({ ...record, saveFormatVersion })).toBeUndefined();

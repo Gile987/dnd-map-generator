@@ -5,8 +5,11 @@ import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
 import { PNG } from './png';
 
 async function snapshot(page: Page, name: string) {
+  await expect(page.locator('.workbench')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.locator('.library')).toHaveAttribute('aria-busy', 'false');
   await page.locator('#save-name').fill(name);
   await page.getByRole('button', { name: 'Save map', exact: true }).click();
+  await expect(page.locator('.library-message .notice')).toHaveText(`Saved “${name}”.`);
   await expect(page.locator('.saved-name').getByText(name, { exact: true })).toBeVisible();
   const stored: unknown = JSON.parse(
     (await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY)) ?? '[]',
@@ -84,7 +87,7 @@ test('camp drafts preserve accepted maps and apply without rebuilding the cleari
   }
 });
 
-test('a camp survives refresh and a format-3 backup imported into an empty browser', async ({
+test('a camp survives refresh and a format-4 backup imported into an empty browser', async ({
   page,
   browser,
 }) => {
@@ -100,7 +103,7 @@ test('a camp survives refresh and a format-3 backup imported into an empty brows
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '3.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '4.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://127.0.0.1:4200/');

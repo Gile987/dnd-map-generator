@@ -1,5 +1,6 @@
 import {
   ALL_DENSITIES,
+  ALL_DUNGEON_SCENES,
   ALL_FOREST_CHARACTERS,
   ALL_FOREST_SCENES,
   ALL_PRESETS,
@@ -22,6 +23,7 @@ export interface SaveVocabulary {
   readonly presets: readonly string[];
   readonly forestCharacters: readonly string[];
   readonly forestScenes?: readonly string[];
+  readonly dungeonScenes?: readonly string[];
   readonly propKinds: readonly string[];
 }
 
@@ -36,6 +38,12 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
   )
     return false;
   if (type === 'dungeon') {
+    if (
+      decoration['scene'] !== undefined &&
+      (typeof decoration['scene'] !== 'string' ||
+        !vocabulary.dungeonScenes?.includes(decoration['scene']))
+    )
+      return false;
     if (
       typeof decoration['preset'] !== 'string' ||
       !vocabulary.presets.includes(decoration['preset'])
@@ -207,7 +215,9 @@ function isDungeonDecoration(value: unknown): boolean {
     isDecorationBase(value) &&
     isObject(value) &&
     typeof value['preset'] === 'string' &&
-    isIn(value['preset'], ALL_PRESETS)
+    isIn(value['preset'], ALL_PRESETS) &&
+    (value['scene'] === undefined ||
+      (typeof value['scene'] === 'string' && isIn(value['scene'], ALL_DUNGEON_SCENES)))
   );
 }
 

@@ -7,6 +7,46 @@ import { renderForest } from '../src/app/rendering/forest-renderer';
 import { generateDungeon } from '../src/app/engine/generate';
 import { generateForestClearing } from '../src/app/engine/forest-generate';
 import type { Density, DecorationPreset, ForestCharacter } from '../src/app/engine/model';
+import { contains } from '../src/app/engine/model';
+
+test.each(['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'] as const)(
+  'renders a deterministic %s study for visual review',
+  (preset) => {
+    const result = generateDungeon({
+      seed: 'mosslit-sanctum',
+      roomCount: 6,
+      preset,
+      density: 'Balanced',
+      scene: 'Forgotten study',
+    });
+    if (!result.ok) throw new Error(result.error);
+    const canvas = createCanvas(2560, 1920);
+    renderDungeon(canvas.getContext('2d'), result.map, { grid: true, pixelsPerTile: 64 });
+    const first = canvas.toBuffer('image/png');
+    renderDungeon(canvas.getContext('2d'), result.map, { grid: true, pixelsPerTile: 64 });
+    expect(canvas.toBuffer('image/png')).toEqual(first);
+    mkdirSync('artifacts/study', { recursive: true });
+    writeFileSync(`artifacts/study/${preset}.png`, first);
+    const desk = result.map.decoration.props.find((p) => p.kind === 'desk');
+    const room = desk && result.map.layout.rooms.find((room) => contains(room, desk));
+    if (!room) throw new Error('Expected study room');
+    const detail = createCanvas((room.width + 2) * 64, (room.height + 2) * 64);
+    detail
+      .getContext('2d')
+      .drawImage(
+        canvas,
+        (room.x - 1) * 64,
+        (room.y - 1) * 64,
+        detail.width,
+        detail.height,
+        0,
+        0,
+        detail.width,
+        detail.height,
+      );
+    writeFileSync(`artifacts/study/${preset}-detail.png`, detail.toBuffer('image/png'));
+  },
+);
 
 test('render the reusable showcase at export resolution and crop a close-up', () => {
   mkdirSync('artifacts', { recursive: true });
