@@ -1,7 +1,8 @@
+import { generateForestClearing } from '../src/app/engine/forest-generate';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import { makeSavedMap, parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
 import { PNG } from './png';
 
 async function snapshot(page: Page, name: string) {
@@ -34,23 +35,29 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   expect(await snapshot(page, 'Pending landmark')).toEqual(original);
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).toContainText('Standing-stone circle');
+  await expect(page.locator('canvas')).toHaveAttribute(
+    'aria-label',
+    /Verdant character\. Standing-stone circle\./,
+  );
   const marked = await snapshot(page, 'Circle');
   expect(marked.layout).toEqual(original.layout);
   expect(marked.surfaceSeed).toBe(original.surfaceSeed);
-  expect(marked.decoration.landmark).toBe('Suggested landmark');
+  expect(marked.decoration.landmark).toBe('standing-stone-circle');
   await page.getByRole('combobox', { name: /^Landmark/ }).selectOption('None');
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
-  expect((await snapshot(page, 'Shuffled')).decoration.landmark).toBe('Suggested landmark');
+  expect((await snapshot(page, 'Shuffled')).decoration.landmark).toBe('standing-stone-circle');
   await page.getByRole('button', { name: 'Reset changes' }).click();
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue('Suggested landmark');
+  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue(
+    'standing-stone-circle',
+  );
   await page.getByRole('radio', { name: 'Abandoned camp', exact: true }).check();
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).toContainText('Abandoned camp');
   const combined = await snapshot(page, 'Camp and circle');
   expect(combined.decoration).toMatchObject({
     scene: 'Abandoned camp',
-    landmark: 'Suggested landmark',
+    landmark: 'standing-stone-circle',
     revision: 1,
   });
   await page.getByRole('combobox', { name: /^Landmark/ }).focus();
@@ -63,7 +70,9 @@ test('landmarks remain pending until generated, compose with camps, and survive 
     .filter({ has: page.getByText('Camp and circle', { exact: true }) })
     .getByRole('button', { name: 'Open', exact: true })
     .click();
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue('Suggested landmark');
+  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue(
+    'standing-stone-circle',
+  );
   await page.evaluate(() => {
     const original = HTMLCanvasElement.prototype.toBlob;
     HTMLCanvasElement.prototype.toBlob = function (callback, type, quality) {
@@ -101,7 +110,7 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await backupDownload;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '5.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '6.0.0' });
   await page.reload();
   await page
     .locator('.saved-item')
@@ -152,13 +161,87 @@ test('a landmark that cannot fit preserves an imported map and recovers with a n
     .selectOption({ label: 'Standing-stone circle' });
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#settings-error')).toContainText('landmark could not fit');
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue('Suggested landmark');
+  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue(
+    'standing-stone-circle',
+  );
   expect(await snapshot(page, 'After rejected landmark')).toEqual(before);
   await page.getByLabel('World seed').fill('landmark-recovery');
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#settings-error')).toBeEmpty();
   await expect(page.locator('#map-summary')).toContainText('Standing-stone circle');
   expect((await snapshot(page, 'Recovered landmark')).decoration.landmark).toBe(
-    'Suggested landmark',
+    'standing-stone-circle',
   );
 });
+
+for (const source of ['library', 'backup'] as const) {
+  test(`format-5 landmarks from ${source} restore the catalog ID and export current-format backups`, async ({
+    page,
+  }) => {
+    const result = generateForestClearing({
+      seed: 'mosslit-sanctum',
+      character: 'Verdant',
+      density: 'Balanced',
+      landmark: 'standing-stone-circle',
+    });
+    if (!result.ok) throw new Error(result.error);
+    const saved = makeSavedMap(
+      result.map,
+      'Legacy circle',
+      'data:image/png;base64,AAAA',
+      'legacy-circle',
+      '2026-10-23T10:00:00Z',
+    );
+    const legacy = {
+      ...saved,
+      saveFormatVersion: '5.0.0',
+      map: {
+        ...saved.map,
+        decoration: { ...saved.map.decoration, landmark: 'Suggested landmark' },
+      },
+    };
+    if (source === 'library')
+      await page.addInitScript(
+        ({ key, record }) => localStorage.setItem(key, JSON.stringify([record])),
+        { key: SAVE_STORAGE_KEY, record: legacy },
+      );
+    await page.goto('/');
+    if (source === 'backup') {
+      await page.setInputFiles('.import-label input', {
+        name: 'legacy-circle.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(
+          JSON.stringify({
+            format: 'encounter-map-forge-saves',
+            saveFormatVersion: '5.0.0',
+            maps: [legacy],
+          }),
+        ),
+      });
+      await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
+    }
+    await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
+    await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue(
+      'standing-stone-circle',
+    );
+    await expect(
+      page.getByRole('combobox', { name: /^Landmark/ }).locator('option:checked'),
+    ).toHaveText('Standing-stone circle');
+    await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
+    expect(await snapshot(page, 'Migrated circle')).toEqual(result.map);
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Download backup', exact: true }).click();
+    const backup = await download;
+    const bundle: unknown = JSON.parse(readFileSync(await backup.path(), 'utf8'));
+    expect(bundle).toMatchObject({
+      saveFormatVersion: '6.0.0',
+      maps: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'legacy-circle',
+          saveFormatVersion: '6.0.0',
+          map: result.map,
+        }),
+      ]),
+    });
+  });
+}

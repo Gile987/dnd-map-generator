@@ -8,8 +8,8 @@ import type {
   ForestLandmark,
   Prop,
 } from './model';
-import { placeStoneCircle } from './forest-landmark';
-import { placeCamp } from './forest-camp';
+import { FOREST_LANDMARK_RULES } from './forest-landmark';
+import { placeCamp, campReservations } from './forest-camp';
 import { Random, shuffleInPlace, streamSeed } from './random';
 import { NEIGHBORS_4, forestDistances } from './forest-layout';
 
@@ -98,7 +98,15 @@ export function decorateForest(
   return {
     ...base,
     landmark,
-    props: placeStoneCircle(layout, base.props, seed, density, revision) ?? base.props,
+    props:
+      FOREST_LANDMARK_RULES[landmark].place(
+        layout,
+        base.props,
+        seed,
+        density,
+        revision,
+        campReservations(base.props),
+      ) ?? base.props,
   };
 }
 

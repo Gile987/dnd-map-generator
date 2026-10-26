@@ -471,21 +471,24 @@ test('landmark drafts stay separate from accepted maps and survive reset, shuffl
   const session = new WorkbenchSession();
   session.selectMapType('forest');
   const original = session.map();
-  session.updateDraft({ type: 'forest', changes: { landmark: 'Suggested landmark' } });
+  session.updateDraft({ type: 'forest', changes: { landmark: 'standing-stone-circle' } });
   expect(session.pending()).toBe(true);
   expect(session.map()).toBe(original);
   session.selectMapType('dungeon');
   session.selectMapType('forest');
-  expect(session.draft()).toMatchObject({ landmark: 'Suggested landmark' });
+  expect(session.draft()).toMatchObject({ landmark: 'standing-stone-circle' });
   expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
   const marked = session.map();
   expect(marked.layout).toBe(original.layout);
   session.updateDraft({ type: 'forest', changes: { landmark: 'None' } });
   session.shuffle();
-  expect(session.map().decoration).toMatchObject({ landmark: 'Suggested landmark', revision: 1 });
+  expect(session.map().decoration).toMatchObject({
+    landmark: 'standing-stone-circle',
+    revision: 1,
+  });
   expect(session.draft()).toMatchObject({ landmark: 'None' });
   session.resetChanges();
-  expect(session.draft()).toMatchObject({ landmark: 'Suggested landmark' });
+  expect(session.draft()).toMatchObject({ landmark: 'standing-stone-circle' });
   session.updateDraft({
     type: 'forest',
     changes: { landmark: 'None', scene: 'Abandoned camp', character: 'Fey', density: 'Sparse' },
@@ -499,7 +502,7 @@ test('landmark drafts stay separate from accepted maps and survive reset, shuffl
   });
   expect(session.map().decoration).not.toHaveProperty('landmark');
   session.openSaved(marked);
-  expect(session.draft()).toMatchObject({ landmark: 'Suggested landmark' });
+  expect(session.draft()).toMatchObject({ landmark: 'standing-stone-circle' });
   expect(session.pending()).toBe(false);
 });
 
@@ -507,7 +510,7 @@ test('a refused landmark preserves accepted settings and draft, then permits ret
   const session = new WorkbenchSession();
   session.selectMapType('forest');
   const original = session.map();
-  session.updateDraft({ type: 'forest', changes: { landmark: 'Suggested landmark' } });
+  session.updateDraft({ type: 'forest', changes: { landmark: 'standing-stone-circle' } });
   const draft = session.draft();
   vi.spyOn(forestEngine, 'changeForestAppearance').mockImplementationOnce((map) => map);
   expect(session.generate()).toMatchObject({

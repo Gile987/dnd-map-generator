@@ -1,3 +1,5 @@
+import { areaAround, areaContains } from './feature-reservation';
+import type { FeatureReservation, ReservedArea } from './feature-reservation';
 import { DENSITY_BUDGETS, HEIGHT, WIDTH, indexOf, isBlockingProp } from './model';
 import type { Density, ForestLayout, Point, Prop, PropKind, ForestPropKind } from './model';
 import { Random, shuffleInPlace, streamSeed } from './random';
@@ -20,6 +22,18 @@ const arrangement: readonly (Point & { readonly kind: ForestPropKind })[] = [
   { x: 0, y: 0, kind: 'fire_ring' },
   { x: 1, y: -1, kind: 'supply_bundle' },
 ];
+
+// The scene owns its reserve, including the empty circulation space.
+export function campArea(center: Point): ReservedArea {
+  return areaAround(center, 3, 2);
+}
+
+export function campReservations(props: readonly Prop[]): readonly FeatureReservation[] {
+  const hearth = props.find((p) => p.kind === 'fire_ring');
+  return hearth
+    ? [{ area: campArea(hearth), props: props.filter((p) => CAMP_PROP_KINDS.includes(p.kind)) }]
+    : [];
+}
 
 export function placeCamp(
   layout: ForestLayout,
@@ -59,7 +73,7 @@ export function placeCamp(
   const maxBlocking = Math.floor(layout.tiles.filter(Boolean).length * DENSITY_BUDGETS[density]);
   let blockers = camp.filter((prop) => prop.blocking).length;
   const retained = props.filter((prop) => {
-    if (Math.abs(prop.x - center.x) <= 3 && Math.abs(prop.y - center.y) <= 2) return false;
+    if (areaContains(campArea(center), prop)) return false;
     if (prop.blocking && ++blockers > maxBlocking) return false;
     return true;
   });

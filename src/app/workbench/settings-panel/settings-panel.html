@@ -141,18 +141,15 @@
     @if (activeDraft.type === 'forest') {
     <div class="field landmark-field">
       <label for="landmark">Landmark <span>A FOCAL POINT</span></label>
-      <select
-        id="landmark"
-        [value]="activeDraft.landmark ?? 'None'"
-        (change)="selectLandmark($event)"
-        aria-describedby="landmark-hint"
-      >
-        <option value="None">None</option>
-        <option value="Suggested landmark">Standing-stone circle</option>
+      <select id="landmark" (change)="selectLandmark($event)" aria-describedby="landmark-hint">
+        <option value="None" [selected]="(activeDraft.landmark ?? 'None') === 'None'">None</option>
+        @for (id of landmarks(); track id) {
+        <option [value]="id" [selected]="activeDraft.landmark === id">
+          {{ landmarkCatalog[id].label }}
+        </option>
+        }
       </select>
-      <p class="field-hint" id="landmark-hint">
-        Six standing stones around a clear center. Each stone blocks one tile; gaps stay open.
-      </p>
+      <p class="field-hint" id="landmark-hint">{{ landmarkDescription() }}</p>
     </div>
     }
     <fieldset class="density-field">

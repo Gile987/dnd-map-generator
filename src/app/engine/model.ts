@@ -1,3 +1,6 @@
+import { landmarkIdsFor } from './landmark-catalog';
+import type { LandmarkIdFor } from './landmark-catalog';
+
 export const WIDTH = 40;
 export const HEIGHT = 30;
 export const ROOM_MIN = 4;
@@ -66,8 +69,11 @@ export const ALL_PRESETS: readonly DecorationPreset[] = [
 export type ForestCharacter = 'Verdant' | 'Autumn' | 'Pines' | 'Fey';
 export type DungeonScene = 'None' | 'Forgotten study';
 export const ALL_DUNGEON_SCENES: readonly DungeonScene[] = ['None', 'Forgotten study'];
-export type ForestLandmark = 'None' | 'Suggested landmark';
-export const ALL_FOREST_LANDMARKS: readonly ForestLandmark[] = ['None', 'Suggested landmark'];
+export type ForestLandmark = 'None' | LandmarkIdFor<'forest'>;
+export const ALL_FOREST_LANDMARKS: readonly ForestLandmark[] = [
+  'None',
+  ...landmarkIdsFor('forest'),
+];
 
 export type ForestScene = 'None' | 'Abandoned camp';
 export const ALL_FOREST_SCENES: readonly ForestScene[] = ['None', 'Abandoned camp'];

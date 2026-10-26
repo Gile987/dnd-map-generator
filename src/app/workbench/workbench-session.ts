@@ -160,8 +160,8 @@ export class WorkbenchSession {
         if (!result.ok) return result;
         forest = result.map;
       } else if (
-        settings.landmark === 'Suggested landmark' ||
-        forest.decoration.landmark === 'Suggested landmark' ||
+        (settings.landmark ?? 'None') !== 'None' ||
+        (forest.decoration.landmark ?? 'None') !== 'None' ||
         settings.scene === 'Abandoned camp' ||
         forest.decoration.scene === 'Abandoned camp'
       ) {

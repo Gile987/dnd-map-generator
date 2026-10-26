@@ -1,8 +1,9 @@
+import { LANDMARK_CATALOG } from '../engine/landmark-catalog';
 import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '5.0.0';
+export const SAVE_FORMAT_VERSION = '6.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -98,6 +99,11 @@ const FORMAT_5_VOCABULARY: SaveVocabulary = {
   propKinds: [...FORMAT_4_VOCABULARY.propKinds, 'standing_stone'],
 };
 
+const FORMAT_6_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_5_VOCABULARY,
+  forestLandmarks: ['None', 'standing-stone-circle'],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
     case '1.0.0':
@@ -106,6 +112,8 @@ export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
       return FORMAT_2_VOCABULARY;
     case '3.0.0':
       return FORMAT_3_VOCABULARY;
+    case '6.0.0':
+      return FORMAT_6_VOCABULARY;
     case '5.0.0':
       return FORMAT_5_VOCABULARY;
     case '4.0.0':
@@ -229,7 +237,7 @@ export function mapSummary(map: GeneratedMap): string {
     return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? ' · Abandoned camp' : '';
-  return `${map.decoration.character}${map.decoration.landmark === 'Suggested landmark' ? ' · Standing-stone circle' : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
+  return `${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
 }
 
 export function uniqueById(

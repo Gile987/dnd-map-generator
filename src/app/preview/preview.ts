@@ -1,3 +1,4 @@
+import { LANDMARK_CATALOG } from '../engine/landmark-catalog';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -49,11 +50,15 @@ export class Preview {
       m.seed +
       ', ' +
       m.decoration.character +
-      (m.decoration.scene === 'Abandoned camp' ? ', abandoned camp scene' : '') +
-      (m.decoration.landmark === 'Suggested landmark'
-        ? ', standing-stone circle, six blocking stones around a clear center'
+      ' character.' +
+      (m.decoration.scene === 'Abandoned camp' ? ' Abandoned camp scene.' : '') +
+      (m.decoration.landmark && m.decoration.landmark !== 'None'
+        ? ' ' +
+          LANDMARK_CATALOG[m.decoration.landmark].label +
+          '. ' +
+          LANDMARK_CATALOG[m.decoration.landmark].description
         : '') +
-      ' character. A path connects two map edges through the clearing. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
+      ' A path connects two map edges through the clearing. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
     );
   });
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');

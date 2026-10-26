@@ -16,8 +16,8 @@ import type { ForestClearing, ForestLayout, ForestSettings, Point } from './mode
 import { isConnected, forestDistances } from './forest-layout';
 import type { Edge } from './forest-layout';
 import { isDetailRevision } from './decoration-revision';
-import { stoneCircleError } from './forest-landmark';
-import { CAMP_PROP_KINDS } from './forest-camp';
+import { FOREST_LANDMARK_RULES } from './forest-landmark';
+import { CAMP_PROP_KINDS, campReservations } from './forest-camp';
 
 function edgeOf(point: Point): Edge | undefined {
   if (!isTilePosition(point.x, point.y)) return undefined;
@@ -78,8 +78,13 @@ export function validateForest(map: ForestClearing): string | undefined {
     return 'Choose a valid forest scene.';
   if (!ALL_FOREST_LANDMARKS.includes(map.decoration.landmark ?? 'None'))
     return 'Choose a valid forest landmark.';
-  if (map.decoration.landmark === 'Suggested landmark') {
-    const error = stoneCircleError(map.layout, map.decoration.props);
+  const landmark = map.decoration.landmark ?? 'None';
+  if (landmark !== 'None') {
+    const error = FOREST_LANDMARK_RULES[landmark].validate(
+      map.layout,
+      map.decoration.props,
+      campReservations(map.decoration.props),
+    );
     if (error) return error;
   } else if (map.decoration.props.some((p) => p.kind === 'standing_stone'))
     return 'Standing stones require a suggested landmark.';
