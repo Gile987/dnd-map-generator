@@ -31,6 +31,7 @@
       [map]="map()"
       [draft]="draft()"
       [pending]="pending()"
+      [shuffleHistory]="shuffleHistory()"
       [disabled]="busy() !== null"
       [generating]="busy() === 'generation'"
       [attempted]="attempted()"
@@ -40,6 +41,8 @@
       (randomizeRequested)="randomizeSeed()"
       (resetRequested)="resetChanges()"
       (shuffleRequested)="shuffle()"
+      (undoShuffleRequested)="restoreShuffle('undo')"
+      (redoShuffleRequested)="restoreShuffle('redo')"
     ></aside>
 
     <section

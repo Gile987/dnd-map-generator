@@ -31,6 +31,7 @@ export class App {
   protected readonly map = this.session.map;
   protected readonly draft = this.session.draft;
   protected readonly pending = this.session.pending;
+  protected readonly shuffleHistory = this.session.shuffleHistory;
   protected readonly grid = signal(true);
   protected readonly busy = signal<Operation | null>(null);
   protected readonly error = signal('');
@@ -72,11 +73,23 @@ export class App {
 
   protected async shuffle(): Promise<void> {
     await this.run('details', () => {
-      this.session.shuffle();
+      if (!this.session.shuffle())
+        throw new Error('Those details could not be shuffled. Your displayed map is unchanged.');
       this.status.set(
         this.map().type === 'dungeon'
           ? 'Details shuffled. Your layout and floor texture are preserved.'
           : 'Details shuffled. The clearing layout is preserved.',
+      );
+    });
+  }
+
+  protected async restoreShuffle(direction: 'undo' | 'redo'): Promise<void> {
+    if (this.busy() || this.shuffleHistory()[direction] === 0) return;
+    await this.run('details', () => {
+      if (direction === 'undo') this.session.undoShuffle();
+      else this.session.redoShuffle();
+      this.status.set(
+        `Shuffle ${direction === 'undo' ? 'undone' : 'redone'}. Showing detail revision ${this.map().decoration.revision}.`,
       );
     });
   }
