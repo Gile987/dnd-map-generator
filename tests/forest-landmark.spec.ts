@@ -1,3 +1,4 @@
+import { selectedAddition, setAddition } from './additions';
 import { generateForestClearing } from '../src/app/engine/forest-generate';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
@@ -26,12 +27,10 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   browser,
 }) => {
   await page.goto('/');
-  await expect(
-    page.getByRole('checkbox', { name: 'Weathered statue', exact: true }),
-  ).not.toBeChecked();
+  await expect(selectedAddition(page, 'Weathered statue')).toHaveCount(0);
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
   const original = await snapshot(page, 'Original');
-  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).check();
+  await setAddition(page, 'Standing-stone circle');
   expect(await snapshot(page, 'Pending landmark')).toEqual(original);
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).toContainText('Standing-stone circle');
@@ -43,15 +42,13 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   expect(marked.layout).toEqual(original.layout);
   expect(marked.surfaceSeed).toBe(original.surfaceSeed);
   expect(marked.decoration.landmark).toBe('standing-stone-circle');
-  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).uncheck();
+  await setAddition(page, 'Standing-stone circle', false);
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   expect((await snapshot(page, 'Shuffled')).decoration.landmark).toBe('standing-stone-circle');
   await page.getByRole('button', { name: 'Reset changes' }).click();
-  await expect(
-    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
-  ).toBeChecked();
-  await page.getByRole('checkbox', { name: 'Abandoned camp', exact: true }).check();
+  await expect(selectedAddition(page, 'Standing-stone circle')).toBeVisible();
+  await setAddition(page, 'Abandoned camp');
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).toContainText('Abandoned camp');
   const combined = await snapshot(page, 'Camp and circle');
@@ -60,11 +57,9 @@ test('landmarks remain pending until generated, compose with camps, and survive 
     landmark: 'standing-stone-circle',
     revision: 1,
   });
-  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).focus();
+  await selectedAddition(page, 'Standing-stone circle').focus();
   await page.keyboard.press('Space');
-  await expect(
-    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
-  ).not.toBeChecked();
+  await expect(selectedAddition(page, 'Standing-stone circle')).toHaveCount(0);
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).not.toContainText('Standing-stone circle');
   await page
@@ -72,9 +67,7 @@ test('landmarks remain pending until generated, compose with camps, and survive 
     .filter({ has: page.getByText('Camp and circle', { exact: true }) })
     .getByRole('button', { name: 'Open', exact: true })
     .click();
-  await expect(
-    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
-  ).toBeChecked();
+  await expect(selectedAddition(page, 'Standing-stone circle')).toBeVisible();
   await page.evaluate(() => {
     const original = HTMLCanvasElement.prototype.toBlob;
     HTMLCanvasElement.prototype.toBlob = function (callback, type, quality) {
@@ -93,15 +86,13 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-export-waiting', 'true');
-  await expect(
-    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
-  ).toBeDisabled();
+  await expect(selectedAddition(page, 'Standing-stone circle')).toBeDisabled();
   await page.screenshot({ path: 'artifacts/f10/disabled.png', fullPage: true });
   await page.evaluate(() => document.dispatchEvent(new Event('release-landmark-export')));
   const png = await download;
   expect(png.suggestedFilename()).toContain('-standing-stone-circle-abandoned-camp-');
   expect(await PNG.read(await png.path())).toEqual({ width: 2560, height: 1920 });
-  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).focus();
+  await selectedAddition(page, 'Standing-stone circle').focus();
   await page.screenshot({ path: 'artifacts/f10/desktop.png', fullPage: true });
   for (const width of [768, 390, 320]) {
     await page.setViewportSize({ width, height: 1100 });
@@ -160,12 +151,10 @@ test('a landmark that cannot fit preserves an imported map and recovers with a n
   await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
   const before = await snapshot(page, 'No landmark space');
-  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).check();
+  await setAddition(page, 'Standing-stone circle');
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#settings-error')).toContainText('landmark could not fit');
-  await expect(
-    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
-  ).toBeChecked();
+  await expect(selectedAddition(page, 'Standing-stone circle')).toBeVisible();
   expect(await snapshot(page, 'After rejected landmark')).toEqual(before);
   await page.getByLabel('World seed').fill('landmark-recovery');
   await page.getByRole('button', { name: 'Generate forest' }).click();
@@ -223,9 +212,7 @@ for (const source of ['library', 'backup'] as const) {
       await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     }
     await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-    await expect(
-      page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
-    ).toBeChecked();
+    await expect(selectedAddition(page, 'Standing-stone circle')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
     expect(await snapshot(page, 'Migrated circle')).toEqual(result.map);
     const download = page.waitForEvent('download');

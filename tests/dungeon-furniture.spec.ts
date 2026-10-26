@@ -1,3 +1,4 @@
+import { selectedAddition, setAddition } from './additions';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -31,12 +32,11 @@ test('furniture stays pending, applies without rebuilding, and combines with oth
   page,
 }) => {
   await page.goto('/');
-  const furniture = page.getByRole('checkbox', { name: 'Dining table', exact: true });
-  await expect(furniture).not.toBeChecked();
+  const furniture = selectedAddition(page, 'Dining table');
+  await expect(furniture).toHaveCount(0);
   const original = await snapshot(page, 'Original');
-  await furniture.focus();
-  await page.keyboard.press('Space');
-  await expect(furniture).toBeChecked();
+  await setAddition(page, 'Dining table');
+  await expect(furniture).toBeVisible();
   expect(await snapshot(page, 'Pending furniture')).toEqual(original);
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('Dining table');
@@ -53,16 +53,16 @@ test('furniture stays pending, applies without rebuilding, and combines with oth
     rotation: expect.any(Number),
     blocking: true,
   });
-  await furniture.uncheck();
+  await furniture.click();
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   expect((await snapshot(page, 'Shuffled table')).decoration.furniture).toBe('dining-table');
-  await expect(furniture).not.toBeChecked();
+  await expect(furniture).toHaveCount(0);
   await page.getByRole('button', { name: 'Reset changes' }).click();
-  await expect(furniture).toBeChecked();
+  await expect(furniture).toBeVisible();
   await page.getByLabel('World seed').fill('table-0');
-  await page.getByRole('checkbox', { name: 'Forgotten study', exact: true }).check();
-  await page.getByRole('checkbox', { name: 'Weathered statue', exact: true }).check();
+  await setAddition(page, 'Forgotten study');
+  await setAddition(page, 'Weathered statue');
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('Forgotten study');
   const combined = await snapshot(page, 'Table study and statue');
@@ -75,8 +75,8 @@ test('furniture stays pending, applies without rebuilding, and combines with oth
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
   await expect(furniture).toHaveCount(0);
   await page.getByRole('radio', { name: 'Dungeon', exact: true }).check();
-  await expect(furniture).toBeChecked();
-  await furniture.uncheck();
+  await expect(furniture).toBeVisible();
+  await furniture.click();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).not.toContainText('Dining table');
   await page
@@ -84,7 +84,7 @@ test('furniture stays pending, applies without rebuilding, and combines with oth
     .filter({ has: page.getByText('Table study and statue', { exact: true }) })
     .getByRole('button', { name: 'Open', exact: true })
     .click();
-  await expect(furniture).toBeChecked();
+  await expect(furniture).toBeVisible();
   await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeDisabled();
   await page.evaluate(() => {
     const original = HTMLCanvasElement.prototype.toBlob;
@@ -126,12 +126,12 @@ test('table footprints and orientations survive refresh and portable backups', a
   browser,
 }) => {
   await page.goto('/');
-  await page.getByRole('checkbox', { name: 'Dining table', exact: true }).check();
+  await setAddition(page, 'Dining table');
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   const saved = await snapshot(page, 'Portable table');
   await page.reload();
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(page.getByRole('checkbox', { name: 'Dining table', exact: true })).toBeChecked();
+  await expect(selectedAddition(page, 'Dining table')).toBeVisible();
   const pending = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending,
@@ -143,7 +143,7 @@ test('table footprints and orientations survive refresh and portable backups', a
     await fresh.setInputFiles('.import-label input', path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-    await expect(fresh.getByRole('checkbox', { name: 'Dining table', exact: true })).toBeChecked();
+    await expect(selectedAddition(fresh, 'Dining table')).toBeVisible();
     expect(await snapshot(fresh, 'Imported table')).toEqual(saved);
   } finally {
     await fresh.close();
@@ -189,11 +189,11 @@ test('an imported dungeon with insufficient table budget stays intact and permit
   });
   await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-  await page.getByRole('checkbox', { name: 'Dining table', exact: true }).check();
+  await setAddition(page, 'Dining table');
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#settings-error')).toContainText('table could not fit');
   expect(await snapshot(page, 'After rejected table')).toEqual(map);
-  await expect(page.getByRole('checkbox', { name: 'Dining table', exact: true })).toBeChecked();
+  await expect(selectedAddition(page, 'Dining table')).toBeVisible();
   await page.getByLabel('World seed').fill('table-0');
   await page.getByRole('radio', { name: 'Balanced', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();

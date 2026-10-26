@@ -122,26 +122,27 @@
     }
     <fieldset class="additions-field" aria-describedby="additions-hint">
       <legend>Add to this map</legend>
-      <p class="field-hint" id="additions-hint">Choose any combination. Generate to apply.</p>
-      <div class="addition-options">
-        @for (addition of additions(); track addition.id) {
-        <label class="addition-option" [class.selected]="addition.checked">
-          <input
-            type="checkbox"
-            name="additions"
-            [value]="addition.id"
-            [checked]="addition.checked"
-            [attr.aria-labelledby]="addition.id + '-label'"
-            [attr.aria-describedby]="addition.id + '-description'"
-            (change)="draftChanged.emit(addition.change)"
-          />
-          <span class="addition-copy">
-            <strong [id]="addition.id + '-label'">{{ addition.label }}</strong>
-            <span [id]="addition.id + '-description'">{{ addition.description }}</span>
-          </span>
-        </label>
+      @if (selectedAdditions().length) {
+      <ul class="selected-additions" aria-label="Selected additions">
+        @for (addition of selectedAdditions(); track addition.id) {
+        <li>
+          <button
+            type="button"
+            [attr.aria-label]="'Remove ' + addition.label"
+            (click)="removeAddition(addition.change, chooseAdditions)"
+          >
+            {{ addition.label }}<forge-icon name="plus" />
+          </button>
+        </li>
         }
-      </div>
+      </ul>
+      } @else {
+      <p class="field-hint empty-additions">No additions selected.</p>
+      }
+      <button #chooseAdditions class="choose-additions" type="button" (click)="picker.show()">
+        <forge-icon name="plus" />Choose additions
+      </button>
+      <p class="field-hint" id="additions-hint">Choose any combination. Generate to apply.</p>
     </fieldset>
     <fieldset class="density-field">
       <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
@@ -183,6 +184,13 @@
     </p>
   </fieldset>
 </form>
+<forge-addition-picker
+  #picker
+  [additions]="additions()"
+  [environment]="activeDraft.type"
+  [disabled]="disabled()"
+  (changed)="draftChanged.emit($event)"
+/>
 <div class="details-section">
   <div class="panel-heading">
     <span class="section-number">02</span>
