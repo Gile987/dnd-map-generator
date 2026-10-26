@@ -18,18 +18,12 @@ import {
 } from '../presentation';
 import { normalizeRoomCount, stepRoomCount } from '../room-count';
 import type { DraftChange, SettingsDraft } from '../settings-draft';
-
-interface MapAddition {
-  readonly id: string;
-  readonly label: string;
-  readonly description: string;
-  readonly checked: boolean;
-  readonly change: DraftChange;
-}
+import { AdditionPicker } from '../addition-picker/addition-picker';
+import type { MapAddition } from '../addition-picker/addition-picker';
 
 @Component({
   selector: 'aside[forge-settings-panel]',
-  imports: [Icon],
+  imports: [Icon, AdditionPicker],
   templateUrl: './settings-panel.html',
   styleUrl: './settings-panel.scss',
   host: { class: 'settings-panel', 'aria-label': 'Map settings' },
@@ -108,6 +102,9 @@ export class SettingsPanel {
       })),
     ];
   });
+  protected readonly selectedAdditions = computed(() =>
+    this.additions().filter((item) => item.checked),
+  );
   protected readonly densities = ALL_DENSITIES;
   protected readonly presets = ALL_PRESETS;
   protected readonly characters = ALL_FOREST_CHARACTERS;
@@ -164,6 +161,11 @@ export class SettingsPanel {
   protected editSeed(event: Event): void {
     if (event.target instanceof HTMLInputElement)
       this.draftChanged.emit({ type: this.draft().type, changes: { seed: event.target.value } });
+  }
+
+  protected removeAddition(change: DraftChange, chooser: HTMLButtonElement): void {
+    this.draftChanged.emit(change);
+    chooser.focus();
   }
 
   protected editRooms(event: Event): void {

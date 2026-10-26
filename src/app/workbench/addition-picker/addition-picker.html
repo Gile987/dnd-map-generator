@@ -1,0 +1,73 @@
+<dialog #dialog class="picker" aria-labelledby="picker-title" aria-describedby="picker-hint">
+  <header>
+    <div>
+      <span class="eyebrow"
+        >{{ environment() === 'dungeon' ? 'Dungeon' : 'Forest' }} additions</span
+      >
+      <h2 id="picker-title" tabindex="-1" autofocus>Choose additions</h2>
+    </div>
+    <button type="button" class="close-button" aria-label="Close additions" (click)="close()">
+      <forge-icon name="plus" />
+    </button>
+  </header>
+  <p id="picker-hint">Choose any combination. Generate to apply after closing the picker.</p>
+  <div class="picker-content">
+    <div class="search-field">
+      <label for="addition-search">Find an addition</label>
+      <div>
+        <input
+          #additionSearch
+          id="addition-search"
+          type="search"
+          autocomplete="off"
+          [value]="query()"
+          (input)="search($event)"
+          placeholder="Search names or descriptions…"
+          [disabled]="disabled()"
+        />
+        @if (query()) {
+        <button type="button" [disabled]="disabled()" (click)="clearSearch(additionSearch)">
+          Clear search
+        </button>
+        }
+      </div>
+    </div>
+    <div class="catalog">
+      <fieldset [disabled]="disabled()">
+        <legend class="sr-only">Available additions</legend>
+        <div class="addition-options">
+          @for (addition of matches(); track addition.id) {
+          <label class="addition-option" [class.selected]="addition.checked">
+            <input
+              type="checkbox"
+              name="additions"
+              [value]="addition.id"
+              [checked]="addition.checked"
+              [attr.aria-labelledby]="addition.id + '-label'"
+              [attr.aria-describedby]="addition.id + '-description'"
+              (change)="changed.emit(addition.change)"
+            />
+            <img [forgeAdditionPreview]="addition.id" width="480" height="300" alt="" />
+            <span class="addition-copy">
+              <strong [id]="addition.id + '-label'">{{ addition.label }}</strong>
+              <span [id]="addition.id + '-description'">{{ addition.description }}</span>
+            </span>
+          </label>
+          } @empty {
+          <div class="empty-results" role="status">
+            <strong>No additions found</strong>
+            <p>Try another name or description.</p>
+            <button type="button" (click)="clearSearch(additionSearch)">Show all additions</button>
+          </div>
+          }
+        </div>
+      </fieldset>
+    </div>
+  </div>
+  <footer>
+    <span role="status">{{ selectedCount() }} selected</span>
+    <button type="button" class="done-button" (click)="close()">
+      Done <forge-icon name="check" />
+    </button>
+  </footer>
+</dialog>

@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
+import { openAdditions } from './additions';
 
 interface Reading {
   readonly state: string;
@@ -190,7 +191,21 @@ for (const width of [1440, 768, 320]) {
         await input.check();
         await checkContrast(text, `${type} option selected`, readings);
       }
-      for (const label of await page.locator('.addition-option').all()) {
+      const picker = await openAdditions(page);
+      await checkContrast(
+        picker.locator(
+          'h2, .eyebrow, #picker-hint, .search-field label, footer > span, .done-button',
+        ),
+        `${type} picker text`,
+        readings,
+      );
+      await checkContrast(
+        picker.getByRole('searchbox'),
+        `${type} picker search placeholder`,
+        readings,
+        true,
+      );
+      for (const label of await picker.locator('.addition-option').all()) {
         const input = label.getByRole('checkbox');
         const text = label.locator('.addition-copy > *');
         await checkContrast(text, `${type} addition normal`, readings);
@@ -204,6 +219,7 @@ for (const width of [1440, 768, 320]) {
         await checkContrast(text, `${type} addition selected`, readings);
         await input.uncheck();
       }
+      await picker.getByRole('button', { name: 'Done', exact: true }).click();
       await checkContrast(page.locator('.pending'), `${type} pending notice`, readings);
       const generate = page.getByRole('button', {
         name: `Generate ${type.toLowerCase()}`,

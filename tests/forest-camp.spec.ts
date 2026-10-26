@@ -1,3 +1,4 @@
+import { selectedAddition, setAddition } from './additions';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -30,7 +31,7 @@ test('camp drafts preserve accepted maps and apply without rebuilding the cleari
   const pixels = await page
     .locator('canvas')
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
-  await page.getByRole('checkbox', { name: 'Abandoned camp', exact: true }).check();
+  await setAddition(page, 'Abandoned camp');
   expect(
     await page.locator('canvas').evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL()),
   ).toBe(pixels);
@@ -41,7 +42,7 @@ test('camp drafts preserve accepted maps and apply without rebuilding the cleari
   expect(camp.decoration.scene).toBe('Abandoned camp');
   expect(camp.layout).toEqual(original.layout);
   expect(camp.surfaceSeed).toBe(original.surfaceSeed);
-  await page.getByRole('checkbox', { name: 'Abandoned camp', exact: true }).uncheck();
+  await setAddition(page, 'Abandoned camp', false);
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   const shuffled = await snapshot(page, 'Shuffled camp');
@@ -49,7 +50,7 @@ test('camp drafts preserve accepted maps and apply without rebuilding the cleari
   expect(shuffled.layout).toEqual(camp.layout);
   expect(shuffled.decoration.props).not.toEqual(camp.decoration.props);
   await page.getByRole('button', { name: 'Reset changes' }).click();
-  await expect(page.getByRole('checkbox', { name: 'Abandoned camp', exact: true })).toBeChecked();
+  await expect(selectedAddition(page, 'Abandoned camp')).toBeVisible();
   await page.getByRole('radio', { name: 'Fey glade', exact: true }).check();
   await page.getByRole('radio', { name: 'Sparse', exact: true }).check();
   await page.getByRole('button', { name: 'Generate forest' }).click();
@@ -61,7 +62,7 @@ test('camp drafts preserve accepted maps and apply without rebuilding the cleari
     revision: 1,
   });
   expect(fey.layout).toEqual(camp.layout);
-  await page.getByRole('checkbox', { name: 'Abandoned camp', exact: true }).uncheck();
+  await setAddition(page, 'Abandoned camp', false);
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).not.toContainText('Abandoned camp');
   await page
@@ -69,14 +70,14 @@ test('camp drafts preserve accepted maps and apply without rebuilding the cleari
     .filter({ has: page.getByText('Camp', { exact: true }) })
     .getByRole('button', { name: 'Open', exact: true })
     .click();
-  await expect(page.getByRole('checkbox', { name: 'Abandoned camp', exact: true })).toBeChecked();
+  await expect(selectedAddition(page, 'Abandoned camp')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
   const png = await download;
   expect(png.suggestedFilename()).toContain('-abandoned-camp-');
   expect(await PNG.read(await png.path())).toEqual({ width: 2560, height: 1920 });
-  await page.getByRole('checkbox', { name: 'Abandoned camp', exact: true }).focus();
+  await selectedAddition(page, 'Abandoned camp').focus();
   await page.screenshot({ path: 'artifacts/f09/desktop.png', fullPage: true });
   for (const width of [768, 390, 320]) {
     await page.setViewportSize({ width, height: 1100 });
@@ -93,12 +94,12 @@ test('a camp survives refresh and a current-format backup imported into an empty
 }) => {
   await page.goto('/');
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
-  await page.getByRole('checkbox', { name: 'Abandoned camp', exact: true }).check();
+  await setAddition(page, 'Abandoned camp');
   await page.getByRole('button', { name: 'Generate forest' }).click();
   const saved = await snapshot(page, 'Portable camp');
   await page.reload();
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(page.getByRole('checkbox', { name: 'Abandoned camp', exact: true })).toBeChecked();
+  await expect(selectedAddition(page, 'Abandoned camp')).toBeVisible();
   const pending = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
@@ -110,9 +111,7 @@ test('a camp survives refresh and a current-format backup imported into an empty
     await fresh.setInputFiles('.import-label input', path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-    await expect(
-      fresh.getByRole('checkbox', { name: 'Abandoned camp', exact: true }),
-    ).toBeChecked();
+    await expect(selectedAddition(fresh, 'Abandoned camp')).toBeVisible();
     expect(await snapshot(fresh, 'Imported snapshot')).toEqual(saved);
   } finally {
     await fresh.close();
@@ -142,10 +141,10 @@ test('a camp that cannot fit preserves an imported map and recovers with a new s
   await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
   const before = await snapshot(page, 'No camp space');
-  await page.getByRole('checkbox', { name: 'Abandoned camp', exact: true }).check();
+  await setAddition(page, 'Abandoned camp');
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#settings-error')).toContainText('camp could not fit');
-  await expect(page.getByRole('checkbox', { name: 'Abandoned camp', exact: true })).toBeChecked();
+  await expect(selectedAddition(page, 'Abandoned camp')).toBeVisible();
   expect(await snapshot(page, 'After rejected camp')).toEqual(before);
   await page.getByLabel('World seed').fill('camp-recovery');
   await page.getByRole('button', { name: 'Generate forest' }).click();
