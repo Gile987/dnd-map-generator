@@ -5,8 +5,10 @@ import type {
   ForestDecoration,
   ForestLayout,
   ForestScene,
+  ForestLandmark,
   Prop,
 } from './model';
+import { placeStoneCircle } from './forest-landmark';
 import { placeCamp } from './forest-camp';
 import { Random, shuffleInPlace, streamSeed } from './random';
 import { NEIGHBORS_4, forestDistances } from './forest-layout';
@@ -89,6 +91,24 @@ export function decorateForest(
   density: Density,
   revision: number,
   scene: ForestScene = 'None',
+  landmark: ForestLandmark = 'None',
+): ForestDecoration {
+  const base = decorateBaseForest(layout, seed, character, density, revision, scene);
+  if (landmark === 'None') return base;
+  return {
+    ...base,
+    landmark,
+    props: placeStoneCircle(layout, base.props, seed, density, revision) ?? base.props,
+  };
+}
+
+function decorateBaseForest(
+  layout: ForestLayout,
+  seed: string,
+  character: ForestCharacter,
+  density: Density,
+  revision: number,
+  scene: ForestScene,
 ): ForestDecoration {
   const random = new Random(streamSeed(seed, 'forest-decoration', character, density, revision));
   const profile = profiles[character];

@@ -2,6 +2,7 @@ import {
   ALL_DENSITIES,
   ALL_FOREST_CHARACTERS,
   ALL_FOREST_SCENES,
+  ALL_FOREST_LANDMARKS,
   DENSITY_BUDGETS,
   HEIGHT,
   WIDTH,
@@ -15,6 +16,7 @@ import type { ForestClearing, ForestLayout, ForestSettings, Point } from './mode
 import { isConnected, forestDistances } from './forest-layout';
 import type { Edge } from './forest-layout';
 import { isDetailRevision } from './decoration-revision';
+import { stoneCircleError } from './forest-landmark';
 import { CAMP_PROP_KINDS } from './forest-camp';
 
 function edgeOf(point: Point): Edge | undefined {
@@ -74,6 +76,13 @@ export function validateForest(map: ForestClearing): string | undefined {
   if (layoutError) return layoutError;
   if (!ALL_FOREST_SCENES.includes(map.decoration.scene ?? 'None'))
     return 'Choose a valid forest scene.';
+  if (!ALL_FOREST_LANDMARKS.includes(map.decoration.landmark ?? 'None'))
+    return 'Choose a valid forest landmark.';
+  if (map.decoration.landmark === 'Suggested landmark') {
+    const error = stoneCircleError(map.layout, map.decoration.props);
+    if (error) return error;
+  } else if (map.decoration.props.some((p) => p.kind === 'standing_stone'))
+    return 'Standing stones require a suggested landmark.';
   const camp = map.decoration.props.filter((prop) => CAMP_PROP_KINDS.includes(prop.kind));
   if (map.decoration.scene === 'Abandoned camp') {
     if (
@@ -132,6 +141,8 @@ export function validateForest(map: ForestClearing): string | undefined {
 export function validateForestSettings(settings: ForestSettings): string | undefined {
   if (!settings.seed.trim() || settings.seed.trim().length > 64)
     return 'Enter a seed between 1 and 64 characters.';
+  if (!ALL_FOREST_LANDMARKS.includes(settings.landmark ?? 'None'))
+    return 'Choose a valid forest landmark.';
   if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a valid decoration density.';
   if (!ALL_FOREST_CHARACTERS.includes(settings.character))
     return 'Choose a valid forest character.';

@@ -26,6 +26,7 @@ const PROP_LAYERS: Readonly<Record<ForestPropKind, 'ground' | 'object'>> = {
   bedroll: 'ground',
   fire_ring: 'ground',
   supply_bundle: 'object',
+  standing_stone: 'object',
 };
 
 interface ForestAtmosphere {

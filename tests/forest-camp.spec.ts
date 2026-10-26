@@ -87,7 +87,7 @@ test('camp drafts preserve accepted maps and apply without rebuilding the cleari
   }
 });
 
-test('a camp survives refresh and a format-4 backup imported into an empty browser', async ({
+test('a camp survives refresh and a current-format backup imported into an empty browser', async ({
   page,
   browser,
 }) => {
@@ -103,7 +103,7 @@ test('a camp survives refresh and a format-4 backup imported into an empty brows
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '4.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '5.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://127.0.0.1:4200/');

@@ -8,6 +8,7 @@ import type {
   ForestClearing,
   ForestSettings,
   ForestScene,
+  ForestLandmark,
 } from '../engine/model';
 import { ROOM_MAX, ROOM_MIN } from '../engine/model';
 import { validateForestSettings } from '../engine/forest-validation';
@@ -29,6 +30,7 @@ export interface ForestDraft extends CommonDraft {
   readonly type: 'forest';
   readonly character: ForestCharacter;
   readonly scene?: ForestScene;
+  readonly landmark?: ForestLandmark;
 }
 
 export interface SettingsDrafts {
@@ -64,6 +66,7 @@ export function forestDraftForMap(map: ForestClearing): ForestDraft {
     seed: map.seed,
     density: map.decoration.density,
     character: map.decoration.character,
+    ...(map.decoration.landmark ? { landmark: map.decoration.landmark } : {}),
     ...(map.decoration.scene ? { scene: map.decoration.scene } : {}),
   };
 }
@@ -74,6 +77,7 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
       seed: draft.seed,
       density: draft.density,
       character: draft.character,
+      ...(draft.landmark ? { landmark: draft.landmark } : {}),
       ...(draft.scene ? { scene: draft.scene } : {}),
     };
     const error = validateForestSettings(settings);

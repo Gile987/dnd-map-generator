@@ -65,6 +65,7 @@ export function generateForestClearing(
         settings.density,
         0,
         settings.scene,
+        settings.landmark,
       ),
     };
 
@@ -88,6 +89,7 @@ export function shuffleForestDetails(map: ForestClearing): ForestClearing {
     map.decoration.density,
     revision,
     map.decoration.scene,
+    map.decoration.landmark,
   );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
@@ -103,6 +105,7 @@ export function changeForestDensity(map: ForestClearing, density: Density): Fore
     density,
     map.decoration.revision,
     map.decoration.scene,
+    map.decoration.landmark,
   );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
@@ -121,6 +124,7 @@ export function changeForestCharacter(
     map.decoration.density,
     map.decoration.revision,
     map.decoration.scene,
+    map.decoration.landmark,
   );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
@@ -134,7 +138,7 @@ export function changeForestScene(map: ForestClearing, scene: ForestScene): Fore
 
 export function changeForestAppearance(
   map: ForestClearing,
-  settings: Pick<ForestSettings, 'density' | 'character' | 'scene'>,
+  settings: Pick<ForestSettings, 'density' | 'character' | 'scene' | 'landmark'>,
 ): ForestClearing {
   const decoration = decorateForest(
     map.layout,
@@ -143,6 +147,7 @@ export function changeForestAppearance(
     settings.density,
     map.decoration.revision,
     settings.scene,
+    settings.landmark,
   );
   const updated: ForestClearing = { ...map, decoration };
   return validateForest(updated) ? map : updated;

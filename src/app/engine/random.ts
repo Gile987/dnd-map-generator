@@ -14,6 +14,7 @@ export type SeedStream =
   | 'surface'
   | 'forest-layout'
   | 'forest-decoration'
+  | 'forest-landmark'
   | 'forest-camp'
   | 'dungeon-study';
 

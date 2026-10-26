@@ -17,7 +17,7 @@ export function exportFilename(map: GeneratedMap): string {
     return `encounter-${seed}-${preset}${scene}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? '-abandoned-camp' : '';
-  return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}${scene}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+  return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}${map.decoration.landmark === 'Suggested landmark' ? '-standing-stone-circle' : ''}${scene}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
 }
 
 export async function createPng(map: GeneratedMap, grid: boolean): Promise<Blob> {
