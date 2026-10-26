@@ -18,10 +18,27 @@ import type { Dungeon, ForestClearing, GeneratedMap, MapType } from '../engine/m
 import { dungeonDraftForMap, forestDraftForMap, parseDraft } from './settings-draft';
 import type { DraftChange, SettingsDrafts } from './settings-draft';
 
+const SHUFFLE_HISTORY_LIMIT = 20;
+
+interface ShuffleHistory<T extends GeneratedMap> {
+  readonly past: readonly T[];
+  readonly future: readonly T[];
+}
+
+export interface ShuffleHistoryStatus {
+  readonly undo: number;
+  readonly redo: number;
+  readonly limit: number;
+}
+
 interface SessionState {
   readonly type: MapType;
   readonly maps: { readonly dungeon: Dungeon; readonly forest: ForestClearing };
   readonly drafts: SettingsDrafts;
+  readonly histories: {
+    readonly dungeon: ShuffleHistory<Dungeon>;
+    readonly forest: ShuffleHistory<ForestClearing>;
+  };
 }
 
 export type ApplySettingsResult =
@@ -32,6 +49,30 @@ function draftsForMap(drafts: SettingsDrafts, map: GeneratedMap): SettingsDrafts
   return map.type === 'dungeon'
     ? { ...drafts, dungeon: dungeonDraftForMap(map) }
     : { ...drafts, forest: forestDraftForMap(map) };
+}
+
+function recordShuffle<T extends GeneratedMap>(
+  history: ShuffleHistory<T>,
+  current: T,
+): ShuffleHistory<T> {
+  return { past: [...history.past, current].slice(-SHUFFLE_HISTORY_LIMIT), future: [] };
+}
+
+function moveShuffle<T extends GeneratedMap>(
+  current: T,
+  history: ShuffleHistory<T>,
+  direction: 'undo' | 'redo',
+): { map: T; history: ShuffleHistory<T> } | undefined {
+  const source = direction === 'undo' ? history.past : history.future;
+  const next = source.at(-1);
+  if (!next) return undefined;
+  return {
+    map: next,
+    history:
+      direction === 'undo'
+        ? { past: source.slice(0, -1), future: [...history.future, current] }
+        : { past: [...history.past, current], future: source.slice(0, -1) },
+  };
 }
 
 function initialState(): SessionState {
@@ -52,6 +93,7 @@ function initialState(): SessionState {
     type: 'dungeon',
     maps: { dungeon: dungeon.map, forest: forest.map },
     drafts: { dungeon: dungeonDraftForMap(dungeon.map), forest: forestDraftForMap(forest.map) },
+    histories: { dungeon: { past: [], future: [] }, forest: { past: [], future: [] } },
   };
 }
 
@@ -66,6 +108,11 @@ export class WorkbenchSession {
   readonly draft = computed(() => {
     const state = this.state();
     return state.drafts[state.type];
+  });
+  readonly shuffleHistory = computed<ShuffleHistoryStatus>(() => {
+    const state = this.state();
+    const history = state.histories[state.type];
+    return { undo: history.past.length, redo: history.future.length, limit: SHUFFLE_HISTORY_LIMIT };
   });
   private readonly layoutPending = computed(() => {
     const state = this.state();
@@ -136,15 +183,48 @@ export class WorkbenchSession {
       maps:
         map.type === 'dungeon' ? { ...state.maps, dungeon: map } : { ...state.maps, forest: map },
       drafts: draftsForMap(state.drafts, map),
+      histories: { ...state.histories, [map.type]: { past: [], future: [] } },
     }));
   }
 
-  shuffle(): void {
+  shuffle(): boolean {
     const current = this.map();
-    this.accept(
-      current.type === 'dungeon' ? shuffleDetails(current) : shuffleForestDetails(current),
-      false,
-    );
+    const next =
+      current.type === 'dungeon' ? shuffleDetails(current) : shuffleForestDetails(current);
+    if (next === current) return false;
+    this.accept(next, false);
+    return true;
+  }
+
+  undoShuffle(): void {
+    this.restoreShuffle('undo');
+  }
+
+  redoShuffle(): void {
+    this.restoreShuffle('redo');
+  }
+
+  private restoreShuffle(direction: 'undo' | 'redo'): void {
+    this.state.update((state) => {
+      if (state.type === 'dungeon') {
+        const next = moveShuffle(state.maps.dungeon, state.histories.dungeon, direction);
+        return next
+          ? {
+              ...state,
+              maps: { ...state.maps, dungeon: next.map },
+              histories: { ...state.histories, dungeon: next.history },
+            }
+          : state;
+      }
+      const next = moveShuffle(state.maps.forest, state.histories.forest, direction);
+      return next
+        ? {
+            ...state,
+            maps: { ...state.maps, forest: next.map },
+            histories: { ...state.histories, forest: next.history },
+          }
+        : state;
+    });
   }
 
   generate(): ApplySettingsResult {
@@ -276,6 +356,20 @@ export class WorkbenchSession {
       maps:
         map.type === 'dungeon' ? { ...state.maps, dungeon: map } : { ...state.maps, forest: map },
       drafts: resetDraft ? draftsForMap(state.drafts, map) : state.drafts,
+      histories:
+        map.type === 'dungeon'
+          ? {
+              ...state.histories,
+              dungeon: resetDraft
+                ? { past: [], future: [] }
+                : recordShuffle(state.histories.dungeon, state.maps.dungeon),
+            }
+          : {
+              ...state.histories,
+              forest: resetDraft
+                ? { past: [], future: [] }
+                : recordShuffle(state.histories.forest, state.maps.forest),
+            },
     }));
   }
 }

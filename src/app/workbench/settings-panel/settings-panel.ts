@@ -20,6 +20,7 @@ import { normalizeRoomCount, stepRoomCount } from '../room-count';
 import type { DraftChange, SettingsDraft } from '../settings-draft';
 import { AdditionPicker } from '../addition-picker/addition-picker';
 import type { MapAddition } from '../addition-picker/addition-picker';
+import type { ShuffleHistoryStatus } from '../workbench-session';
 
 @Component({
   selector: 'aside[forge-settings-panel]',
@@ -33,6 +34,7 @@ export class SettingsPanel {
   readonly map = input.required<GeneratedMap>();
   readonly draft = input.required<SettingsDraft>();
   readonly pending = input.required<boolean>();
+  readonly shuffleHistory = input.required<ShuffleHistoryStatus>();
   readonly disabled = input(false);
   readonly generating = input(false);
   readonly attempted = input(false);
@@ -42,6 +44,8 @@ export class SettingsPanel {
   readonly randomizeRequested = output<void>();
   readonly resetRequested = output<void>();
   readonly shuffleRequested = output<void>();
+  readonly undoShuffleRequested = output<void>();
+  readonly redoShuffleRequested = output<void>();
 
   protected readonly additions = computed<readonly MapAddition[]>(() => {
     const draft = this.draft();
@@ -166,6 +170,13 @@ export class SettingsPanel {
   protected removeAddition(change: DraftChange, chooser: HTMLButtonElement): void {
     this.draftChanged.emit(change);
     chooser.focus();
+  }
+
+  protected restoreShuffle(direction: 'undo' | 'redo'): void {
+    // Keep these controls focusable at the history boundary and during the busy state.
+    if (this.disabled() || this.shuffleHistory()[direction] === 0) return;
+    if (direction === 'undo') this.undoShuffleRequested.emit();
+    else this.redoShuffleRequested.emit();
   }
 
   protected editRooms(event: Event): void {

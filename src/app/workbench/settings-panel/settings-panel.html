@@ -200,14 +200,41 @@
     {{ map().type === 'dungeon' ? 'Love the layout? Give its rooms a different kind of character.' :
     'Love the clearing? Give it a different woodland character.' }}
   </p>
-  <button
-    class="shuffle-button"
-    type="button"
-    (click)="shuffleRequested.emit()"
-    [disabled]="disabled()"
-  >
-    <forge-icon name="shuffle" />Shuffle details<span>↗</span>
-  </button>
+  <div class="detail-actions" role="group" aria-label="Detail actions">
+    <button
+      class="shuffle-button"
+      type="button"
+      (click)="shuffleRequested.emit()"
+      [disabled]="disabled()"
+    >
+      <forge-icon name="shuffle" />Shuffle details
+    </button>
+    <button
+      class="history-button"
+      type="button"
+      aria-label="Undo shuffle"
+      [title]="'Undo shuffle (' + shuffleHistory().undo + ' available)'"
+      aria-describedby="shuffle-history-hint"
+      [attr.aria-disabled]="disabled() || shuffleHistory().undo === 0"
+      (click)="restoreShuffle('undo')"
+    >
+      <forge-icon name="undo" />
+    </button>
+    <button
+      class="history-button"
+      type="button"
+      aria-label="Redo shuffle"
+      [title]="'Redo shuffle (' + shuffleHistory().redo + ' available)'"
+      aria-describedby="shuffle-history-hint"
+      [attr.aria-disabled]="disabled() || shuffleHistory().redo === 0"
+      (click)="restoreShuffle('redo')"
+    >
+      <forge-icon name="redo" />
+    </button>
+  </div>
+  <p class="history-hint" id="shuffle-history-hint">
+    Up to {{ shuffleHistory().limit }} shuffles. Generate or Open starts over.
+  </p>
   <span class="preserve-note"
     ><forge-icon name="lock" />{{ map().type === 'dungeon' ? 'Your rooms and paths stay put.' :
     'Your clearing and path stay put.' }}</span
