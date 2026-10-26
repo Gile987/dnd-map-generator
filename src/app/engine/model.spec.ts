@@ -39,6 +39,7 @@ describe('production option constants', () => {
       'bookshelf',
       'scroll_case',
       'weathered_statue',
+      'dining_table',
       'tree',
       'boulder',
       'fern',

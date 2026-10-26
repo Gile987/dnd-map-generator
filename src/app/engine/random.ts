@@ -17,7 +17,8 @@ export type SeedStream =
   | 'forest-landmark'
   | 'forest-camp'
   | 'dungeon-study'
-  | 'dungeon-landmark';
+  | 'dungeon-landmark'
+  | 'dungeon-furniture';
 
 export function streamSeed(seed: string, kind: SeedStream, ...parts: (string | number)[]): number {
   return hashSeed([GENERATOR_VERSION, seed, kind, ...parts].join(':'));

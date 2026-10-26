@@ -1,3 +1,4 @@
+import { propCells } from './prop-footprint';
 import type { FeatureReservation } from './feature-reservation';
 import { contains, DENSITY_BUDGETS, indexOf, isFloor } from './model';
 import type { Density, DecorationPreset, Layout, Point, Prop, Room } from './model';
@@ -68,7 +69,10 @@ export function placeStudy(
             continue;
           const retained = props.filter((p) => !contains(room, p));
           const blocked = new Set(
-            [...retained, ...objects].filter((p) => p.blocking).map((p) => indexOf(p.x, p.y)),
+            [...retained, ...objects]
+              .filter((p) => p.blocking)
+              .flatMap(propCells)
+              .map((p) => indexOf(p.x, p.y)),
           );
           if (isTraversable(layout, blocked)) candidates.push({ room, objects });
         }

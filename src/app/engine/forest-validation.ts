@@ -1,3 +1,4 @@
+import { propFootprintError } from './prop-footprint';
 import {
   ALL_DENSITIES,
   ALL_FOREST_CHARACTERS,
@@ -114,6 +115,8 @@ export function validateForest(map: ForestClearing): string | undefined {
   const route = new Set(map.layout.route);
   const blocked = new Set<number>();
   for (const prop of map.decoration.props) {
+    const footprintError = propFootprintError(prop);
+    if (footprintError) return footprintError;
     if (!isTilePosition(prop.x, prop.y)) return 'A prop is outside the tile grid.';
     if (!isForestPropKind(prop.kind)) return 'A prop is not supported by forest maps.';
     if (prop.kind === 'tree' && isWalkable(map.layout, prop.x, prop.y))

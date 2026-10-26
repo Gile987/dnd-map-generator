@@ -97,6 +97,7 @@ export class WorkbenchSession {
       this.layoutPending() ||
       draft.density !== decoration.density ||
       draft.preset !== decoration.preset ||
+      (draft.furniture ?? 'None') !== (decoration.furniture ?? 'None') ||
       (draft.landmark ?? 'None') !== (decoration.landmark ?? 'None') ||
       (draft.scene ?? 'None') !== (decoration.scene ?? 'None')
     );
@@ -182,6 +183,8 @@ export class WorkbenchSession {
         if (!result.ok) return result;
         dungeon = result.map;
       } else if (
+        (settings.furniture ?? 'None') !== 'None' ||
+        (dungeon.decoration.furniture ?? 'None') !== 'None' ||
         (settings.landmark ?? 'None') !== 'None' ||
         (dungeon.decoration.landmark ?? 'None') !== 'None' ||
         settings.scene === 'Forgotten study' ||
@@ -236,6 +239,15 @@ export class WorkbenchSession {
     ) {
       return { ok: false, error: 'That camp could not fit beside the path. Try another seed.' };
     }
+    if (
+      next.type === 'dungeon' &&
+      parsed.type === 'dungeon' &&
+      (next.decoration.furniture ?? 'None') !== (parsed.settings.furniture ?? 'None')
+    )
+      return {
+        ok: false,
+        error: 'That table could not fit. Try another seed, density, or fewer features.',
+      };
     if (
       next.type === 'dungeon' &&
       parsed.type === 'dungeon' &&

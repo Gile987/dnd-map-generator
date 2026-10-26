@@ -67,6 +67,10 @@ export const ALL_PRESETS: readonly DecorationPreset[] = [
 ];
 
 export type ForestCharacter = 'Verdant' | 'Autumn' | 'Pines' | 'Fey';
+export type DungeonFurniture = 'None' | 'dining-table';
+export const ALL_DUNGEON_FURNITURE: readonly DungeonFurniture[] = ['None', 'dining-table'];
+export type QuarterTurn = 0 | 1 | 2 | 3;
+
 export type DungeonScene = 'None' | 'Forgotten study';
 export const ALL_DUNGEON_SCENES: readonly DungeonScene[] = ['None', 'Forgotten study'];
 export type DungeonLandmark = 'None' | LandmarkIdFor<'dungeon'>;
@@ -99,6 +103,7 @@ export interface DungeonSettings {
   readonly preset: DecorationPreset;
   readonly scene?: DungeonScene;
   readonly landmark?: DungeonLandmark;
+  readonly furniture?: DungeonFurniture;
 }
 
 export interface ForestSettings {
@@ -127,6 +132,7 @@ export const DUNGEON_PROP_KINDS = [
   'bookshelf',
   'scroll_case',
   'weathered_statue',
+  'dining_table',
 ] as const;
 
 export const FOREST_PROP_KINDS = [
@@ -163,6 +169,8 @@ export interface Prop extends Point {
   readonly kind: PropKind;
   readonly blocking: boolean;
   readonly variation: number;
+  readonly footprint?: { readonly width: number; readonly height: number };
+  readonly rotation?: QuarterTurn;
 }
 
 export interface Decoration {
@@ -171,6 +179,7 @@ export interface Decoration {
   readonly preset: DecorationPreset;
   readonly scene?: DungeonScene;
   readonly landmark?: DungeonLandmark;
+  readonly furniture?: DungeonFurniture;
   readonly revision: number;
 }
 
@@ -254,6 +263,7 @@ export function isBlockingProp(kind: PropKind): boolean {
     kind === 'supply_bundle' ||
     kind === 'desk' ||
     kind === 'bookshelf' ||
+    kind === 'dining_table' ||
     kind === 'weathered_statue' ||
     kind === 'standing_stone'
   );

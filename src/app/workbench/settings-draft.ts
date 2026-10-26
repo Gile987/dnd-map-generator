@@ -5,6 +5,7 @@ import type {
   DungeonSettings,
   DungeonScene,
   DungeonLandmark,
+  DungeonFurniture,
   ForestCharacter,
   ForestClearing,
   ForestSettings,
@@ -26,6 +27,7 @@ export interface DungeonDraft extends CommonDraft {
   readonly preset: DecorationPreset;
   readonly scene?: DungeonScene;
   readonly landmark?: DungeonLandmark;
+  readonly furniture?: DungeonFurniture;
 }
 
 export interface ForestDraft extends CommonDraft {
@@ -58,6 +60,7 @@ export function dungeonDraftForMap(map: Dungeon): DungeonDraft {
     rooms: String(map.layout.rooms.length),
     density: map.decoration.density,
     preset: map.decoration.preset,
+    ...(map.decoration.furniture ? { furniture: map.decoration.furniture } : {}),
     ...(map.decoration.landmark ? { landmark: map.decoration.landmark } : {}),
     ...(map.decoration.scene ? { scene: map.decoration.scene } : {}),
   };
@@ -91,6 +94,7 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
     roomCount: Number(draft.rooms),
     density: draft.density,
     preset: draft.preset,
+    ...(draft.furniture ? { furniture: draft.furniture } : {}),
     ...(draft.landmark ? { landmark: draft.landmark } : {}),
     ...(draft.scene ? { scene: draft.scene } : {}),
   };

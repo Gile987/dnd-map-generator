@@ -574,3 +574,55 @@ test('rejected dungeon landmark changes keep accepted maps and drafts available 
   expect(session.pending()).toBe(true);
   expect(session.generate().ok).toBe(true);
 });
+
+test('furniture drafts stay pending and apply with other settings without rebuilding the dungeon', () => {
+  const session = new WorkbenchSession(),
+    original = session.map();
+  session.updateDraft({ type: 'dungeon', changes: { furniture: 'dining-table' } });
+  expect(session.map()).toBe(original);
+  expect(session.pending()).toBe(true);
+  session.selectMapType('forest');
+  session.selectMapType('dungeon');
+  expect(session.draft()).toMatchObject({ furniture: 'dining-table' });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const furnished = session.map();
+  expect(furnished.layout).toBe(original.layout);
+  expect(furnished.surfaceSeed).toBe(original.surfaceSeed);
+  session.updateDraft({ type: 'dungeon', changes: { furniture: 'None' } });
+  session.shuffle();
+  expect(session.map().decoration).toMatchObject({ furniture: 'dining-table', revision: 1 });
+  expect(session.draft()).toMatchObject({ furniture: 'None' });
+  session.resetChanges();
+  expect(session.draft()).toMatchObject({ furniture: 'dining-table' });
+  session.updateDraft({
+    type: 'dungeon',
+    changes: { furniture: 'None', preset: 'Crypt', density: 'Sparse', scene: 'Forgotten study' },
+  });
+  expect(session.generate().ok).toBe(true);
+  expect(session.map().decoration).toMatchObject({
+    preset: 'Crypt',
+    density: 'Sparse',
+    scene: 'Forgotten study',
+    revision: 1,
+  });
+  expect(session.map().decoration).not.toHaveProperty('furniture');
+  session.openSaved(furnished);
+  expect(session.draft()).toMatchObject({ furniture: 'dining-table' });
+  expect(session.pending()).toBe(false);
+});
+
+test('a refused furniture change preserves accepted map and draft and can be retried', () => {
+  const session = new WorkbenchSession(),
+    original = session.map();
+  session.updateDraft({ type: 'dungeon', changes: { furniture: 'dining-table' } });
+  const draft = session.draft();
+  vi.spyOn(dungeonDecoration, 'changeDungeonAppearance').mockImplementationOnce((map) => map);
+  expect(session.generate()).toMatchObject({
+    ok: false,
+    error: expect.stringContaining('table could not fit'),
+  });
+  expect(session.map()).toBe(original);
+  expect(session.draft()).toBe(draft);
+  expect(session.pending()).toBe(true);
+  expect(session.generate().ok).toBe(true);
+});

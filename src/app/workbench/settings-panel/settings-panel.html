@@ -150,6 +150,20 @@
       </select>
       <p class="field-hint" id="landmark-hint">{{ landmarkDescription() }}</p>
     </div>
+    @if (activeDraft.type === 'dungeon') {
+    <div class="field furniture-field">
+      <label for="furniture">Furniture <span>ROOM TO GATHER</span></label>
+      <select id="furniture" (change)="selectFurniture($event)" aria-describedby="furniture-hint">
+        <option value="None" [selected]="(activeDraft.furniture ?? 'None') === 'None'">None</option>
+        <option value="dining-table" [selected]="activeDraft.furniture === 'dining-table'">
+          Dining table
+        </option>
+      </select>
+      <p class="field-hint" id="furniture-hint">
+        A 2 × 1 wooden table. Both tiles block movement; space around it stays clear.
+      </p>
+    </div>
+    }
     <fieldset class="density-field">
       <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
       @let selectedDensity = activeDraft.density;

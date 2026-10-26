@@ -21,10 +21,11 @@ function record() {
   );
 }
 
-test('statue snapshots round-trip in format 7 and historical vocabularies reject new metadata and objects', () => {
+test('statue snapshots round-trip in current format and historical vocabularies reject new metadata and objects', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('7.0.0');
+  expect(saved.saveFormatVersion).toBe('8.0.0');
   expect(parseSavedMap(saved)).toEqual(saved);
+  expect(parseSavedMap({ ...saved, saveFormatVersion: '7.0.0' })).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   for (const saveFormatVersion of ['1.0.0', '2.0.0', '3.0.0', '4.0.0', '5.0.0', '6.0.0']) {
     expect(parseSavedMap({ ...saved, saveFormatVersion })).toBeUndefined();

@@ -48,6 +48,9 @@ export class Preview {
             '. ' +
             LANDMARK_CATALOG[m.decoration.landmark].description
           : '') +
+        (m.decoration.furniture === 'dining-table'
+          ? ' A dining table blocks two tiles, with clear space around it.'
+          : '') +
         ' Stairs mark the entrance; a circular stone dais marks the objective. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
       );
     }
