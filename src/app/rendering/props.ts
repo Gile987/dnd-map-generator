@@ -1,3 +1,5 @@
+import { drawDiningTable } from './furniture-props';
+import { propBounds } from '../engine/prop-footprint';
 import { drawStandingStone, drawWeatheredStatue } from './landmark-props';
 import type { Prop, PropKind } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
@@ -53,6 +55,7 @@ const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   supply_bundle: drawSupplyBundle,
   standing_stone: drawStandingStone,
   weathered_statue: drawWeatheredStatue,
+  dining_table: drawDiningTable,
   desk: drawDesk,
   bookshelf: drawBookshelf,
   scroll_case: drawScrollCase,
@@ -64,7 +67,13 @@ export function drawProp(
   forest: ForestPalette = VERDANT_PALETTE,
 ): void {
   ctx.save();
-  ctx.translate(prop.x + 0.5, prop.y + (prop.kind === 'sconce' ? 0.18 : 0.5));
+  if (prop.footprint) {
+    const bounds = propBounds(prop);
+    ctx.translate(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    ctx.rotate(((prop.rotation ?? 0) * Math.PI) / 2);
+  } else {
+    ctx.translate(prop.x + 0.5, prop.y + (prop.kind === 'sconce' ? 0.18 : 0.5));
+  }
   ctx.lineWidth = 0.025;
   PROP_DRAWERS[prop.kind](ctx, prop, forest);
   ctx.restore();

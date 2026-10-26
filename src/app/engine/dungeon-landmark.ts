@@ -1,3 +1,4 @@
+import { propCells } from './prop-footprint';
 import { contains, DENSITY_BUDGETS, indexOf } from './model';
 import type { Density, DecorationPreset, DungeonLandmark, Layout, Point, Prop } from './model';
 import { areaAround, areaContains, areasOverlap } from './feature-reservation';
@@ -7,6 +8,12 @@ import { Random, shuffleInPlace, streamSeed } from './random';
 
 export function statueArea(center: Point): ReservedArea {
   return areaAround(center, 2, 2);
+}
+
+export function statueReservations(props: readonly Prop[]): readonly FeatureReservation[] {
+  return props
+    .filter((p) => p.kind === 'weathered_statue')
+    .map((statue) => ({ area: statueArea(statue), props: [statue] }));
 }
 
 function statueError(
@@ -30,7 +37,7 @@ function statueError(
   )
     return 'The statue needs a clear 5 × 5 area away from doors, entrance, and objective.';
   if (
-    props.some((p) => p !== statue && areaContains(area, p)) ||
+    props.some((p) => p !== statue && propCells(p).some((cell) => areaContains(area, cell))) ||
     reservations.some((reservation) => areasOverlap(area, reservation.area))
   )
     return 'The statue and scene need separate clear encounter space.';
@@ -61,19 +68,29 @@ function placeStatue(
     const area = statueArea(center);
     const budget = Math.floor(room.width * room.height * DENSITY_BUDGETS[density]);
     let blockers =
-      1 + props.filter((p) => p.blocking && contains(room, p) && protectedProps.has(p)).length;
+      1 +
+      props
+        .filter((p) => p.blocking && contains(room, p) && protectedProps.has(p))
+        .flatMap(propCells).length;
     if (blockers > budget) continue;
     const retained = props.filter((p) => {
       if (protectedProps.has(p)) return true;
-      if (areaContains(area, p)) return false;
-      return !contains(room, p) || !p.blocking || ++blockers <= budget;
+      if (propCells(p).some((cell) => areaContains(area, cell))) return false;
+      if (!contains(room, p) || !p.blocking) return true;
+      blockers += propCells(p).length;
+      return blockers <= budget;
     });
     const placed: readonly Prop[] = [
       ...retained,
       { ...center, kind: 'weathered_statue', blocking: true, variation: random.next() },
     ];
     if (statueError(layout, placed, reservations)) continue;
-    const blocked = new Set(placed.filter((p) => p.blocking).map((p) => indexOf(p.x, p.y)));
+    const blocked = new Set(
+      placed
+        .filter((p) => p.blocking)
+        .flatMap(propCells)
+        .map((p) => indexOf(p.x, p.y)),
+    );
     if (isTraversable(layout, blocked)) return placed;
   }
   return undefined;

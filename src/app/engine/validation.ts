@@ -1,8 +1,11 @@
-import { DUNGEON_LANDMARK_RULES } from './dungeon-landmark';
+import { propCells, propFootprintError } from './prop-footprint';
+import { furnitureError } from './dungeon-furniture';
+import { DUNGEON_LANDMARK_RULES, statueReservations } from './dungeon-landmark';
 import { studyReservations } from './dungeon-study';
 import {
   ALL_DENSITIES,
   ALL_DUNGEON_SCENES,
+  ALL_DUNGEON_FURNITURE,
   ALL_DUNGEON_LANDMARKS,
   ALL_PRESETS,
   DENSITY_BUDGETS,
@@ -33,6 +36,8 @@ export function validateSettings(settings: DungeonSettings): string | undefined 
     return `Choose a whole number of rooms from ${ROOM_MIN} to ${ROOM_MAX}.`;
   if (!ALL_DUNGEON_LANDMARKS.includes(settings.landmark ?? 'None'))
     return 'Choose a valid dungeon landmark.';
+  if (!ALL_DUNGEON_FURNITURE.includes(settings.furniture ?? 'None'))
+    return 'Choose valid dungeon furniture.';
   if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a valid decoration density.';
   if (!ALL_PRESETS.includes(settings.preset)) return 'Choose a valid decoration preset.';
   if (!ALL_DUNGEON_SCENES.includes(settings.scene ?? 'None'))
@@ -99,6 +104,20 @@ export function validateDungeon(map: Dungeon): string | undefined {
   if (layoutError) return layoutError;
   if (!ALL_DUNGEON_SCENES.includes(map.decoration.scene ?? 'None'))
     return 'Choose a valid dungeon scene.';
+  for (const prop of map.decoration.props) {
+    const error = propFootprintError(prop);
+    if (error) return error;
+  }
+  if (!ALL_DUNGEON_FURNITURE.includes(map.decoration.furniture ?? 'None'))
+    return 'Choose valid dungeon furniture.';
+  if (map.decoration.furniture === 'dining-table') {
+    const error = furnitureError(map.layout, map.decoration.props, [
+      ...studyReservations(map.layout, map.decoration.props),
+      ...statueReservations(map.decoration.props),
+    ]);
+    if (error) return error;
+  } else if (map.decoration.props.some((p) => p.kind === 'dining_table'))
+    return 'A dining table requires the furniture option.';
   const landmark = map.decoration.landmark ?? 'None';
   if (!ALL_DUNGEON_LANDMARKS.includes(landmark)) return 'Choose a valid dungeon landmark.';
   if (landmark !== 'None') {
@@ -138,21 +157,27 @@ export function validateDungeon(map: Dungeon): string | undefined {
   for (const prop of map.decoration.props) {
     if (!isTilePosition(prop.x, prop.y)) return 'A prop is outside the tile grid.';
     if (!isDungeonPropKind(prop.kind)) return 'A prop is not supported by dungeon maps.';
-    if (!isFloor(map.layout, prop.x, prop.y)) return 'A prop is outside the floor.';
+    const cells = propCells(prop);
+    if (
+      cells.some((cell) => !isTilePosition(cell.x, cell.y) || !isFloor(map.layout, cell.x, cell.y))
+    )
+      return 'A prop footprint is outside the floor.';
     if (prop.blocking !== isBlockingProp(prop.kind))
       return 'A prop has an invalid movement classification.';
     if (!prop.blocking) continue;
-    const tile = indexOf(prop.x, prop.y);
-    if (reserved.has(tile) || blocked.has(tile))
-      return 'A blocking prop overlaps reserved space or another prop.';
-    if (!map.layout.rooms.some((room) => contains(room, prop)))
-      return 'A blocking prop is outside a room.';
-    blocked.add(tile);
+    const room = map.layout.rooms.find((room) => cells.every((cell) => contains(room, cell)));
+    if (!room) return 'A blocking prop footprint is outside a room.';
+    for (const cell of cells) {
+      const tile = indexOf(cell.x, cell.y);
+      if (reserved.has(tile) || blocked.has(tile))
+        return 'A blocking prop overlaps reserved space or another prop.';
+      blocked.add(tile);
+    }
   }
   for (const room of map.layout.rooms) {
-    const count = map.decoration.props.filter(
-      (prop) => prop.blocking && contains(room, prop),
-    ).length;
+    const count = map.decoration.props
+      .filter((prop) => prop.blocking && contains(room, prop))
+      .flatMap(propCells).length;
     if (count > Math.floor(room.width * room.height * DENSITY_BUDGETS[map.decoration.density]))
       return 'Dungeon decoration exceeds a room blocking budget.';
   }

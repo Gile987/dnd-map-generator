@@ -1,6 +1,7 @@
 import {
   ALL_DENSITIES,
   ALL_DUNGEON_SCENES,
+  ALL_DUNGEON_FURNITURE,
   ALL_DUNGEON_LANDMARKS,
   ALL_FOREST_CHARACTERS,
   ALL_FOREST_SCENES,
@@ -26,6 +27,13 @@ export interface SaveVocabulary {
   readonly forestCharacters: readonly string[];
   readonly forestLandmarks?: readonly string[];
   readonly forestScenes?: readonly string[];
+  readonly dungeonFurniture?: readonly string[];
+  readonly propFootprints?: Readonly<
+    Record<
+      string,
+      { readonly width: number; readonly height: number; readonly rotations: readonly number[] }
+    >
+  >;
   readonly dungeonLandmarks?: readonly string[];
   readonly dungeonScenes?: readonly string[];
   readonly propKinds: readonly string[];
@@ -42,6 +50,12 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
   )
     return false;
   if (type === 'dungeon') {
+    if (
+      decoration['furniture'] !== undefined &&
+      (typeof decoration['furniture'] !== 'string' ||
+        !vocabulary.dungeonFurniture?.includes(decoration['furniture']))
+    )
+      return false;
     if (
       decoration['landmark'] !== undefined &&
       (typeof decoration['landmark'] !== 'string' ||
@@ -87,6 +101,19 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
         !vocabulary.propKinds.includes(prop['kind'])
       )
         return false;
+      if (prop['footprint'] !== undefined || prop['rotation'] !== undefined) {
+        const spec = vocabulary.propFootprints?.[prop['kind']];
+        const footprint = prop['footprint'];
+        if (
+          !spec ||
+          !isObject(footprint) ||
+          footprint['width'] !== spec.width ||
+          footprint['height'] !== spec.height ||
+          typeof prop['rotation'] !== 'number' ||
+          !spec.rotations.includes(prop['rotation'])
+        )
+          return false;
+      }
     }
   }
   return true;
@@ -128,7 +155,13 @@ function isProp(value: unknown): boolean {
     typeof value['kind'] === 'string' &&
     isIn(value['kind'], ALL_PROP_KINDS) &&
     typeof value['blocking'] === 'boolean' &&
-    isUnitFraction(value['variation'])
+    isUnitFraction(value['variation']) &&
+    (value['footprint'] === undefined ||
+      (isObject(value['footprint']) &&
+        isNonNegativeInt(value['footprint']['width']) &&
+        isNonNegativeInt(value['footprint']['height']))) &&
+    (value['rotation'] === undefined ||
+      (typeof value['rotation'] === 'number' && [0, 1, 2, 3].includes(value['rotation'])))
   );
 }
 
@@ -232,6 +265,9 @@ function isDungeonDecoration(value: unknown): boolean {
     isObject(value) &&
     typeof value['preset'] === 'string' &&
     isIn(value['preset'], ALL_PRESETS) &&
+    (value['furniture'] === undefined ||
+      (typeof value['furniture'] === 'string' &&
+        isIn(value['furniture'], ALL_DUNGEON_FURNITURE))) &&
     (value['landmark'] === undefined ||
       (typeof value['landmark'] === 'string' && isIn(value['landmark'], ALL_DUNGEON_LANDMARKS))) &&
     (value['scene'] === undefined ||

@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import {
   ALL_DENSITIES,
   ALL_DUNGEON_SCENES,
+  ALL_DUNGEON_FURNITURE,
   ALL_DUNGEON_LANDMARKS,
   ALL_FOREST_CHARACTERS,
   ALL_FOREST_SCENES,
@@ -122,6 +123,13 @@ export class SettingsPanel {
   protected editSeed(event: Event): void {
     if (event.target instanceof HTMLInputElement)
       this.draftChanged.emit({ type: this.draft().type, changes: { seed: event.target.value } });
+  }
+
+  protected selectFurniture(event: Event): void {
+    if (this.draft().type !== 'dungeon' || !(event.target instanceof HTMLSelectElement)) return;
+    const value = event.target.value;
+    const furniture = ALL_DUNGEON_FURNITURE.find((item) => item === value);
+    if (furniture) this.draftChanged.emit({ type: 'dungeon', changes: { furniture } });
   }
 
   protected selectLandmark(event: Event): void {
