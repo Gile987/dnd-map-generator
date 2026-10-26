@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import {
   ALL_DENSITIES,
   ALL_DUNGEON_SCENES,
+  ALL_DUNGEON_LANDMARKS,
   ALL_FOREST_CHARACTERS,
   ALL_FOREST_SCENES,
   ALL_FOREST_LANDMARKS,
@@ -48,7 +49,7 @@ export class SettingsPanel {
   protected readonly landmarks = computed(() => landmarkIdsFor(this.draft().type));
   protected readonly landmarkDescription = computed(() => {
     const draft = this.draft();
-    return draft.type === 'forest' && draft.landmark && draft.landmark !== 'None'
+    return draft.landmark && draft.landmark !== 'None'
       ? LANDMARK_CATALOG[draft.landmark].description
       : 'Choose a focal point for your encounter.';
   });
@@ -124,10 +125,15 @@ export class SettingsPanel {
   }
 
   protected selectLandmark(event: Event): void {
-    if (this.draft().type !== 'forest' || !(event.target instanceof HTMLSelectElement)) return;
+    if (!(event.target instanceof HTMLSelectElement)) return;
     const value = event.target.value;
-    const landmark = ALL_FOREST_LANDMARKS.find((item) => item === value);
-    if (landmark) this.draftChanged.emit({ type: 'forest', changes: { landmark } });
+    if (this.draft().type === 'dungeon') {
+      const landmark = ALL_DUNGEON_LANDMARKS.find((item) => item === value);
+      if (landmark) this.draftChanged.emit({ type: 'dungeon', changes: { landmark } });
+    } else {
+      const landmark = ALL_FOREST_LANDMARKS.find((item) => item === value);
+      if (landmark) this.draftChanged.emit({ type: 'forest', changes: { landmark } });
+    }
   }
 
   protected selectScene(value: string): void {

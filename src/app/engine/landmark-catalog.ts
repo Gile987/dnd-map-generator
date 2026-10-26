@@ -2,6 +2,12 @@ import type { MapType } from './model';
 
 // IDs are persisted; labels and descriptions can change independently.
 export const LANDMARK_CATALOG = {
+  'weathered-statue': {
+    label: 'Weathered statue',
+    mapTypes: ['dungeon'],
+    description:
+      'A weathered stone figure on a plinth. One blocking tile with clear space around it.',
+  },
   'standing-stone-circle': {
     label: 'Standing-stone circle',
     mapTypes: ['forest'],

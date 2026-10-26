@@ -138,7 +138,6 @@
       </div>
       <p class="field-hint">{{ sceneDescription() }}</p>
     </fieldset>
-    @if (activeDraft.type === 'forest') {
     <div class="field landmark-field">
       <label for="landmark">Landmark <span>A FOCAL POINT</span></label>
       <select id="landmark" (change)="selectLandmark($event)" aria-describedby="landmark-hint">
@@ -151,7 +150,6 @@
       </select>
       <p class="field-hint" id="landmark-hint">{{ landmarkDescription() }}</p>
     </div>
-    }
     <fieldset class="density-field">
       <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
       @let selectedDensity = activeDraft.density;

@@ -69,6 +69,11 @@ export const ALL_PRESETS: readonly DecorationPreset[] = [
 export type ForestCharacter = 'Verdant' | 'Autumn' | 'Pines' | 'Fey';
 export type DungeonScene = 'None' | 'Forgotten study';
 export const ALL_DUNGEON_SCENES: readonly DungeonScene[] = ['None', 'Forgotten study'];
+export type DungeonLandmark = 'None' | LandmarkIdFor<'dungeon'>;
+export const ALL_DUNGEON_LANDMARKS: readonly DungeonLandmark[] = [
+  'None',
+  ...landmarkIdsFor('dungeon'),
+];
 export type ForestLandmark = 'None' | LandmarkIdFor<'forest'>;
 export const ALL_FOREST_LANDMARKS: readonly ForestLandmark[] = [
   'None',
@@ -93,6 +98,7 @@ export interface DungeonSettings {
   readonly density: Density;
   readonly preset: DecorationPreset;
   readonly scene?: DungeonScene;
+  readonly landmark?: DungeonLandmark;
 }
 
 export interface ForestSettings {
@@ -120,6 +126,7 @@ export const DUNGEON_PROP_KINDS = [
   'desk',
   'bookshelf',
   'scroll_case',
+  'weathered_statue',
 ] as const;
 
 export const FOREST_PROP_KINDS = [
@@ -163,6 +170,7 @@ export interface Decoration {
   readonly density: Density;
   readonly preset: DecorationPreset;
   readonly scene?: DungeonScene;
+  readonly landmark?: DungeonLandmark;
   readonly revision: number;
 }
 
@@ -246,6 +254,7 @@ export function isBlockingProp(kind: PropKind): boolean {
     kind === 'supply_bundle' ||
     kind === 'desk' ||
     kind === 'bookshelf' ||
+    kind === 'weathered_statue' ||
     kind === 'standing_stone'
   );
 }

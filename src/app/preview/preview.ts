@@ -42,6 +42,12 @@ export class Preview {
         (m.decoration.scene === 'Forgotten study'
           ? ' connected rooms, Forgotten study scene.'
           : ' connected rooms.') +
+        (m.decoration.landmark && m.decoration.landmark !== 'None'
+          ? ' ' +
+            LANDMARK_CATALOG[m.decoration.landmark].label +
+            '. ' +
+            LANDMARK_CATALOG[m.decoration.landmark].description
+          : '') +
         ' Stairs mark the entrance; a circular stone dais marks the objective. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
       );
     }

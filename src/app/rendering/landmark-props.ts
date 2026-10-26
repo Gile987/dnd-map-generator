@@ -65,3 +65,71 @@ export function drawStandingStone(ctx: DrawingContext, prop: Prop): void {
     ctx.fill();
   }
 }
+
+// Top-down stone figure and square plinth, including its shadow, fit one tile.
+export function drawWeatheredStatue(ctx: DrawingContext, prop: Prop): void {
+  ctx.fillStyle = '#101b2860';
+  ctx.fillRect(-0.36, -0.32, 0.79, 0.76);
+  ctx.fillStyle = '#505b64';
+  ctx.fillRect(-0.4, -0.4, 0.8, 0.8);
+  ctx.strokeStyle = '#26343e';
+  ctx.lineWidth = 0.025;
+  ctx.strokeRect(-0.4, -0.4, 0.8, 0.8);
+  ctx.fillStyle = '#a6aaa2';
+  ctx.fillRect(-0.35, -0.35, 0.7, 0.65);
+  ctx.fillStyle = '#777f80';
+  ctx.fillRect(-0.35, 0.24, 0.7, 0.11);
+  ctx.strokeStyle = '#c4c5b4';
+  ctx.lineWidth = 0.018;
+  ctx.beginPath();
+  ctx.moveTo(-0.33, 0.22);
+  ctx.lineTo(-0.33, -0.33);
+  ctx.lineTo(0.32, -0.33);
+  ctx.stroke();
+  ctx.fillStyle = '#4d5c60';
+  ctx.beginPath();
+  ctx.ellipse(0.02, 0.06, 0.26, 0.23, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // A robed guardian, one shoulder chipped, with a worn round head.
+  ctx.fillStyle = '#747f80';
+  ctx.beginPath();
+  ctx.moveTo(-0.1, -0.09);
+  ctx.lineTo(-0.27, 0.02);
+  ctx.lineTo(-0.21, 0.12);
+  ctx.lineTo(-0.14, 0.1);
+  ctx.lineTo(-0.16, 0.26);
+  ctx.lineTo(0.17, 0.26);
+  ctx.lineTo(0.12, 0.06);
+  ctx.lineTo(0.22, 0.01);
+  ctx.lineTo(0.15, -0.08);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#3d5059';
+  ctx.lineWidth = 0.018;
+  ctx.stroke();
+  ctx.fillStyle = '#b3b9ac';
+  ctx.beginPath();
+  ctx.ellipse(-0.01, -0.12, 0.12, 0.13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = '#d1d1bb';
+  ctx.beginPath();
+  ctx.moveTo(-0.06, -0.2);
+  ctx.lineTo(0.02, -0.22);
+  ctx.moveTo(-0.09, 0.02);
+  ctx.lineTo(-0.1, 0.19);
+  ctx.moveTo(0.04, 0.05);
+  ctx.lineTo(0.09, 0.22);
+  ctx.stroke();
+  ctx.strokeStyle = '#55646a';
+  ctx.beginPath();
+  ctx.moveTo(0.34, -0.25);
+  ctx.lineTo(0.25, -0.16);
+  ctx.lineTo(0.3, -0.1);
+  ctx.moveTo(-0.32, 0.25);
+  ctx.lineTo(-0.23, 0.19);
+  ctx.stroke();
+  ctx.fillStyle = prop.variation < 0.5 ? '#73836a' : '#858c79';
+  ctx.fillRect(0.22, 0.24, 0.09, 0.04);
+  ctx.fillRect(-0.32, -0.3, 0.06, 0.035);
+}

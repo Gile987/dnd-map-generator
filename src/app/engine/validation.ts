@@ -1,6 +1,9 @@
+import { DUNGEON_LANDMARK_RULES } from './dungeon-landmark';
+import { studyReservations } from './dungeon-study';
 import {
   ALL_DENSITIES,
   ALL_DUNGEON_SCENES,
+  ALL_DUNGEON_LANDMARKS,
   ALL_PRESETS,
   DENSITY_BUDGETS,
   HEIGHT,
@@ -14,8 +17,9 @@ import {
   isTilePosition,
   isFloor,
 } from './model';
-import type { Dungeon, DungeonSettings, Layout, Point, Room } from './model';
-import { distances } from './topology';
+import type { Dungeon, DungeonSettings, Layout } from './model';
+import { reservedTiles, isTraversable } from './dungeon-space';
+export { reservedTiles, isTraversable, hasClearSquare } from './dungeon-space';
 import { isDetailRevision } from './decoration-revision';
 
 export function validateSettings(settings: DungeonSettings): string | undefined {
@@ -27,65 +31,13 @@ export function validateSettings(settings: DungeonSettings): string | undefined 
     settings.roomCount > ROOM_MAX
   )
     return `Choose a whole number of rooms from ${ROOM_MIN} to ${ROOM_MAX}.`;
+  if (!ALL_DUNGEON_LANDMARKS.includes(settings.landmark ?? 'None'))
+    return 'Choose a valid dungeon landmark.';
   if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a valid decoration density.';
   if (!ALL_PRESETS.includes(settings.preset)) return 'Choose a valid decoration preset.';
   if (!ALL_DUNGEON_SCENES.includes(settings.scene ?? 'None'))
     return 'Choose a valid dungeon scene.';
   return undefined;
-}
-
-export function reservedTiles(layout: Layout): Set<number> {
-  const reserved = new Set<number>();
-  const reserve = (point: Point, radius: number): void => {
-    for (let dy = -radius; dy <= radius; dy++) {
-      for (let dx = -radius; dx <= radius; dx++) {
-        if (isFloor(layout, point.x + dx, point.y + dy))
-          reserved.add(indexOf(point.x + dx, point.y + dy));
-      }
-    }
-  };
-  reserve(layout.entrance, 1);
-  reserve(layout.objective, 1);
-  for (const door of layout.thresholds) {
-    for (let i = 0; i < door.span; i++) {
-      const point = {
-        x: door.x + (door.axis === 'horizontal' ? i : 0),
-        y: door.y + (door.axis === 'vertical' ? i : 0),
-      };
-      reserve(point, 1);
-    }
-  }
-  for (let y = 1; y < HEIGHT - 1; y++) {
-    for (let x = 1; x < WIDTH - 1; x++) {
-      if (!isFloor(layout, x, y)) continue;
-      if (!layout.rooms.some((room) => contains(room, { x, y }))) {
-        reserve({ x, y }, 1);
-      }
-    }
-  }
-  return reserved;
-}
-
-export function hasClearSquare(room: Room, blocked: ReadonlySet<number>): boolean {
-  for (let y = room.y; y < room.y + room.height - 1; y++) {
-    for (let x = room.x; x < room.x + room.width - 1; x++) {
-      if (
-        [indexOf(x, y), indexOf(x + 1, y), indexOf(x, y + 1), indexOf(x + 1, y + 1)].every(
-          (tile) => !blocked.has(tile),
-        )
-      )
-        return true;
-    }
-  }
-  return false;
-}
-
-export function isTraversable(layout: Layout, blocked: ReadonlySet<number>): boolean {
-  const floorCount = layout.tiles.filter(Boolean).length;
-  return (
-    distances(layout.tiles, layout.entrance, blocked).size === floorCount - blocked.size &&
-    layout.rooms.every((room) => hasClearSquare(room, blocked))
-  );
 }
 
 export function validateLayout(layout: Layout, roomCount: number): string | undefined {
@@ -147,6 +99,17 @@ export function validateDungeon(map: Dungeon): string | undefined {
   if (layoutError) return layoutError;
   if (!ALL_DUNGEON_SCENES.includes(map.decoration.scene ?? 'None'))
     return 'Choose a valid dungeon scene.';
+  const landmark = map.decoration.landmark ?? 'None';
+  if (!ALL_DUNGEON_LANDMARKS.includes(landmark)) return 'Choose a valid dungeon landmark.';
+  if (landmark !== 'None') {
+    const error = DUNGEON_LANDMARK_RULES[landmark].validate(
+      map.layout,
+      map.decoration.props,
+      studyReservations(map.layout, map.decoration.props),
+    );
+    if (error) return error;
+  } else if (map.decoration.props.some((p) => p.kind === 'weathered_statue'))
+    return 'A weathered statue requires a dungeon landmark.';
   const study = map.decoration.props.filter(
     (p) => p.kind === 'desk' || p.kind === 'bookshelf' || p.kind === 'scroll_case',
   );
