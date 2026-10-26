@@ -13,7 +13,7 @@ test.each(ALL_FOREST_CHARACTERS)(
       character,
       density: 'Balanced',
       scene: 'Abandoned camp',
-      landmark: 'Suggested landmark',
+      landmark: 'standing-stone-circle',
     });
     if (!result.ok) throw new Error(result.error);
     const canvas = createCanvas(2560, 1920);

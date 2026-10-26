@@ -1,5 +1,7 @@
+import { areaAround, areaContains, areasOverlap } from './feature-reservation';
+import type { FeatureReservation } from './feature-reservation';
 import { DENSITY_BUDGETS, HEIGHT, WIDTH, indexOf, isWalkable } from './model';
-import type { Density, ForestLayout, Point, Prop } from './model';
+import type { Density, ForestLayout, ForestLandmark, Point, Prop } from './model';
 import { forestDistances } from './forest-layout';
 import { Random, shuffleInPlace, streamSeed } from './random';
 
@@ -15,10 +17,14 @@ const offsets: readonly Point[] = [
 ];
 
 export function circleReserve(center: Point, point: Point): boolean {
-  return Math.abs(point.x - center.x) <= 3 && Math.abs(point.y - center.y) <= 3;
+  return areaContains(areaAround(center, 3, 3), point);
 }
 
-export function stoneCircleError(layout: ForestLayout, props: readonly Prop[]): string | undefined {
+export function stoneCircleError(
+  layout: ForestLayout,
+  props: readonly Prop[],
+  reservations: readonly FeatureReservation[] = [],
+): string | undefined {
   const stones = props.filter((p) => p.kind === 'standing_stone');
   const center = {
     x: stones.reduce((sum, p) => sum + p.x, 0) / 6,
@@ -44,10 +50,8 @@ export function stoneCircleError(layout: ForestLayout, props: readonly Prop[]): 
     props.some((p) => p.kind !== 'standing_stone' && circleReserve(center, p))
   )
     return 'The standing-stone circle needs clear ground and an open path.';
-  // Keep the camp's entire reserved area separate, including empty space.
-  const hearth = props.find((p) => p.kind === 'fire_ring');
-  if (hearth && Math.abs(hearth.x - center.x) <= 6 && Math.abs(hearth.y - center.y) <= 5)
-    return 'The camp and landmark need separate encounter space.';
+  if (reservations.some((reservation) => areasOverlap(areaAround(center, 3, 3), reservation.area)))
+    return 'The scene and landmark need separate encounter space.';
   return undefined;
 }
 
@@ -57,6 +61,7 @@ export function placeStoneCircle(
   seed: string,
   density: Density,
   revision: number,
+  reservations: readonly FeatureReservation[] = [],
 ): readonly Prop[] | undefined {
   const random = new Random(streamSeed(seed, 'forest-landmark', 'v1', density, revision));
   const candidates: Point[] = [];
@@ -64,6 +69,7 @@ export function placeStoneCircle(
     for (let x = 3; x < WIDTH - 3; x++) candidates.push({ x, y });
   shuffleInPlace(candidates, random);
   const budget = Math.floor(layout.tiles.filter(Boolean).length * DENSITY_BUDGETS[density]);
+  const protectedProps = new Set(reservations.flatMap((reservation) => reservation.props));
   for (const center of candidates) {
     const stones: Prop[] = offsets.map((p) => ({
       x: center.x + p.x,
@@ -73,23 +79,15 @@ export function placeStoneCircle(
       variation: random.next(),
     }));
     // Scene objects are never removed to make room for a landmark.
-    let blockers =
-      stones.length +
-      props.filter((p) => (p.blocking && p.kind === 'tent') || p.kind === 'supply_bundle').length;
+    let blockers = stones.length + props.filter((p) => p.blocking && protectedProps.has(p)).length;
     if (blockers > budget) continue;
     const retained = props.filter((p) => {
-      if (
-        p.kind === 'tent' ||
-        p.kind === 'bedroll' ||
-        p.kind === 'fire_ring' ||
-        p.kind === 'supply_bundle'
-      )
-        return true;
+      if (protectedProps.has(p)) return true;
       if (circleReserve(center, p)) return false;
       return !p.blocking || ++blockers <= budget;
     });
     const placed = [...retained, ...stones];
-    if (stoneCircleError(layout, placed)) continue;
+    if (stoneCircleError(layout, placed, reservations)) continue;
     const blocked = new Set(placed.filter((p) => p.blocking).map((p) => indexOf(p.x, p.y)));
     if (
       forestDistances(layout.tiles, layout.pathStart, blocked).size !==
@@ -100,3 +98,14 @@ export function placeStoneCircle(
   }
   return undefined;
 }
+
+// Map-specific rules stay separate from the shared presentation catalog.
+export const FOREST_LANDMARK_RULES = {
+  'standing-stone-circle': { place: placeStoneCircle, validate: stoneCircleError },
+} satisfies Record<
+  Exclude<ForestLandmark, 'None'>,
+  {
+    readonly place: typeof placeStoneCircle;
+    readonly validate: typeof stoneCircleError;
+  }
+>;

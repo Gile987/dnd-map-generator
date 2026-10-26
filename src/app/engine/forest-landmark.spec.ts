@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import baseline from './fixtures/forest-landmark-baseline.json';
 import { expect, test } from 'vitest';
 import { ALL_DENSITIES, ALL_FOREST_CHARACTERS, indexOf } from './model';
 import type { ForestSettings } from './model';
@@ -25,8 +27,8 @@ test('adding and removing a landmark preserves the clearing and historical outpu
   const base = generated(settings);
   const snapshot = structuredClone(base);
   expect(generated({ ...settings, landmark: 'None' })).toEqual(base);
-  const marked = changeForestAppearance(base, { ...settings, landmark: 'Suggested landmark' });
-  expect(marked.decoration.landmark).toBe('Suggested landmark');
+  const marked = changeForestAppearance(base, { ...settings, landmark: 'standing-stone-circle' });
+  expect(marked.decoration.landmark).toBe('standing-stone-circle');
   expect(marked.layout).toBe(base.layout);
   expect(marked.surfaceSeed).toBe(base.surfaceSeed);
   expect(marked.decoration.revision).toBe(0);
@@ -45,7 +47,7 @@ test.each(ALL_FOREST_CHARACTERS)(
             density,
             character,
             scene,
-            landmark: 'Suggested landmark',
+            landmark: 'standing-stone-circle',
           };
           const map = generated(settings);
           expect(generated(settings)).toEqual(map);
@@ -91,7 +93,7 @@ test('no-fit changes reject immutably; invalid or incomplete landmarks are rejec
   };
   expect(validateForest(cramped)).toBeUndefined();
   expect(
-    changeForestAppearance(cramped, { ...cramped.decoration, landmark: 'Suggested landmark' }),
+    changeForestAppearance(cramped, { ...cramped.decoration, landmark: 'standing-stone-circle' }),
   ).toBe(cramped);
   expect(
     validateForestSettings({
@@ -105,7 +107,7 @@ test('no-fit changes reject immutably; invalid or incomplete landmarks are rejec
     seed: 'landmark-reject',
     character: 'Verdant',
     density: 'Sparse',
-    landmark: 'Suggested landmark',
+    landmark: 'standing-stone-circle',
   });
   expect(
     validateForest({
@@ -116,4 +118,25 @@ test('no-fit changes reject immutably; invalid or incomplete landmarks are rejec
   expect(validateForest({ ...map, decoration: { ...map.decoration, landmark: 'None' } })).toContain(
     'require',
   );
+});
+
+test('catalog and reservation changes preserve existing placements and RNG consumption', () => {
+  for (const character of ALL_FOREST_CHARACTERS)
+    for (const density of ALL_DENSITIES)
+      for (const scene of ['None', 'Abandoned camp'] as const) {
+        const map = generated({
+          seed: 'mosslit-sanctum',
+          character,
+          density,
+          scene,
+          landmark: 'standing-stone-circle',
+        });
+        const maps = [map, shuffleForestDetails(map)].map((current) => {
+          const { landmark, ...decoration } = current.decoration;
+          return { ...current, decoration };
+        });
+        expect(createHash('sha256').update(JSON.stringify(maps)).digest('hex')).toBe(
+          baseline[`${character}/${density}/${scene}`],
+        );
+      }
 });

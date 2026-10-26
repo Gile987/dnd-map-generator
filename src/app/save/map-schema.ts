@@ -284,7 +284,21 @@ export function parseSavedMapBody(
       decoration: { ...map['decoration'], character: DEFAULT_FOREST_CHARACTER },
     };
   }
+  // Retain the stored vocabulary for compatibility checks after bounded shape
+  // validation. An old format cannot claim a new ID, nor a new format an alias.
+  const storedMap = normalizedMap;
+  if (
+    isObject(normalizedMap) &&
+    normalizedMap['type'] === 'forest' &&
+    isObject(normalizedMap['decoration']) &&
+    normalizedMap['decoration']['landmark'] === 'Suggested landmark'
+  ) {
+    normalizedMap = {
+      ...normalizedMap,
+      decoration: { ...normalizedMap['decoration'], landmark: 'standing-stone-circle' },
+    };
+  }
   if (!isUsableMap(normalizedMap)) return undefined;
-  if (!mapUsesVocabulary(normalizedMap, vocabulary)) return undefined;
+  if (!mapUsesVocabulary(storedMap, vocabulary)) return undefined;
   return normalizedMap;
 }

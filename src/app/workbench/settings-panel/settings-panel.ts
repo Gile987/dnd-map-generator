@@ -1,3 +1,4 @@
+import { LANDMARK_CATALOG, landmarkIdsFor } from '../../engine/landmark-catalog';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import {
   ALL_DENSITIES,
@@ -43,6 +44,14 @@ export class SettingsPanel {
   readonly resetRequested = output<void>();
   readonly shuffleRequested = output<void>();
 
+  protected readonly landmarkCatalog = LANDMARK_CATALOG;
+  protected readonly landmarks = computed(() => landmarkIdsFor(this.draft().type));
+  protected readonly landmarkDescription = computed(() => {
+    const draft = this.draft();
+    return draft.type === 'forest' && draft.landmark && draft.landmark !== 'None'
+      ? LANDMARK_CATALOG[draft.landmark].description
+      : 'Choose a focal point for your encounter.';
+  });
   protected readonly densities = ALL_DENSITIES;
   protected readonly presets = ALL_PRESETS;
   protected readonly characters = ALL_FOREST_CHARACTERS;

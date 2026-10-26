@@ -1,3 +1,4 @@
+import { LANDMARK_CATALOG } from '../../engine/landmark-catalog';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import type { GeneratedMap } from '../../engine/model';
 import { Icon } from '../../icon';
@@ -33,7 +34,7 @@ export class MapPanel {
     return {
       seed: map.seed,
       rooms: map.decoration.scene === 'Abandoned camp' ? 'Abandoned camp' : 'Open clearing',
-      details: `${map.decoration.character}${map.decoration.landmark === 'Suggested landmark' ? ' · Standing-stone circle' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
+      details: `${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''} · ${map.decoration.density} r${map.decoration.revision}`,
       type: 'FOREST CLEARING',
     };
   });

@@ -8,7 +8,7 @@ function record() {
     character: 'Verdant',
     density: 'Balanced',
     scene: 'Abandoned camp',
-    landmark: 'Suggested landmark',
+    landmark: 'standing-stone-circle',
   });
   if (!result.ok) throw new Error(result.error);
   return makeSavedMap(
@@ -20,13 +20,15 @@ function record() {
   );
 }
 
-test('format 5 preserves a landmark and camp together; older vocabularies reject both metadata and stones', () => {
+test('format 6 preserves a landmark and camp together; older vocabularies reject both metadata and stones', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('5.0.0');
+  expect(saved.saveFormatVersion).toBe('6.0.0');
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-  for (const saveFormatVersion of ['1.0.0', '2.0.0', '3.0.0', '4.0.0']) {
+  for (const saveFormatVersion of ['1.0.0', '2.0.0', '3.0.0', '4.0.0', '5.0.0']) {
     expect(parseSavedMap({ ...saved, saveFormatVersion })).toBeUndefined();
+    // None was already part of format 5; only formats 1–4 must reject it.
+    if (saveFormatVersion === '5.0.0') continue;
     expect(
       parseSavedMap({
         ...saved,
@@ -86,4 +88,43 @@ test.each([
       },
     }),
   ).toBeUndefined();
+});
+
+test('format-5 landmark aliases migrate immutably while preserving all saved artwork data', () => {
+  const current = record();
+  const legacy = {
+    ...current,
+    saveFormatVersion: '5.0.0',
+    map: {
+      ...current.map,
+      decoration: { ...current.map.decoration, landmark: 'Suggested landmark' },
+    },
+  };
+  const before = structuredClone(legacy);
+  const parsed = parseSavedMap(legacy);
+  expect(parsed).toEqual(current);
+  expect(legacy).toEqual(before);
+  expect(
+    parseBundle(
+      JSON.stringify({
+        format: 'encounter-map-forge-saves',
+        saveFormatVersion: '5.0.0',
+        maps: [legacy],
+      }),
+    ),
+  ).toEqual({ ok: true, maps: [current], skipped: 0 });
+  expect(JSON.parse(serializeBundle(parsed ? [parsed] : []))).toMatchObject({
+    saveFormatVersion: '6.0.0',
+    maps: [{ map: { decoration: { landmark: 'standing-stone-circle' } } }],
+  });
+  // Each format is checked before normalization; aliases cannot bypass its vocabulary.
+  expect(parseSavedMap({ ...legacy, saveFormatVersion: '6.0.0' })).toBeUndefined();
+  expect(parseSavedMap({ ...current, saveFormatVersion: '5.0.0' })).toBeUndefined();
+  for (const saveFormatVersion of ['1.0.0', '2.0.0', '3.0.0', '4.0.0'])
+    expect(parseSavedMap({ ...legacy, saveFormatVersion })).toBeUndefined();
+  const invalid = {
+    ...legacy,
+    map: { ...legacy.map, decoration: { ...legacy.map.decoration, props: [] } },
+  };
+  expect(parseSavedMap(invalid)).toBeUndefined();
 });
