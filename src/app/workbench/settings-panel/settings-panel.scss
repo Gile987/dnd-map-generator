@@ -453,3 +453,24 @@ form {
     background: #f0f2e6;
   }
 }
+
+.landmark-field {
+  margin-top: 18px;
+  margin-bottom: 10px;
+  select {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px;
+    border: 1px solid #d9ddce;
+    border-radius: 5px;
+    background: #f4f3ea;
+    color: #415c48;
+    font: inherit;
+    &:hover:not(:disabled) {
+      border-color: #6b8b70;
+    }
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+}

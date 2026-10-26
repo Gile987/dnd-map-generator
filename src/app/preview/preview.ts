@@ -50,6 +50,9 @@ export class Preview {
       ', ' +
       m.decoration.character +
       (m.decoration.scene === 'Abandoned camp' ? ', abandoned camp scene' : '') +
+      (m.decoration.landmark === 'Suggested landmark'
+        ? ', standing-stone circle, six blocking stones around a clear center'
+        : '') +
       ' character. A path connects two map edges through the clearing. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
     );
   });

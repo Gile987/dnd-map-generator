@@ -50,6 +50,7 @@ describe('production option constants', () => {
       'bedroll',
       'fire_ring',
       'supply_bundle',
+      'standing_stone',
     ]);
   });
 });

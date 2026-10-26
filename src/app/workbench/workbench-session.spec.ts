@@ -466,3 +466,56 @@ test('a rejected camp leaves the accepted map and combined draft intact', () => 
     density: 'Sparse',
   });
 });
+
+test('landmark drafts stay separate from accepted maps and survive reset, shuffle and opening', () => {
+  const session = new WorkbenchSession();
+  session.selectMapType('forest');
+  const original = session.map();
+  session.updateDraft({ type: 'forest', changes: { landmark: 'Suggested landmark' } });
+  expect(session.pending()).toBe(true);
+  expect(session.map()).toBe(original);
+  session.selectMapType('dungeon');
+  session.selectMapType('forest');
+  expect(session.draft()).toMatchObject({ landmark: 'Suggested landmark' });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const marked = session.map();
+  expect(marked.layout).toBe(original.layout);
+  session.updateDraft({ type: 'forest', changes: { landmark: 'None' } });
+  session.shuffle();
+  expect(session.map().decoration).toMatchObject({ landmark: 'Suggested landmark', revision: 1 });
+  expect(session.draft()).toMatchObject({ landmark: 'None' });
+  session.resetChanges();
+  expect(session.draft()).toMatchObject({ landmark: 'Suggested landmark' });
+  session.updateDraft({
+    type: 'forest',
+    changes: { landmark: 'None', scene: 'Abandoned camp', character: 'Fey', density: 'Sparse' },
+  });
+  expect(session.generate().ok).toBe(true);
+  expect(session.map().decoration).toMatchObject({
+    scene: 'Abandoned camp',
+    character: 'Fey',
+    density: 'Sparse',
+    revision: 1,
+  });
+  expect(session.map().decoration).not.toHaveProperty('landmark');
+  session.openSaved(marked);
+  expect(session.draft()).toMatchObject({ landmark: 'Suggested landmark' });
+  expect(session.pending()).toBe(false);
+});
+
+test('a refused landmark preserves accepted settings and draft, then permits retry', () => {
+  const session = new WorkbenchSession();
+  session.selectMapType('forest');
+  const original = session.map();
+  session.updateDraft({ type: 'forest', changes: { landmark: 'Suggested landmark' } });
+  const draft = session.draft();
+  vi.spyOn(forestEngine, 'changeForestAppearance').mockImplementationOnce((map) => map);
+  expect(session.generate()).toMatchObject({
+    ok: false,
+    error: expect.stringContaining('landmark could not fit'),
+  });
+  expect(session.map()).toBe(original);
+  expect(session.draft()).toBe(draft);
+  expect(session.pending()).toBe(true);
+  expect(session.generate().ok).toBe(true);
+});

@@ -4,6 +4,7 @@ import {
   ALL_DUNGEON_SCENES,
   ALL_FOREST_CHARACTERS,
   ALL_FOREST_SCENES,
+  ALL_FOREST_LANDMARKS,
   ALL_PRESETS,
   ROOM_MAX,
   ROOM_MIN,
@@ -111,6 +112,13 @@ export class SettingsPanel {
   protected editSeed(event: Event): void {
     if (event.target instanceof HTMLInputElement)
       this.draftChanged.emit({ type: this.draft().type, changes: { seed: event.target.value } });
+  }
+
+  protected selectLandmark(event: Event): void {
+    if (this.draft().type !== 'forest' || !(event.target instanceof HTMLSelectElement)) return;
+    const value = event.target.value;
+    const landmark = ALL_FOREST_LANDMARKS.find((item) => item === value);
+    if (landmark) this.draftChanged.emit({ type: 'forest', changes: { landmark } });
   }
 
   protected selectScene(value: string): void {

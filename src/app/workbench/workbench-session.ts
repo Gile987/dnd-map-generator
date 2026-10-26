@@ -87,6 +87,7 @@ export class WorkbenchSession {
         this.layoutPending() ||
         draft.density !== decoration.density ||
         draft.character !== decoration.character ||
+        (draft.landmark ?? 'None') !== (decoration.landmark ?? 'None') ||
         (draft.scene ?? 'None') !== (decoration.scene ?? 'None')
       );
     }
@@ -159,6 +160,8 @@ export class WorkbenchSession {
         if (!result.ok) return result;
         forest = result.map;
       } else if (
+        settings.landmark === 'Suggested landmark' ||
+        forest.decoration.landmark === 'Suggested landmark' ||
         settings.scene === 'Abandoned camp' ||
         forest.decoration.scene === 'Abandoned camp'
       ) {
@@ -214,6 +217,15 @@ export class WorkbenchSession {
     ) {
       return { ok: false, error: 'That forest character could not be applied. Try another seed.' };
     }
+    if (
+      next.type === 'forest' &&
+      parsed.type === 'forest' &&
+      (next.decoration.landmark ?? 'None') !== (parsed.settings.landmark ?? 'None')
+    )
+      return {
+        ok: false,
+        error: 'That landmark could not fit. Try another seed or remove the camp.',
+      };
     if (
       next.type === 'forest' &&
       parsed.type === 'forest' &&
