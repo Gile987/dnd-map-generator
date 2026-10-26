@@ -157,6 +157,7 @@ for (const width of [1440, 768, 320]) {
             '.field label > span',
             '.preset-field legend > span',
             '.density-field legend > span',
+            '.additions-field legend',
             '.field-bottom > span',
             '.field-hint',
             '.generate-note',
@@ -188,6 +189,20 @@ for (const width of [1440, 768, 320]) {
         await checkContrast(text, `${type} option keyboard focus`, readings);
         await input.check();
         await checkContrast(text, `${type} option selected`, readings);
+      }
+      for (const label of await page.locator('.addition-option').all()) {
+        const input = label.getByRole('checkbox');
+        const text = label.locator('.addition-copy > *');
+        await checkContrast(text, `${type} addition normal`, readings);
+        await label.hover();
+        await checkContrast(text, `${type} addition hover`, readings);
+        await page.keyboard.press('Tab');
+        await input.focus();
+        expect(await input.evaluate((element) => element.matches(':focus-visible'))).toBe(true);
+        await checkContrast(text, `${type} addition keyboard focus`, readings);
+        await input.check();
+        await checkContrast(text, `${type} addition selected`, readings);
+        await input.uncheck();
       }
       await checkContrast(page.locator('.pending'), `${type} pending notice`, readings);
       const generate = page.getByRole('button', {

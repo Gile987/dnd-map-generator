@@ -1,5 +1,56 @@
 import { expect, test } from '@playwright/test';
 
+test('map additions share one keyboard-accessible list with independent drafts for each map type', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const settings = page.getByRole('complementary', { name: 'Map settings' });
+  const additions = settings.getByRole('group', { name: 'Add to this map', exact: true });
+  await expect(additions).toHaveCount(1);
+  await expect(additions).toHaveAccessibleDescription('Choose any combination. Generate to apply.');
+  const study = additions.getByRole('checkbox', { name: 'Forgotten study', exact: true });
+  const statue = additions.getByRole('checkbox', { name: 'Weathered statue', exact: true });
+  const table = additions.getByRole('checkbox', { name: 'Dining table', exact: true });
+  await expect(additions.getByRole('checkbox')).toHaveCount(3);
+  await expect(study).toHaveAccessibleDescription(/desk, bookshelves, scroll cases, and a rug/);
+  await expect(statue).toHaveAccessibleDescription(/stone figure on a plinth/);
+  await expect(table).toHaveAccessibleDescription(/blocks two tiles/);
+  const summary = await page.locator('#map-summary').textContent();
+  await settings.getByRole('radio', { name: 'Mosslit', exact: true }).focus();
+  for (const option of [study, statue, table]) {
+    await expect(option).not.toBeChecked();
+    await page.keyboard.press('Tab');
+    await expect(option).toBeFocused();
+    expect(await option.evaluate((element) => element.matches(':focus-visible'))).toBe(true);
+    await page.keyboard.press('Space');
+    await expect(option).toBeChecked();
+  }
+  await additions.screenshot({ path: 'artifacts/additions/keyboard.png' });
+  await expect(page.locator('#map-summary')).toHaveText(summary ?? '');
+  await settings.getByRole('radio', { name: 'Forest', exact: true }).check();
+  const camp = additions.getByRole('checkbox', { name: 'Abandoned camp', exact: true });
+  const circle = additions.getByRole('checkbox', { name: 'Standing-stone circle', exact: true });
+  await expect(additions.getByRole('checkbox')).toHaveCount(2);
+  await expect(camp).toHaveAccessibleDescription(/tents, bedrolls, a cold fire ring/);
+  await expect(circle).toHaveAccessibleDescription(/Six standing stones/);
+  await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
+  // Clicking the description activates its checkbox, just like clicking the title.
+  await additions.getByText(/Two tents, bedrolls/).click();
+  await circle.check();
+  await expect(camp).toBeChecked();
+  await settings.getByRole('radio', { name: 'Dungeon', exact: true }).check();
+  for (const option of [study, statue, table]) await expect(option).toBeChecked();
+  // Unchecking every addition returns to the accepted base map without generating.
+  for (const option of [study, statue, table]) await option.uncheck();
+  await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Reset changes' })).toHaveCount(0);
+  await settings.getByRole('radio', { name: 'Forest', exact: true }).check();
+  for (const option of [camp, circle]) await expect(option).toBeChecked();
+  await page.getByRole('button', { name: 'Reset changes' }).click();
+  for (const option of [camp, circle]) await expect(option).not.toBeChecked();
+  await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
+});
+
 test('panel landmarks retain descriptions and native keyboard submission applies drafts', async ({
   page,
 }) => {
@@ -55,6 +106,8 @@ test('an export in progress disables both panels and preserves the pending draft
   const settings = page.getByRole('complementary', { name: 'Map settings' });
   const seed = settings.getByRole('textbox', { name: 'World seed' });
   await seed.fill('unapplied-panel-draft');
+  const additions = settings.getByRole('group', { name: 'Add to this map', exact: true });
+  await additions.getByRole('checkbox', { name: 'Forgotten study', exact: true }).check();
   await expect(settings.getByRole('button', { name: 'Generate dungeon' })).toBeEnabled();
   await page.evaluate(() => {
     const original = HTMLCanvasElement.prototype.toBlob;
@@ -76,6 +129,9 @@ test('an export in progress disables both panels and preserves the pending draft
   await expect(settings.getByRole('button', { name: 'Reset changes' })).toBeDisabled();
   await expect(settings.getByRole('button', { name: 'Shuffle details' })).toBeDisabled();
   for (const radio of await settings.getByRole('radio').all()) await expect(radio).toBeDisabled();
+  for (const option of await additions.getByRole('checkbox').all())
+    await expect(option).toBeDisabled();
+  await additions.screenshot({ path: 'artifacts/additions/disabled.png' });
   await expect(page.getByRole('checkbox', { name: 'Grid', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Save map', exact: true })).toBeDisabled();
   await expect(page.locator('.rename-form input')).toBeDisabled();
@@ -97,6 +153,11 @@ test('an export in progress disables both panels and preserves the pending draft
   await expect(page.getByRole('button', { name: 'Export PNG', exact: true })).toBeEnabled();
   await expect(seed).toBeEnabled();
   await expect(seed).toHaveValue('unapplied-panel-draft');
+  await expect(
+    additions.getByRole('checkbox', { name: 'Forgotten study', exact: true }),
+  ).toBeChecked();
+  for (const option of await additions.getByRole('checkbox').all())
+    await expect(option).toBeEnabled();
   await expect(settings.getByRole('button', { name: 'Generate dungeon' })).toBeEnabled();
   await expect(page.getByRole('checkbox', { name: 'Grid', exact: true })).toBeEnabled();
   await expect(page.locator('.rename-form input')).toBeEnabled();
@@ -135,6 +196,9 @@ test('native panel hosts retain desktop columns and tablet and mobile flow for b
         () => document.documentElement.scrollWidth > window.innerWidth,
       );
       expect(horizontalOverflow).toBe(false);
+      await settings.screenshot({
+        path: `artifacts/additions/${type.toLowerCase()}-${width}.png`,
+      });
     }
   }
 });

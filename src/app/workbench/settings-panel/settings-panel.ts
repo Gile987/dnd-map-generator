@@ -2,12 +2,7 @@ import { LANDMARK_CATALOG, landmarkIdsFor } from '../../engine/landmark-catalog'
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import {
   ALL_DENSITIES,
-  ALL_DUNGEON_SCENES,
-  ALL_DUNGEON_FURNITURE,
-  ALL_DUNGEON_LANDMARKS,
   ALL_FOREST_CHARACTERS,
-  ALL_FOREST_SCENES,
-  ALL_FOREST_LANDMARKS,
   ALL_PRESETS,
   ROOM_MAX,
   ROOM_MIN,
@@ -23,6 +18,14 @@ import {
 } from '../presentation';
 import { normalizeRoomCount, stepRoomCount } from '../room-count';
 import type { DraftChange, SettingsDraft } from '../settings-draft';
+
+interface MapAddition {
+  readonly id: string;
+  readonly label: string;
+  readonly description: string;
+  readonly checked: boolean;
+  readonly change: DraftChange;
+}
 
 @Component({
   selector: 'aside[forge-settings-panel]',
@@ -46,30 +49,68 @@ export class SettingsPanel {
   readonly resetRequested = output<void>();
   readonly shuffleRequested = output<void>();
 
-  protected readonly landmarkCatalog = LANDMARK_CATALOG;
-  protected readonly landmarks = computed(() => landmarkIdsFor(this.draft().type));
-  protected readonly landmarkDescription = computed(() => {
+  protected readonly additions = computed<readonly MapAddition[]>(() => {
     const draft = this.draft();
-    return draft.landmark && draft.landmark !== 'None'
-      ? LANDMARK_CATALOG[draft.landmark].description
-      : 'Choose a focal point for your encounter.';
+    if (draft.type === 'dungeon') {
+      return [
+        {
+          id: 'forgotten-study',
+          label: 'Forgotten study',
+          description: 'A desk, bookshelves, scroll cases, and a rug in one room.',
+          checked: draft.scene === 'Forgotten study',
+          change: {
+            type: 'dungeon',
+            changes: { scene: draft.scene === 'Forgotten study' ? 'None' : 'Forgotten study' },
+          },
+        },
+        ...landmarkIdsFor('dungeon').map((id): MapAddition => ({
+          id,
+          label: LANDMARK_CATALOG[id].label,
+          description: LANDMARK_CATALOG[id].description,
+          checked: draft.landmark === id,
+          change: {
+            type: 'dungeon',
+            changes: { landmark: draft.landmark === id ? 'None' : id },
+          },
+        })),
+        {
+          id: 'dining-table',
+          label: 'Dining table',
+          description: 'A wooden table that blocks two tiles, with clear space around it.',
+          checked: draft.furniture === 'dining-table',
+          change: {
+            type: 'dungeon',
+            changes: { furniture: draft.furniture === 'dining-table' ? 'None' : 'dining-table' },
+          },
+        },
+      ];
+    }
+    return [
+      {
+        id: 'abandoned-camp',
+        label: 'Abandoned camp',
+        description: 'Two tents, bedrolls, a cold fire ring, and supplies beside the path.',
+        checked: draft.scene === 'Abandoned camp',
+        change: {
+          type: 'forest',
+          changes: { scene: draft.scene === 'Abandoned camp' ? 'None' : 'Abandoned camp' },
+        },
+      },
+      ...landmarkIdsFor('forest').map((id): MapAddition => ({
+        id,
+        label: LANDMARK_CATALOG[id].label,
+        description: LANDMARK_CATALOG[id].description,
+        checked: draft.landmark === id,
+        change: {
+          type: 'forest',
+          changes: { landmark: draft.landmark === id ? 'None' : id },
+        },
+      })),
+    ];
   });
   protected readonly densities = ALL_DENSITIES;
   protected readonly presets = ALL_PRESETS;
   protected readonly characters = ALL_FOREST_CHARACTERS;
-  protected readonly scenes = computed(() =>
-    this.draft().type === 'dungeon' ? ALL_DUNGEON_SCENES : ALL_FOREST_SCENES,
-  );
-  protected readonly sceneDescription = computed(() => {
-    const draft = this.draft();
-    if (draft.type === 'dungeon')
-      return draft.scene === 'Forgotten study'
-        ? 'A writing desk, bookshelves, and scattered scrolls in one quiet room.'
-        : 'Rooms ready for your story.';
-    return draft.scene === 'Abandoned camp'
-      ? 'Small tents, bedrolls, and a cold hearth beside the path.'
-      : 'An open clearing, ready for your story.';
-  });
   protected readonly characterNames = CHARACTER_LABELS;
   protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest'];
   protected readonly roomMin = ROOM_MIN;
@@ -123,35 +164,6 @@ export class SettingsPanel {
   protected editSeed(event: Event): void {
     if (event.target instanceof HTMLInputElement)
       this.draftChanged.emit({ type: this.draft().type, changes: { seed: event.target.value } });
-  }
-
-  protected selectFurniture(event: Event): void {
-    if (this.draft().type !== 'dungeon' || !(event.target instanceof HTMLSelectElement)) return;
-    const value = event.target.value;
-    const furniture = ALL_DUNGEON_FURNITURE.find((item) => item === value);
-    if (furniture) this.draftChanged.emit({ type: 'dungeon', changes: { furniture } });
-  }
-
-  protected selectLandmark(event: Event): void {
-    if (!(event.target instanceof HTMLSelectElement)) return;
-    const value = event.target.value;
-    if (this.draft().type === 'dungeon') {
-      const landmark = ALL_DUNGEON_LANDMARKS.find((item) => item === value);
-      if (landmark) this.draftChanged.emit({ type: 'dungeon', changes: { landmark } });
-    } else {
-      const landmark = ALL_FOREST_LANDMARKS.find((item) => item === value);
-      if (landmark) this.draftChanged.emit({ type: 'forest', changes: { landmark } });
-    }
-  }
-
-  protected selectScene(value: string): void {
-    if (this.draft().type === 'dungeon') {
-      const scene = ALL_DUNGEON_SCENES.find((scene) => scene === value);
-      if (scene) this.draftChanged.emit({ type: 'dungeon', changes: { scene } });
-    } else {
-      const scene = ALL_FOREST_SCENES.find((scene) => scene === value);
-      if (scene) this.draftChanged.emit({ type: 'forest', changes: { scene } });
-    }
   }
 
   protected editRooms(event: Event): void {
