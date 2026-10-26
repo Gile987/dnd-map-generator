@@ -120,50 +120,29 @@
       <p class="field-hint">{{ draftStyleDescription() }}</p>
     </fieldset>
     }
-    <fieldset class="preset-field">
-      <legend>Scene <span>A PLACE WITH A STORY</span></legend>
-      <div class="preset-options">
-        @for (scene of scenes(); track scene) {
-        <label [class.selected]="(activeDraft.scene ?? 'None') === scene">
+    <fieldset class="additions-field" aria-describedby="additions-hint">
+      <legend>Add to this map</legend>
+      <p class="field-hint" id="additions-hint">Choose any combination. Generate to apply.</p>
+      <div class="addition-options">
+        @for (addition of additions(); track addition.id) {
+        <label class="addition-option" [class.selected]="addition.checked">
           <input
-            type="radio"
-            name="scene"
-            [value]="scene"
-            [checked]="(activeDraft.scene ?? 'None') === scene"
-            (change)="selectScene(scene)"
+            type="checkbox"
+            name="additions"
+            [value]="addition.id"
+            [checked]="addition.checked"
+            [attr.aria-labelledby]="addition.id + '-label'"
+            [attr.aria-describedby]="addition.id + '-description'"
+            (change)="draftChanged.emit(addition.change)"
           />
-          <span>{{ scene }}</span>
+          <span class="addition-copy">
+            <strong [id]="addition.id + '-label'">{{ addition.label }}</strong>
+            <span [id]="addition.id + '-description'">{{ addition.description }}</span>
+          </span>
         </label>
         }
       </div>
-      <p class="field-hint">{{ sceneDescription() }}</p>
     </fieldset>
-    <div class="field landmark-field">
-      <label for="landmark">Landmark <span>A FOCAL POINT</span></label>
-      <select id="landmark" (change)="selectLandmark($event)" aria-describedby="landmark-hint">
-        <option value="None" [selected]="(activeDraft.landmark ?? 'None') === 'None'">None</option>
-        @for (id of landmarks(); track id) {
-        <option [value]="id" [selected]="activeDraft.landmark === id">
-          {{ landmarkCatalog[id].label }}
-        </option>
-        }
-      </select>
-      <p class="field-hint" id="landmark-hint">{{ landmarkDescription() }}</p>
-    </div>
-    @if (activeDraft.type === 'dungeon') {
-    <div class="field furniture-field">
-      <label for="furniture">Furniture <span>ROOM TO GATHER</span></label>
-      <select id="furniture" (change)="selectFurniture($event)" aria-describedby="furniture-hint">
-        <option value="None" [selected]="(activeDraft.furniture ?? 'None') === 'None'">None</option>
-        <option value="dining-table" [selected]="activeDraft.furniture === 'dining-table'">
-          Dining table
-        </option>
-      </select>
-      <p class="field-hint" id="furniture-hint">
-        A 2 × 1 wooden table. Both tiles block movement; space around it stays clear.
-      </p>
-    </div>
-    }
     <fieldset class="density-field">
       <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
       @let selectedDensity = activeDraft.density;

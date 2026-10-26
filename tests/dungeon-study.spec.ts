@@ -35,22 +35,22 @@ test('study settings preserve layouts and drafts through shuffle, switching and 
   const pixels = await page
     .locator('canvas')
     .evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL());
-  await page.getByRole('radio', { name: 'Forgotten study', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Forgotten study', exact: true }).check();
   expect(
     await page.locator('canvas').evaluate((canvas) => (canvas as HTMLCanvasElement).toDataURL()),
   ).toBe(pixels);
   expect(await snapshot(page, 'Pending study')).toEqual(original);
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
-  await expect(page.getByRole('radio', { name: 'Abandoned camp', exact: true })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Abandoned camp', exact: true })).toBeVisible();
   await page.getByRole('radio', { name: 'Dungeon', exact: true }).check();
-  await expect(page.getByRole('radio', { name: 'Forgotten study', exact: true })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Forgotten study', exact: true })).toBeChecked();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('Forgotten study');
   const study = await snapshot(page, 'Study');
   expect(study.layout).toEqual(original.layout);
   expect(study.surfaceSeed).toBe(original.surfaceSeed);
   expect(study.decoration).toMatchObject({ scene: 'Forgotten study', revision: 0 });
-  await page.getByRole('radio', { name: 'None', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Forgotten study', exact: true }).uncheck();
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   const shuffled = await snapshot(page, 'Shuffled');
@@ -58,7 +58,7 @@ test('study settings preserve layouts and drafts through shuffle, switching and 
   expect(shuffled.decoration.props).not.toEqual(study.decoration.props);
   expect(shuffled.layout).toEqual(study.layout);
   await page.getByRole('button', { name: 'Reset changes' }).click();
-  await expect(page.getByRole('radio', { name: 'Forgotten study', exact: true })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Forgotten study', exact: true })).toBeChecked();
   await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
   await page.getByRole('radio', { name: 'Cluttered', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
@@ -70,7 +70,7 @@ test('study settings preserve layouts and drafts through shuffle, switching and 
     revision: 1,
   });
   expect(crypt.layout).toEqual(study.layout);
-  await page.getByRole('radio', { name: 'None', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Forgotten study', exact: true }).uncheck();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   expect((await snapshot(page, 'No study')).decoration).not.toHaveProperty('scene');
   await page
@@ -78,7 +78,7 @@ test('study settings preserve layouts and drafts through shuffle, switching and 
     .filter({ has: page.getByText('Study', { exact: true }) })
     .getByRole('button', { name: 'Open', exact: true })
     .click();
-  await expect(page.getByRole('radio', { name: 'Forgotten study', exact: true })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Forgotten study', exact: true })).toBeChecked();
   await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeDisabled();
   const pending = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
@@ -87,7 +87,7 @@ test('study settings preserve layouts and drafts through shuffle, switching and 
   expect(await PNG.read(await png.path())).toEqual({ width: 2560, height: 1920 });
   for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 1100 });
-    await page.locator('input[name=scene]:checked').focus();
+    await page.getByRole('checkbox', { name: 'Forgotten study', exact: true }).focus();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
       false,
     );
@@ -97,12 +97,12 @@ test('study settings preserve layouts and drafts through shuffle, switching and 
 
 test('study artwork survives refresh and portable backup import', async ({ page, browser }) => {
   await page.goto('/');
-  await page.getByRole('radio', { name: 'Forgotten study', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Forgotten study', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   const saved = await snapshot(page, 'Portable study');
   await page.reload();
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(page.getByRole('radio', { name: 'Forgotten study', exact: true })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Forgotten study', exact: true })).toBeChecked();
   const pending = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
@@ -114,7 +114,9 @@ test('study artwork survives refresh and portable backup import', async ({ page,
     await fresh.setInputFiles('.import-label input', path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-    await expect(fresh.getByRole('radio', { name: 'Forgotten study', exact: true })).toBeChecked();
+    await expect(
+      fresh.getByRole('checkbox', { name: 'Forgotten study', exact: true }),
+    ).toBeChecked();
     expect(await snapshot(fresh, 'Imported study')).toEqual(saved);
   } finally {
     await fresh.close();
@@ -161,11 +163,11 @@ test('an imported dungeon with insufficient study space stays intact and permits
   });
   await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-  await page.getByRole('radio', { name: 'Forgotten study', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Forgotten study', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#settings-error')).toContainText('study could not fit');
   expect(await snapshot(page, 'After rejected study')).toEqual(map);
-  await expect(page.getByRole('radio', { name: 'Forgotten study', exact: true })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Forgotten study', exact: true })).toBeChecked();
   await page.getByLabel('World seed').fill('study-recovery');
   await page.getByRole('radio', { name: 'Balanced', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();

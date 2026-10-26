@@ -32,11 +32,11 @@ test('statue drafts preserve accepted maps, combine with studies and export the 
 }) => {
   await page.goto('/');
   const original = await snapshot(page, 'Original dungeon');
-  const landmark = page.getByRole('combobox', { name: /^Landmark/ });
-  await expect(landmark.locator('option')).toHaveText(['None', 'Weathered statue']);
+  const landmark = page.getByRole('checkbox', { name: 'Weathered statue', exact: true });
+  await expect(landmark).not.toBeChecked();
   await landmark.focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(landmark).toHaveValue('weathered-statue');
+  await page.keyboard.press('Space');
+  await expect(landmark).toBeChecked();
   expect(await snapshot(page, 'Pending statue')).toEqual(original);
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('Weathered statue');
@@ -48,14 +48,14 @@ test('statue drafts preserve accepted maps, combine with studies and export the 
   expect(marked.layout).toEqual(original.layout);
   expect(marked.surfaceSeed).toBe(original.surfaceSeed);
   expect(marked.decoration).toMatchObject({ landmark: 'weathered-statue', revision: 0 });
-  await landmark.selectOption('None');
+  await landmark.uncheck();
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   expect((await snapshot(page, 'Shuffled statue')).decoration.landmark).toBe('weathered-statue');
-  await expect(landmark).toHaveValue('None');
+  await expect(landmark).not.toBeChecked();
   await page.getByRole('button', { name: 'Reset changes' }).click();
-  await expect(landmark).toHaveValue('weathered-statue');
-  await page.getByRole('radio', { name: 'Forgotten study', exact: true }).check();
+  await expect(landmark).toBeChecked();
+  await page.getByRole('checkbox', { name: 'Forgotten study', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('Forgotten study');
   const combined = await snapshot(page, 'Statue and study');
@@ -65,10 +65,13 @@ test('statue drafts preserve accepted maps, combine with studies and export the 
     revision: 1,
   });
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
-  await expect(landmark.locator('option')).toHaveText(['None', 'Standing-stone circle']);
+  await expect(
+    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
+  ).toBeVisible();
+  await expect(landmark).toHaveCount(0);
   await page.getByRole('radio', { name: 'Dungeon', exact: true }).check();
-  await expect(landmark).toHaveValue('weathered-statue');
-  await landmark.selectOption('None');
+  await expect(landmark).toBeChecked();
+  await landmark.uncheck();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).not.toContainText('Weathered statue');
   await page
@@ -76,7 +79,7 @@ test('statue drafts preserve accepted maps, combine with studies and export the 
     .filter({ has: page.getByText('Statue and study', { exact: true }) })
     .getByRole('button', { name: 'Open', exact: true })
     .click();
-  await expect(landmark).toHaveValue('weathered-statue');
+  await expect(landmark).toBeChecked();
   await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeDisabled();
   await page.evaluate(() => {
     const original = HTMLCanvasElement.prototype.toBlob;
@@ -118,14 +121,12 @@ test('statues survive refresh and backup import with their exact saved layout an
   browser,
 }) => {
   await page.goto('/');
-  await page
-    .getByRole('combobox', { name: /^Landmark/ })
-    .selectOption({ label: 'Weathered statue' });
+  await page.getByRole('checkbox', { name: 'Weathered statue', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   const saved = await snapshot(page, 'Portable statue');
   await page.reload();
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue('weathered-statue');
+  await expect(page.getByRole('checkbox', { name: 'Weathered statue', exact: true })).toBeChecked();
   const pending = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
@@ -137,9 +138,9 @@ test('statues survive refresh and backup import with their exact saved layout an
     await fresh.setInputFiles('.import-label input', path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-    await expect(fresh.getByRole('combobox', { name: /^Landmark/ })).toHaveValue(
-      'weathered-statue',
-    );
+    await expect(
+      fresh.getByRole('checkbox', { name: 'Weathered statue', exact: true }),
+    ).toBeChecked();
     expect(await snapshot(fresh, 'Imported statue')).toEqual(saved);
   } finally {
     await fresh.close();
@@ -185,13 +186,11 @@ test('an imported dungeon with insufficient statue space stays intact and permit
   });
   await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-  await page
-    .getByRole('combobox', { name: /^Landmark/ })
-    .selectOption({ label: 'Weathered statue' });
+  await page.getByRole('checkbox', { name: 'Weathered statue', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#settings-error')).toContainText('statue could not fit');
   expect(await snapshot(page, 'After rejected statue')).toEqual(map);
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue('weathered-statue');
+  await expect(page.getByRole('checkbox', { name: 'Weathered statue', exact: true })).toBeChecked();
   await page.getByLabel('World seed').fill('statue-recovery');
   await page.getByRole('radio', { name: 'Balanced', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();

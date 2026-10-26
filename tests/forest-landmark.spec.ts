@@ -26,15 +26,12 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   browser,
 }) => {
   await page.goto('/');
-  await expect(page.getByRole('combobox', { name: /^Landmark/ }).locator('option')).toHaveText([
-    'None',
-    'Weathered statue',
-  ]);
+  await expect(
+    page.getByRole('checkbox', { name: 'Weathered statue', exact: true }),
+  ).not.toBeChecked();
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
   const original = await snapshot(page, 'Original');
-  await page
-    .getByRole('combobox', { name: /^Landmark/ })
-    .selectOption({ label: 'Standing-stone circle' });
+  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).check();
   expect(await snapshot(page, 'Pending landmark')).toEqual(original);
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).toContainText('Standing-stone circle');
@@ -46,15 +43,15 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   expect(marked.layout).toEqual(original.layout);
   expect(marked.surfaceSeed).toBe(original.surfaceSeed);
   expect(marked.decoration.landmark).toBe('standing-stone-circle');
-  await page.getByRole('combobox', { name: /^Landmark/ }).selectOption('None');
+  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).uncheck();
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   expect((await snapshot(page, 'Shuffled')).decoration.landmark).toBe('standing-stone-circle');
   await page.getByRole('button', { name: 'Reset changes' }).click();
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue(
-    'standing-stone-circle',
-  );
-  await page.getByRole('radio', { name: 'Abandoned camp', exact: true }).check();
+  await expect(
+    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
+  ).toBeChecked();
+  await page.getByRole('checkbox', { name: 'Abandoned camp', exact: true }).check();
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).toContainText('Abandoned camp');
   const combined = await snapshot(page, 'Camp and circle');
@@ -63,9 +60,11 @@ test('landmarks remain pending until generated, compose with camps, and survive 
     landmark: 'standing-stone-circle',
     revision: 1,
   });
-  await page.getByRole('combobox', { name: /^Landmark/ }).focus();
-  await page.keyboard.press('ArrowUp');
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue('None');
+  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).focus();
+  await page.keyboard.press('Space');
+  await expect(
+    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
+  ).not.toBeChecked();
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).not.toContainText('Standing-stone circle');
   await page
@@ -73,9 +72,9 @@ test('landmarks remain pending until generated, compose with camps, and survive 
     .filter({ has: page.getByText('Camp and circle', { exact: true }) })
     .getByRole('button', { name: 'Open', exact: true })
     .click();
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue(
-    'standing-stone-circle',
-  );
+  await expect(
+    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
+  ).toBeChecked();
   await page.evaluate(() => {
     const original = HTMLCanvasElement.prototype.toBlob;
     HTMLCanvasElement.prototype.toBlob = function (callback, type, quality) {
@@ -94,13 +93,15 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-export-waiting', 'true');
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toBeDisabled();
+  await expect(
+    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
+  ).toBeDisabled();
   await page.screenshot({ path: 'artifacts/f10/disabled.png', fullPage: true });
   await page.evaluate(() => document.dispatchEvent(new Event('release-landmark-export')));
   const png = await download;
   expect(png.suggestedFilename()).toContain('-standing-stone-circle-abandoned-camp-');
   expect(await PNG.read(await png.path())).toEqual({ width: 2560, height: 1920 });
-  await page.getByRole('combobox', { name: /^Landmark/ }).focus();
+  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).focus();
   await page.screenshot({ path: 'artifacts/f10/desktop.png', fullPage: true });
   for (const width of [768, 390, 320]) {
     await page.setViewportSize({ width, height: 1100 });
@@ -159,14 +160,12 @@ test('a landmark that cannot fit preserves an imported map and recovers with a n
   await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
   const before = await snapshot(page, 'No landmark space');
-  await page
-    .getByRole('combobox', { name: /^Landmark/ })
-    .selectOption({ label: 'Standing-stone circle' });
+  await page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }).check();
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#settings-error')).toContainText('landmark could not fit');
-  await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue(
-    'standing-stone-circle',
-  );
+  await expect(
+    page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
+  ).toBeChecked();
   expect(await snapshot(page, 'After rejected landmark')).toEqual(before);
   await page.getByLabel('World seed').fill('landmark-recovery');
   await page.getByRole('button', { name: 'Generate forest' }).click();
@@ -224,12 +223,9 @@ for (const source of ['library', 'backup'] as const) {
       await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     }
     await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-    await expect(page.getByRole('combobox', { name: /^Landmark/ })).toHaveValue(
-      'standing-stone-circle',
-    );
     await expect(
-      page.getByRole('combobox', { name: /^Landmark/ }).locator('option:checked'),
-    ).toHaveText('Standing-stone circle');
+      page.getByRole('checkbox', { name: 'Standing-stone circle', exact: true }),
+    ).toBeChecked();
     await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
     expect(await snapshot(page, 'Migrated circle')).toEqual(result.map);
     const download = page.waitForEvent('download');

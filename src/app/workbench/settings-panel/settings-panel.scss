@@ -108,7 +108,8 @@ form {
 }
 .field label,
 .density-field legend,
-.preset-field legend {
+.preset-field legend,
+.additions-field legend {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -407,10 +408,19 @@ form {
       grid-column: 1 / -1;
     }
   }
+  .map-type-field {
+    grid-column: 1;
+    grid-row: 2;
+  }
   form {
+    grid-column: 1;
+    grid-row: 3 / 5;
     margin-top: 24px;
   }
   .details-section {
+    grid-column: 2;
+    grid-row: 2 / 4;
+    align-self: start;
     margin-top: 24px;
     padding-top: 0;
     border-top: 0;
@@ -426,6 +436,7 @@ form {
   }
   .style-note {
     grid-column: 2;
+    grid-row: 4;
     margin: 0;
     padding: 15px 0 0;
     border-top: 1px solid #dbe1cf;
@@ -454,24 +465,64 @@ form {
   }
 }
 
-.landmark-field,
-.furniture-field {
+.additions-field {
   margin-top: 18px;
-  margin-bottom: 10px;
-  select {
-    width: 100%;
-    min-height: 38px;
-    padding: 8px;
-    border: 1px solid #d9ddce;
-    border-radius: 5px;
-    background: #f4f3ea;
-    color: #415c48;
-    font: inherit;
-    &:hover:not(:disabled) {
-      border-color: #6b8b70;
+  legend {
+    margin-bottom: 0;
+  }
+}
+.addition-options {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+.addition-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #d9ddce;
+  border-radius: 5px;
+  background: #f4f3ea;
+  cursor: pointer;
+  &.selected {
+    background: #edf2e5;
+    border-color: #809773;
+  }
+  &:hover:not(:has(input:disabled)) {
+    border-color: #6b8b70;
+  }
+  &:has(input:focus-visible) {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+  &:has(input:disabled) {
+    cursor: default;
+    opacity: 0.6;
+  }
+  input {
+    flex-shrink: 0;
+    width: 15px;
+    height: 15px;
+    margin: 1px 0 0;
+    accent-color: #284e3b;
+    cursor: inherit;
+    &:focus-visible {
+      outline: none;
     }
-    &:disabled {
-      opacity: 0.6;
-    }
+  }
+}
+.addition-copy {
+  display: grid;
+  gap: 4px;
+  strong {
+    color: #425847;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  > span {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.5;
   }
 }
