@@ -3,7 +3,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '6.0.0';
+export const SAVE_FORMAT_VERSION = '7.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -104,6 +104,12 @@ const FORMAT_6_VOCABULARY: SaveVocabulary = {
   forestLandmarks: ['None', 'standing-stone-circle'],
 };
 
+const FORMAT_7_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_6_VOCABULARY,
+  dungeonLandmarks: ['None', 'weathered-statue'],
+  propKinds: [...FORMAT_6_VOCABULARY.propKinds, 'weathered_statue'],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
     case '1.0.0':
@@ -112,6 +118,8 @@ export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
       return FORMAT_2_VOCABULARY;
     case '3.0.0':
       return FORMAT_3_VOCABULARY;
+    case '7.0.0':
+      return FORMAT_7_VOCABULARY;
     case '6.0.0':
       return FORMAT_6_VOCABULARY;
     case '5.0.0':
@@ -234,7 +242,7 @@ export function makeSavedMap(
 export function mapSummary(map: GeneratedMap): string {
   if (map.type === 'dungeon') {
     const scene = map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : '';
-    return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
+    return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? ' · Abandoned camp' : '';
   return `${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;

@@ -21,7 +21,7 @@ function campRecord() {
 
 test('a camp round-trips through current format without changing its saved model', () => {
   const record = campRecord();
-  expect(record.saveFormatVersion).toBe('6.0.0');
+  expect(record.saveFormatVersion).toBe('7.0.0');
   expect(parseSavedMap(record)).toEqual(record);
   expect(parseSavedMap({ ...record, saveFormatVersion: '3.0.0' })).toEqual(record);
   expect(parseSavedMap({ ...record, saveFormatVersion: '4.0.0' })).toEqual(record);

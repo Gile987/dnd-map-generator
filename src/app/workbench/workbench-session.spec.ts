@@ -522,3 +522,55 @@ test('a refused landmark preserves accepted settings and draft, then permits ret
   expect(session.pending()).toBe(true);
   expect(session.generate().ok).toBe(true);
 });
+
+test('dungeon landmark drafts apply atomically and survive switching, shuffling, reset and opening', () => {
+  const session = new WorkbenchSession();
+  const original = session.map();
+  session.updateDraft({ type: 'dungeon', changes: { landmark: 'weathered-statue' } });
+  expect(session.map()).toBe(original);
+  expect(session.pending()).toBe(true);
+  session.selectMapType('forest');
+  session.selectMapType('dungeon');
+  expect(session.draft()).toMatchObject({ landmark: 'weathered-statue' });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const marked = session.map();
+  expect(marked.layout).toBe(original.layout);
+  expect(marked.decoration).toMatchObject({ landmark: 'weathered-statue', revision: 0 });
+  session.updateDraft({ type: 'dungeon', changes: { landmark: 'None' } });
+  session.shuffle();
+  expect(session.map().decoration).toMatchObject({ landmark: 'weathered-statue', revision: 1 });
+  expect(session.draft()).toMatchObject({ landmark: 'None' });
+  session.resetChanges();
+  expect(session.draft()).toMatchObject({ landmark: 'weathered-statue' });
+  session.updateDraft({
+    type: 'dungeon',
+    changes: { landmark: 'None', scene: 'Forgotten study', preset: 'Crypt', density: 'Sparse' },
+  });
+  expect(session.generate().ok).toBe(true);
+  expect(session.map().decoration).toMatchObject({
+    scene: 'Forgotten study',
+    preset: 'Crypt',
+    density: 'Sparse',
+    revision: 1,
+  });
+  expect(session.map().decoration).not.toHaveProperty('landmark');
+  session.openSaved(marked);
+  expect(session.draft()).toMatchObject({ landmark: 'weathered-statue' });
+  expect(session.pending()).toBe(false);
+});
+
+test('rejected dungeon landmark changes keep accepted maps and drafts available for retry', () => {
+  const session = new WorkbenchSession();
+  const original = session.map();
+  session.updateDraft({ type: 'dungeon', changes: { landmark: 'weathered-statue' } });
+  const draft = session.draft();
+  vi.spyOn(dungeonDecoration, 'changeDungeonAppearance').mockImplementationOnce((map) => map);
+  expect(session.generate()).toMatchObject({
+    ok: false,
+    error: expect.stringContaining('statue could not fit'),
+  });
+  expect(session.map()).toBe(original);
+  expect(session.draft()).toBe(draft);
+  expect(session.pending()).toBe(true);
+  expect(session.generate().ok).toBe(true);
+});

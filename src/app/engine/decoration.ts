@@ -5,13 +5,16 @@ import type {
   Density,
   Dungeon,
   DungeonScene,
+  DungeonLandmark,
   DungeonSettings,
   Layout,
   Prop,
 } from './model';
 import { Random, shuffleInPlace, streamSeed } from './random';
-import { isTraversable, reservedTiles, validateDungeon } from './validation';
-import { placeStudy } from './dungeon-study';
+import { isTraversable, reservedTiles } from './dungeon-space';
+import { validateDungeon } from './validation';
+import { DUNGEON_LANDMARK_RULES } from './dungeon-landmark';
+import { placeStudy, studyReservations } from './dungeon-study';
 import { nextDetailRevision } from './decoration-revision';
 
 type PropChoice = Prop['kind'];
@@ -92,6 +95,33 @@ export function decorate(
   preset: DecorationPreset,
   revision: number,
   scene: DungeonScene = 'None',
+  landmark: DungeonLandmark = 'None',
+): Decoration {
+  const base = decorateBase(layout, seed, density, preset, revision, scene);
+  if (landmark === 'None') return base;
+  return {
+    ...base,
+    landmark,
+    props:
+      DUNGEON_LANDMARK_RULES[landmark].place(
+        layout,
+        base.props,
+        seed,
+        density,
+        preset,
+        revision,
+        studyReservations(layout, base.props),
+      ) ?? base.props,
+  };
+}
+
+function decorateBase(
+  layout: Layout,
+  seed: string,
+  density: Density,
+  preset: DecorationPreset,
+  revision: number,
+  scene: DungeonScene,
 ): Decoration {
   const random = new Random(streamSeed(seed, 'decoration', preset, density, revision));
   const palette = palettes[preset];
@@ -197,7 +227,14 @@ export function decorate(
 
 export function shuffleDetails(map: Dungeon, density: Density = map.decoration.density): Dungeon {
   const revision = nextDetailRevision(map.decoration.revision);
-  return redecorate(map, density, map.decoration.preset, revision, map.decoration.scene);
+  return redecorate(
+    map,
+    density,
+    map.decoration.preset,
+    revision,
+    map.decoration.scene,
+    map.decoration.landmark,
+  );
 }
 
 export function changeDensity(map: Dungeon, density: Density): Dungeon {
@@ -207,6 +244,7 @@ export function changeDensity(map: Dungeon, density: Density): Dungeon {
     map.decoration.preset,
     map.decoration.revision,
     map.decoration.scene,
+    map.decoration.landmark,
   );
 }
 
@@ -217,12 +255,13 @@ export function changePreset(map: Dungeon, preset: DecorationPreset): Dungeon {
     preset,
     map.decoration.revision,
     map.decoration.scene,
+    map.decoration.landmark,
   );
 }
 
 export function changeDungeonAppearance(
   map: Dungeon,
-  settings: Pick<DungeonSettings, 'density' | 'preset' | 'scene'>,
+  settings: Pick<DungeonSettings, 'density' | 'preset' | 'scene' | 'landmark'>,
 ): Dungeon {
   return redecorate(
     map,
@@ -230,6 +269,7 @@ export function changeDungeonAppearance(
     settings.preset,
     map.decoration.revision,
     settings.scene,
+    settings.landmark,
   );
 }
 
@@ -239,10 +279,13 @@ function redecorate(
   preset: DecorationPreset,
   revision: number,
   scene: DungeonScene = 'None',
+  landmark: DungeonLandmark = 'None',
 ): Dungeon {
   const updated: Dungeon = {
     ...map,
-    decoration: decorate(map.layout, map.seed, density, preset, revision, scene),
+    decoration: decorate(map.layout, map.seed, density, preset, revision, scene, landmark),
   };
-  return scene === 'Forgotten study' && validateDungeon(updated) ? map : updated;
+  return (scene === 'Forgotten study' || landmark !== 'None') && validateDungeon(updated)
+    ? map
+    : updated;
 }

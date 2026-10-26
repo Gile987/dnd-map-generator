@@ -1,4 +1,4 @@
-import { drawStandingStone } from './landmark-props';
+import { drawStandingStone, drawWeatheredStatue } from './landmark-props';
 import type { Prop, PropKind } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import { drawTent, drawBedroll, drawFireRing, drawSupplyBundle } from './camp-props';
@@ -52,6 +52,7 @@ const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   fire_ring: drawFireRing,
   supply_bundle: drawSupplyBundle,
   standing_stone: drawStandingStone,
+  weathered_statue: drawWeatheredStatue,
   desk: drawDesk,
   bookshelf: drawBookshelf,
   scroll_case: drawScrollCase,

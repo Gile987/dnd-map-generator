@@ -1,7 +1,8 @@
+import type { FeatureReservation } from './feature-reservation';
 import { contains, DENSITY_BUDGETS, indexOf, isFloor } from './model';
 import type { Density, DecorationPreset, Layout, Point, Prop, Room } from './model';
 import { Random, shuffleInPlace, streamSeed } from './random';
-import { isTraversable, reservedTiles } from './validation';
+import { isTraversable, reservedTiles } from './dungeon-space';
 
 const arrangement = [
   { x: 0, y: 0, kind: 'bookshelf', blocking: true },
@@ -21,6 +22,16 @@ function rotate(point: Point, turn: number): Point {
     default:
       return point;
   }
+}
+
+// The study protects its entire room, including the rug and circulation space.
+export function studyReservations(
+  layout: Layout,
+  props: readonly Prop[],
+): readonly FeatureReservation[] {
+  const desk = props.find((p) => p.kind === 'desk');
+  const room = desk && layout.rooms.find((room) => contains(room, desk));
+  return room ? [{ area: room, props: props.filter((p) => contains(room, p)) }] : [];
 }
 
 export function placeStudy(
