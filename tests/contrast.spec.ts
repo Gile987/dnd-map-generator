@@ -262,6 +262,41 @@ for (const width of [1440, 768, 320]) {
     await page.getByRole('button', { name: 'Save map', exact: true }).click();
     await expect(page.locator('.saved-item')).toHaveCount(1);
     await expect(page.locator('.library')).toHaveAttribute('aria-busy', 'false');
+    const librarySearch = page.getByRole('searchbox', { name: 'Search saved maps', exact: true });
+    await checkContrast(
+      page.locator(
+        '.filter-field label, #library-type, #library-sort, .favorites-filter, .library-count',
+      ),
+      'library browsing controls',
+      readings,
+    );
+    await checkContrast(librarySearch, 'library search placeholder', readings, true);
+    for (const control of [
+      librarySearch,
+      page.locator('#library-type'),
+      page.locator('#library-sort'),
+    ]) {
+      await control.hover();
+      await checkContrast(control, 'library browsing hover', readings, control === librarySearch);
+      await page.keyboard.press('Tab');
+      await control.focus();
+      await checkContrast(control, 'library browsing focus', readings, control === librarySearch);
+    }
+    await librarySearch.fill('unmatched-library-search');
+    await checkContrast(
+      page.locator('.filtered-empty strong, .filtered-empty p, .clear-filters, .library-count'),
+      'filtered library empty state',
+      readings,
+    );
+    await page.getByRole('checkbox', { name: 'Favorites only', exact: true }).check();
+    await checkContrast(page.locator('.favorites-filter'), 'favorites filter selected', readings);
+    const clearFilters = page.getByRole('button', { name: 'Clear filters', exact: true });
+    await clearFilters.hover();
+    await checkContrast(clearFilters, 'clear filters hover', readings);
+    await page.keyboard.press('Tab');
+    await clearFilters.focus();
+    await checkContrast(clearFilters, 'clear filters focus', readings);
+    await clearFilters.click();
     await checkContrast(
       page.locator('.saved-meta > span, .saved-name, .library-message .notice'),
       'populated library',
