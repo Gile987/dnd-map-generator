@@ -77,6 +77,195 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('deletion undo', () => {
+  test('the undo snapshot is readonly, local to a store, and absent after reloading the page', async () => {
+    stubStorage();
+    const store = createStore();
+    expectTypeOf<SaveStore['lastDeleted']>().toEqualTypeOf<Signal<SavedMap | null>>();
+    expect(store.lastDeleted()).toBeNull();
+    await store.remove(original.id);
+    expect(store.lastDeleted()).toEqual(original);
+    expect(createStore().lastDeleted()).toBeNull();
+    store.reload();
+    expect(store.lastDeleted()).toEqual(original);
+  });
+
+  test('deletion captures the latest complete record inside the lock and restores it exactly', async () => {
+    const storage = stubStorage();
+    const other = createStore();
+    const store = createStore();
+    await other.rename(original.id, 'Latest name');
+    await other.toggleFavorite(original.id);
+    const deleted = await store.remove(original.id);
+    expect(deleted).toEqual({ ...original, name: 'Latest name', favorite: false });
+    expect(store.lastDeleted()).toBe(deleted);
+    expect(storage.values.get(SAVE_STORAGE_KEY)).toBe('[]');
+    expect(await store.undoRemove()).toBe(deleted);
+    expect(store.saved()).toEqual([deleted]);
+    expect(JSON.parse(storage.values.get(SAVE_STORAGE_KEY) ?? '')).toEqual([deleted]);
+    expect(store.lastDeleted()).toBeNull();
+  });
+
+  test('unrelated writes, reloads, and backups retain the undo and restored records keep their original metadata', async () => {
+    const storage = stubStorage();
+    const store = createStore();
+    await store.remove(original.id);
+    await store.importMaps([incoming]);
+    await store.rename(incoming.id, 'Keep the newer name');
+    await store.toggleFavorite(incoming.id);
+    await store.duplicate(incoming.id);
+    await store.add(original.map, 'New save', thumbnail);
+    store.reload();
+    const others = store.saved();
+    expect(parseBundle(store.exportBundle())).toMatchObject({ ok: true, maps: others });
+    expect(store.lastDeleted()).toEqual(original);
+    await store.undoRemove();
+    expect(store.saved()).toEqual([original, ...others]);
+    expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(JSON.stringify([original, ...others]));
+  });
+
+  test('only the next successful deletion replaces the snapshot', async () => {
+    const storage = stubStorage(JSON.stringify([original, incoming]));
+    const store = createStore();
+    await store.remove(original.id);
+    storage.setItem.mockImplementationOnce(() => {
+      throw new Error('blocked');
+    });
+    await expect(store.remove(incoming.id)).rejects.toThrow('could not write');
+    expect(store.lastDeleted()).toEqual(original);
+    await expect(store.remove('missing')).rejects.toThrow('no longer in the library');
+    expect(store.lastDeleted()).toEqual(original);
+    await store.remove(incoming.id);
+    expect(store.lastDeleted()).toEqual(incoming);
+    await store.undoRemove();
+    expect(store.saved()).toEqual([incoming]);
+    expect(store.lastDeleted()).toBeNull();
+  });
+
+  test('a failed undo write preserves storage, visible records, and the snapshot for retry', async () => {
+    const storage = stubStorage();
+    const store = createStore();
+    await store.remove(original.id);
+    const before = store.saved();
+    const deleted = store.lastDeleted();
+    storage.setItem.mockImplementationOnce(() => {
+      expect(store.saved()).toBe(before);
+      expect(store.lastDeleted()).toBe(deleted);
+      throw new DOMException('Full', 'QuotaExceededError');
+    });
+    await expect(store.undoRemove()).rejects.toThrow('could not write');
+    expect(store.saved()).toBe(before);
+    expect(store.lastDeleted()).toBe(deleted);
+    expect(storage.values.get(SAVE_STORAGE_KEY)).toBe('[]');
+    await store.undoRemove();
+    expect(store.saved()).toEqual([original]);
+    expect(store.lastDeleted()).toBeNull();
+  });
+
+  test('neither deletion nor undo publishes its snapshot before storage succeeds', async () => {
+    const storage = stubStorage();
+    const store = createStore();
+    storage.setItem.mockImplementationOnce((key, value) => {
+      expect(store.lastDeleted()).toBeNull();
+      expect(store.saved()).toEqual([original]);
+      storage.values.set(key, value);
+    });
+    await store.remove(original.id);
+    storage.setItem.mockImplementationOnce((key, value) => {
+      expect(store.lastDeleted()).toEqual(original);
+      expect(store.saved()).toEqual([]);
+      storage.values.set(key, value);
+    });
+    await store.undoRemove();
+    expect(store.lastDeleted()).toBeNull();
+  });
+
+  test('an import that reuses the deleted ID is never overwritten, even without a storage event', async () => {
+    const storage = stubStorage();
+    const store = createStore();
+    const other = createStore();
+    await store.remove(original.id);
+    const replacement = { ...incoming, id: original.id, name: 'Newer replacement' };
+    await other.importMaps([replacement]);
+    const raw = storage.values.get(SAVE_STORAGE_KEY);
+    storage.setItem.mockClear();
+    await expect(store.undoRemove()).rejects.toThrow('will not overwrite');
+    expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(store.saved()).toEqual([replacement]);
+    expect(store.lastDeleted()).toEqual(original);
+    await other.remove(replacement.id);
+    await store.undoRemove();
+    expect(store.saved()).toEqual([original]);
+  });
+
+  test('simultaneous undo commands restore once and cannot duplicate an identifier', async () => {
+    const storage = stubStorage();
+    const store = createStore();
+    await store.remove(original.id);
+    const results = await Promise.allSettled([store.undoRemove(), store.undoRemove()]);
+    expect(results.map((result) => result.status)).toEqual(['fulfilled', 'rejected']);
+    expect(store.saved()).toEqual([original]);
+    expect(storage.setItem).toHaveBeenCalledTimes(2);
+  });
+
+  test('queued deletions and undo follow lock order and preserve writes from other tabs', async () => {
+    stubStorage(JSON.stringify([original, incoming]));
+    const store = createStore();
+    const other = createStore();
+    await Promise.all([
+      store.remove(original.id),
+      store.remove(incoming.id),
+      other.add(original.map, 'Unrelated addition', thumbnail),
+      store.undoRemove(),
+    ]);
+    expect(store.saved().map((record) => record.name)).toEqual([
+      'Imported forest',
+      'Unrelated addition',
+    ]);
+    expect(store.saved()[0]).toEqual(incoming);
+    expect(other.lastDeleted()).toBeNull();
+    expect(store.lastDeleted()).toBeNull();
+  });
+
+  test.each(['partial', 'invalid', 'duplicates', 'unavailable'] as const)(
+    'undo preserves %s data and remains available after storage recovery',
+    async (kind) => {
+      const storage = stubStorage();
+      const store = createStore();
+      await store.remove(original.id);
+      const raw =
+        kind === 'partial'
+          ? JSON.stringify([incoming, null])
+          : kind === 'duplicates'
+            ? JSON.stringify([incoming, incoming])
+            : '{broken';
+      storage.values.set(SAVE_STORAGE_KEY, raw);
+      if (kind === 'unavailable')
+        storage.getItem.mockImplementation(() => {
+          throw new Error('Blocked');
+        });
+      await expect(store.undoRemove()).rejects.toThrow(/Changes are paused/);
+      expect(store.lastDeleted()).toEqual(original);
+      expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
+      expect(storage.setItem).toHaveBeenCalledOnce();
+      storage.getItem.mockImplementation((key) => storage.values.get(key) ?? null);
+      storage.values.set(SAVE_STORAGE_KEY, JSON.stringify([incoming]));
+      store.reload();
+      await store.undoRemove();
+      expect(store.saved()).toEqual([original, incoming]);
+    },
+  );
+
+  test('undo with no snapshot or no lock support cannot write', async () => {
+    const storage = stubStorage();
+    await expect(createStore().undoRemove()).rejects.toThrow('no deleted map');
+    vi.stubGlobal('navigator', {});
+    await expect(createStore().undoRemove()).rejects.toThrow('Saving is unavailable');
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
+});
+
 describe('saved-map persistence', () => {
   test('exposes saved records through a readonly signal and collection', () => {
     expectTypeOf<SaveStore['saved']>().toEqualTypeOf<Signal<readonly SavedMap[]>>();

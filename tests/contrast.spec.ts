@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { openAdditions } from './additions';
+import { SAVE_STORAGE_KEY } from '../src/app/save/save-format';
 
 interface Reading {
   readonly state: string;
@@ -354,6 +355,36 @@ for (const width of [1440, 768, 320]) {
       await checkContrast(button, 'rename action keyboard focus', readings);
     }
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    const undoDelete = page.getByRole('button', { name: 'Undo delete', exact: true });
+    await expect(undoDelete).toBeEnabled();
+    await checkContrast(
+      page.locator('.undo-copy > p:not(:empty), #undo-delete-hint, .undo-delete button'),
+      'undo deletion notice',
+      readings,
+    );
+    await undoDelete.hover();
+    await checkContrast(undoDelete, 'undo deletion hover', readings);
+    await page.keyboard.press('Tab');
+    await undoDelete.focus();
+    await checkContrast(undoDelete, 'undo deletion focus', readings);
+    await page.evaluate((key) => {
+      const original = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (name, value) {
+        if (name !== key) {
+          original.call(this, name, value);
+          return;
+        }
+        Storage.prototype.setItem = original;
+        throw new DOMException('Full', 'QuotaExceededError');
+      };
+    }, SAVE_STORAGE_KEY);
+    await undoDelete.click();
+    await expect(page.locator('.undo-error')).not.toBeEmpty();
+    await checkContrast(page.locator('.undo-error'), 'undo deletion write error', readings);
+    await page.locator('.undo-delete').screenshot({ path: `artifacts/f16/contrast-${width}.png` });
+    await undoDelete.click();
+    await expect(page.locator('.undo-delete')).toHaveCount(0);
     await page.setInputFiles('.import-label input', {
       name: 'invalid.json',
       mimeType: 'application/json',

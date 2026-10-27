@@ -44,6 +44,7 @@ export class Library {
   protected readonly editDraft = signal('');
   protected readonly notice = signal('');
   protected readonly error = signal('');
+  protected readonly undoError = signal('');
   protected readonly working = signal(false);
   protected readonly blocked = computed(() => this.disabled() || this.working());
   protected readonly writeBlocked = computed(() => this.blocked() || !this.store.canWrite());
@@ -51,6 +52,11 @@ export class Library {
   protected readonly recoveryData = this.store.recoveryData;
 
   protected readonly saved = this.store.saved;
+  protected readonly lastDeleted = this.store.lastDeleted;
+  protected readonly deletionMessage = computed(() => {
+    const deleted = this.lastDeleted();
+    return deleted ? `Deleted “${deleted.name}”.` : '';
+  });
   protected readonly view = signal<LibraryView>(DEFAULT_LIBRARY_VIEW);
   protected readonly visibleMaps = computed(() => viewSavedMaps(this.saved(), this.view()));
   protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest', 'courtyard'];
@@ -147,10 +153,28 @@ export class Library {
 
   protected async removeMap(record: SavedMap): Promise<void> {
     await this.runStore(async () => {
-      await this.store.remove(record.id);
-      return `Deleted “${record.name}”.`;
+      const deleted = await this.store.remove(record.id);
+      if (this.editingId() === deleted.id) this.editingId.set(null);
+      return this.deletionMessage();
     });
     this.focusSearchIfHidden(record.id);
+  }
+
+  protected async undoDelete(): Promise<void> {
+    if (this.writeBlocked()) return;
+    await this.runStore(async () => {
+      const restored = await this.store.undoRemove();
+      afterNextRender(
+        {
+          write: () => {
+            if (!this.blocked()) this.searchInput().nativeElement.focus();
+          },
+        },
+        { injector: this.injector },
+      );
+      const hidden = !this.visibleMaps().some((record) => record.id === restored.id);
+      return `Restored “${restored.name}”.${hidden ? ' Current filters hide this map.' : ''}`;
+    }, this.undoError);
   }
 
   protected async duplicateMap(record: SavedMap): Promise<void> {
@@ -185,6 +209,7 @@ export class Library {
     if (this.blocked()) return;
     this.store.reload();
     this.error.set('');
+    this.undoError.set('');
     this.notice.set(this.store.problem() ? '' : 'Library reloaded.');
   }
 
@@ -242,15 +267,16 @@ export class Library {
     }
   }
 
-  private async runStore(action: () => Promise<string>): Promise<void> {
+  private async runStore(action: () => Promise<string>, errorTarget = this.error): Promise<void> {
     if (this.blocked()) return;
     this.working.set(true);
     this.notice.set('');
     this.error.set('');
+    this.undoError.set('');
     try {
       this.notice.set(await action());
     } catch (error: unknown) {
-      this.error.set(
+      errorTarget.set(
         error instanceof Error
           ? error.message
           : 'This change could not be saved. Please try again.',

@@ -26,6 +26,7 @@ type StoredLibrary =
 interface LibraryChange<T> {
   readonly records: readonly SavedMap[];
   readonly result: T;
+  readonly lastDeleted?: SavedMap | null;
 }
 
 const WRITE_LOCK = `${SAVE_STORAGE_KEY}.write`;
@@ -102,6 +103,8 @@ function requireRecord(records: readonly SavedMap[], id: string): SavedMap {
 @Injectable({ providedIn: 'root' })
 export class SaveStore {
   private readonly state = signal<StoredLibrary>(readLibrary());
+  private readonly deleted = signal<SavedMap | null>(null);
+  readonly lastDeleted = this.deleted.asReadonly();
   private readonly locks: LockManager | undefined = navigator.locks;
   readonly saved = computed(() => this.state().records);
   readonly problem = computed(
@@ -136,10 +139,26 @@ export class SaveStore {
     return this.commit((records) => ({ records: [record, ...records], result: record }));
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string): Promise<SavedMap> {
     return this.commit((records) => {
-      requireRecord(records, id);
-      return { records: records.filter((record) => record.id !== id), result: undefined };
+      const deleted = requireRecord(records, id);
+      return {
+        records: records.filter((record) => record.id !== id),
+        result: deleted,
+        lastDeleted: deleted,
+      };
+    });
+  }
+
+  async undoRemove(): Promise<SavedMap> {
+    return this.commit((records) => {
+      const deleted = this.deleted();
+      if (!deleted) throw new Error('There is no deleted map to restore in this tab.');
+      if (records.some((record) => record.id === deleted.id))
+        throw new Error(
+          'That map is already in the library. Undo will not overwrite the existing save.',
+        );
+      return { records: [deleted, ...records], result: deleted, lastDeleted: null };
     });
   }
 
@@ -221,6 +240,7 @@ export class SaveStore {
         );
       }
       this.state.set({ kind: 'ready', raw, records: next.records });
+      if (next.lastDeleted !== undefined) this.deleted.set(next.lastDeleted);
       return next.result;
     });
   }
