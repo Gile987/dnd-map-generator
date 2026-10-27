@@ -1,7 +1,7 @@
 @let activeDraft = draft();
 <div class="panel-heading">
   <span class="section-number">01</span>
-  <h2>{{ map().type === 'dungeon' ? 'Shape your dungeon' : 'Shape your clearing' }}</h2>
+  <h2>{{ mapHeadings[map().type] }}</h2>
 </div>
 
 <fieldset class="map-type-field" [disabled]="disabled()">
@@ -16,9 +16,7 @@
         [checked]="map().type === type"
         (change)="mapTypeChanged.emit(type)"
         [disabled]="disabled()"
-      /><forge-icon [name]="type === 'dungeon' ? 'layers' : 'tree'" /><span
-        >{{ type === 'dungeon' ? 'Dungeon' : 'Forest' }}</span
-      ></label
+      /><forge-icon [name]="mapTypeIcons[type]" /><span>{{ mapTypeLabels[type] }}</span></label
     >
     }
   </div>
@@ -171,9 +169,7 @@
     </div>
     }
     <button class="generate-button" type="submit" [disabled]="disabled() || !pending()">
-      <forge-icon [name]="map().type === 'dungeon' ? 'spark' : 'tree'" />{{ generating() ?
-      map().type === 'dungeon' ? 'Forging your dungeon…' : 'Growing your clearing…' : map().type ===
-      'dungeon' ? 'Generate dungeon' : 'Generate forest' }}<forge-icon
+      <forge-icon [name]="mapTypeIcons[map().type]" />{{ generateLabel() }}<forge-icon
         class="generate-arrow"
         name="arrow"
       />
@@ -197,8 +193,9 @@
     <h2>Make it feel lived in</h2>
   </div>
   <p>
-    {{ map().type === 'dungeon' ? 'Love the layout? Give its rooms a different kind of character.' :
-    'Love the clearing? Give it a different woodland character.' }}
+    {{ map().type === 'courtyard' ? 'Keep the broken walls. Rearrange the columns and scattered
+    details.' : map().type === 'dungeon' ? 'Love the layout? Give its rooms a different kind of
+    character.' : 'Love the clearing? Give it a different woodland character.' }}
   </p>
   <div class="detail-actions" role="group" aria-label="Detail actions">
     <button
@@ -236,8 +233,9 @@
     Up to {{ shuffleHistory().limit }} shuffles. Generate or Open starts over.
   </p>
   <span class="preserve-note"
-    ><forge-icon name="lock" />{{ map().type === 'dungeon' ? 'Your rooms and paths stay put.' :
-    'Your clearing and path stay put.' }}</span
+    ><forge-icon name="lock" />{{ map().type === 'courtyard' ? 'Your walls and approaches stay put.'
+    : map().type === 'dungeon' ? 'Your rooms and paths stay put.' : 'Your clearing and path stay
+    put.' }}</span
   >
 </div>
 <div class="style-note">

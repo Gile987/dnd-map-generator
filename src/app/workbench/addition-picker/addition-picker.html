@@ -1,9 +1,7 @@
 <dialog #dialog class="picker" aria-labelledby="picker-title" aria-describedby="picker-hint">
   <header>
     <div>
-      <span class="eyebrow"
-        >{{ environment() === 'dungeon' ? 'Dungeon' : 'Forest' }} additions</span
-      >
+      <span class="eyebrow">{{ environmentLabels[environment()] }} additions</span>
       <h2 id="picker-title" tabindex="-1" autofocus>Choose additions</h2>
     </div>
     <button type="button" class="close-button" aria-label="Close additions" (click)="close()">

@@ -7,7 +7,7 @@ export const ROOM_MIN = 4;
 export const ROOM_MAX = 8;
 export const GENERATOR_VERSION = '4.0.0';
 
-export type MapType = 'dungeon' | 'forest';
+export type MapType = 'dungeon' | 'forest' | 'courtyard';
 
 export interface Point {
   readonly x: number;
@@ -114,9 +114,44 @@ export interface ForestSettings {
   readonly landmark?: ForestLandmark;
 }
 
+export interface CourtyardSettings {
+  readonly seed: string;
+  readonly density: Density;
+  readonly fountain: boolean;
+}
+
+export interface TileArea extends Point {
+  readonly width: number;
+  readonly height: number;
+}
+
+export interface CourtyardLayout {
+  // All grass and paving are walkable; false tiles are standing masonry.
+  readonly tiles: readonly boolean[];
+  readonly bounds: TileArea;
+  // Centers of three-tile openings, in north/east/south/west order.
+  readonly approaches: readonly Point[];
+  readonly encounter: TileArea;
+}
+
+export interface RuinedCourtyard {
+  readonly type: 'courtyard';
+  readonly version: string;
+  readonly seed: string;
+  readonly layout: CourtyardLayout;
+  readonly surfaceSeed: number;
+  readonly decoration: {
+    readonly props: readonly Prop[];
+    readonly density: Density;
+    readonly fountain: boolean;
+    readonly revision: number;
+  };
+}
+
 export type MapSettings =
   | (DungeonSettings & { readonly mapType: 'dungeon' })
-  | (ForestSettings & { readonly mapType: 'forest' });
+  | (ForestSettings & { readonly mapType: 'forest' })
+  | (CourtyardSettings & { readonly mapType: 'courtyard' });
 
 export const DUNGEON_PROP_KINDS = [
   'crate',
@@ -153,9 +188,22 @@ export const FOREST_PROP_KINDS = [
 
 export type DungeonPropKind = (typeof DUNGEON_PROP_KINDS)[number];
 export type ForestPropKind = (typeof FOREST_PROP_KINDS)[number];
-export type PropKind = DungeonPropKind | ForestPropKind;
+export const COURTYARD_PROP_KINDS = [
+  'broken_column',
+  'moss',
+  'fern',
+  'vine',
+  'low_rubble',
+  'dry_fountain',
+] as const;
+export type PropKind = DungeonPropKind | ForestPropKind | 'low_rubble' | 'dry_fountain';
 
-export const ALL_PROP_KINDS: readonly PropKind[] = [...DUNGEON_PROP_KINDS, ...FOREST_PROP_KINDS];
+export const ALL_PROP_KINDS: readonly PropKind[] = [
+  ...DUNGEON_PROP_KINDS,
+  ...FOREST_PROP_KINDS,
+  'low_rubble',
+  'dry_fountain',
+];
 
 export function isDungeonPropKind(kind: PropKind): kind is DungeonPropKind {
   return DUNGEON_PROP_KINDS.some((candidate) => candidate === kind);
@@ -217,7 +265,7 @@ export interface ForestClearing {
   readonly surfaceSeed: number;
 }
 
-export type GeneratedMap = Dungeon | ForestClearing;
+export type GeneratedMap = Dungeon | ForestClearing | RuinedCourtyard;
 
 export type GenerationResult =
   { readonly ok: true; readonly map: Dungeon } | { readonly ok: false; readonly error: string };
@@ -265,7 +313,8 @@ export function isBlockingProp(kind: PropKind): boolean {
     kind === 'bookshelf' ||
     kind === 'dining_table' ||
     kind === 'weathered_statue' ||
-    kind === 'standing_stone'
+    kind === 'standing_stone' ||
+    kind === 'dry_fountain'
   );
 }
 

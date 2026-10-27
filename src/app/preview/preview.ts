@@ -33,6 +33,8 @@ export class Preview {
   protected readonly dragging = signal(false);
   protected readonly ariaLabel = computed(() => {
     const m = this.map();
+    if (m.type === 'courtyard')
+      return `Ruined courtyard map for seed ${m.seed}. Four broad openings connect walkable grass to a paved interior. Standing walls and columns block movement; flat rubble is passable. A six-by-six gathering space stays clear.${m.decoration.fountain ? ' A dry fountain blocks three by three tiles, with a clear tile around it.' : ''} Use arrow keys to pan, plus and minus to zoom, Home to fit.`;
     if (m.type === 'dungeon') {
       return (
         'Dungeon map for seed ' +

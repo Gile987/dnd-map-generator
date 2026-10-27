@@ -53,6 +53,8 @@ describe('production option constants', () => {
       'fire_ring',
       'supply_bundle',
       'standing_stone',
+      'low_rubble',
+      'dry_fountain',
     ]);
   });
 });

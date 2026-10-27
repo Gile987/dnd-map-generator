@@ -4,6 +4,7 @@ import type { ReservedArea } from './feature-reservation';
 // Local, unrotated dimensions. Stored dimensions must match this definition.
 export const MULTI_TILE_PROPS = {
   dining_table: { width: 2, height: 1 },
+  dry_fountain: { width: 3, height: 3 },
 } as const;
 export const QUARTER_TURNS: readonly QuarterTurn[] = [0, 1, 2, 3];
 

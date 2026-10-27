@@ -1,4 +1,22 @@
-import type { DecorationPreset, Density, ForestCharacter } from '../engine/model';
+import type { DecorationPreset, Density, ForestCharacter, MapType } from '../engine/model';
+import type { IconName } from '../icon';
+
+export const MAP_TYPE_LABELS: Readonly<Record<MapType, string>> = {
+  dungeon: 'Dungeon',
+  forest: 'Forest',
+  courtyard: 'Courtyard',
+};
+export const MAP_TYPE_ICONS: Readonly<Record<MapType, IconName>> = {
+  dungeon: 'layers',
+  forest: 'tree',
+  courtyard: 'ruin',
+};
+export const MAP_HEADINGS: Readonly<Record<MapType, string>> = {
+  dungeon: 'Shape your dungeon',
+  forest: 'Shape your clearing',
+  courtyard: 'Shape your courtyard',
+};
+export const COURTYARD_DESCRIPTION = 'Weathered paving, broken walls, and open grass approaches.';
 
 export const PRESET_DESCRIPTIONS: Readonly<Record<DecorationPreset, string>> = {
   Mosslit: 'Cool slate. Soft moss. A warm glow.',

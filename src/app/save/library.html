@@ -112,7 +112,7 @@
           </button>
         </div>
         <p class="saved-meta">
-          <span>{{ record.map.type === 'dungeon' ? 'Dungeon' : 'Forest' }}</span>
+          <span>{{ mapTypeLabels[record.map.type] }}</span>
           <span class="saved-seed">{{ record.map.seed }}</span>
           <span>{{ summaryOf(record) }}</span>
         </p>

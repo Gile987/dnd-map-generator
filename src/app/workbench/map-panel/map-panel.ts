@@ -19,10 +19,21 @@ export class MapPanel {
   readonly gridChanged = output<boolean>();
 
   protected readonly mapTypeLabel = computed(() =>
-    this.map().type === 'dungeon' ? 'Stone Dungeon' : 'Forest Clearing',
+    this.map().type === 'courtyard'
+      ? 'Ruined Courtyard'
+      : this.map().type === 'dungeon'
+        ? 'Stone Dungeon'
+        : 'Forest Clearing',
   );
   protected readonly mapSummary = computed(() => {
     const map = this.map();
+    if (map.type === 'courtyard')
+      return {
+        seed: map.seed,
+        rooms: '4 open approaches',
+        details: `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
+        type: 'RUINED COURTYARD',
+      };
     if (map.type === 'dungeon') {
       return {
         seed: map.seed,

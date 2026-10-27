@@ -11,10 +11,13 @@ import type {
   ForestSettings,
   ForestScene,
   ForestLandmark,
+  CourtyardSettings,
+  RuinedCourtyard,
 } from '../engine/model';
 import { ROOM_MAX, ROOM_MIN } from '../engine/model';
 import { validateForestSettings } from '../engine/forest-validation';
 import { validateSettings } from '../engine/validation';
+import { validateCourtyardSettings } from '../engine/courtyard-validation';
 
 interface CommonDraft {
   readonly seed: string;
@@ -40,17 +43,25 @@ export interface ForestDraft extends CommonDraft {
 export interface SettingsDrafts {
   readonly dungeon: DungeonDraft;
   readonly forest: ForestDraft;
+  readonly courtyard: CourtyardDraft;
 }
 
-export type SettingsDraft = DungeonDraft | ForestDraft;
+export interface CourtyardDraft extends CommonDraft {
+  readonly type: 'courtyard';
+  readonly fountain: boolean;
+}
+
+export type SettingsDraft = DungeonDraft | ForestDraft | CourtyardDraft;
 
 export type DraftChange =
   | { readonly type: 'dungeon'; readonly changes: Partial<Omit<DungeonDraft, 'type'>> }
-  | { readonly type: 'forest'; readonly changes: Partial<Omit<ForestDraft, 'type'>> };
+  | { readonly type: 'forest'; readonly changes: Partial<Omit<ForestDraft, 'type'>> }
+  | { readonly type: 'courtyard'; readonly changes: Partial<Omit<CourtyardDraft, 'type'>> };
 
 type ParsedDraft =
   | { readonly ok: true; readonly type: 'dungeon'; readonly settings: DungeonSettings }
   | { readonly ok: true; readonly type: 'forest'; readonly settings: ForestSettings }
+  | { readonly ok: true; readonly type: 'courtyard'; readonly settings: CourtyardSettings }
   | { readonly ok: false; readonly error: string };
 
 export function dungeonDraftForMap(map: Dungeon): DungeonDraft {
@@ -78,6 +89,15 @@ export function forestDraftForMap(map: ForestClearing): ForestDraft {
 }
 
 export function parseDraft(draft: SettingsDraft): ParsedDraft {
+  if (draft.type === 'courtyard') {
+    const settings: CourtyardSettings = {
+      seed: draft.seed,
+      density: draft.density,
+      fountain: draft.fountain,
+    };
+    const error = validateCourtyardSettings(settings);
+    return error ? { ok: false, error } : { ok: true, type: 'courtyard', settings };
+  }
   if (draft.type === 'forest') {
     const settings: ForestSettings = {
       seed: draft.seed,
@@ -104,4 +124,13 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
       ? `Choose a whole number of rooms from ${ROOM_MIN} to ${ROOM_MAX}.`
       : undefined);
   return error ? { ok: false, error } : { ok: true, type: 'dungeon', settings };
+}
+
+export function courtyardDraftForMap(map: RuinedCourtyard): CourtyardDraft {
+  return {
+    type: 'courtyard',
+    seed: map.seed,
+    density: map.decoration.density,
+    fountain: map.decoration.fountain,
+  };
 }
