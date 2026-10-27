@@ -1,13 +1,17 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   inject,
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
-import type { GeneratedMap } from '../engine/model';
+import type { GeneratedMap, MapType } from '../engine/model';
 import { downloadBlob } from '../browser/download';
 import { Icon } from '../icon';
 import { createThumbnail } from '../rendering/thumbnail';
@@ -15,6 +19,8 @@ import { defaultMapName, mapSummary, parseBundle } from './save-format';
 import type { SavedMap } from './save-format';
 import { SaveStore } from './save-store';
 import { MAP_TYPE_LABELS } from '../workbench/presentation';
+import { DEFAULT_LIBRARY_VIEW, LIBRARY_SORT_OPTIONS, viewSavedMaps } from './library-view';
+import type { LibraryView } from './library-view';
 
 @Component({
   selector: 'forge-library',
@@ -30,6 +36,8 @@ export class Library {
   readonly open = output<GeneratedMap>();
 
   private readonly store = inject(SaveStore);
+  private readonly injector = inject(Injector);
+  private readonly searchInput = viewChild.required<ElementRef<HTMLInputElement>>('librarySearch');
 
   protected readonly name = signal('');
   protected readonly editingId = signal<string | null>(null);
@@ -42,15 +50,50 @@ export class Library {
   protected readonly libraryProblem = this.store.problem;
   protected readonly recoveryData = this.store.recoveryData;
 
-  protected readonly saved = computed(() =>
-    [...this.store.saved()].sort((a, b) => {
-      if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
-      return b.savedAt.localeCompare(a.savedAt);
-    }),
-  );
+  protected readonly saved = this.store.saved;
+  protected readonly view = signal<LibraryView>(DEFAULT_LIBRARY_VIEW);
+  protected readonly visibleMaps = computed(() => viewSavedMaps(this.saved(), this.view()));
+  protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest', 'courtyard'];
+  protected readonly sortOptions = LIBRARY_SORT_OPTIONS;
+  protected readonly hasFilters = computed(() => {
+    const view = this.view();
+    return view.query !== '' || view.mapType !== 'all' || view.favoritesOnly;
+  });
   protected readonly placeholder = computed(() => defaultMapName(this.map()));
 
   protected readonly summaryOf = (record: SavedMap): string => mapSummary(record.map);
+
+  protected search(event: Event): void {
+    if (this.blocked() || !(event.target instanceof HTMLInputElement)) return;
+    const query = event.target.value;
+    this.view.update((view) => ({ ...view, query }));
+  }
+
+  protected filterMapType(event: Event): void {
+    if (this.blocked() || !(event.target instanceof HTMLSelectElement)) return;
+    const value = event.target.value;
+    const mapType = value === 'all' ? 'all' : this.mapTypes.find((type) => type === value);
+    if (mapType) this.view.update((view) => ({ ...view, mapType }));
+  }
+
+  protected filterFavorites(event: Event): void {
+    if (this.blocked() || !(event.target instanceof HTMLInputElement)) return;
+    const favoritesOnly = event.target.checked;
+    this.view.update((view) => ({ ...view, favoritesOnly }));
+  }
+
+  protected sortMaps(event: Event): void {
+    if (this.blocked() || !(event.target instanceof HTMLSelectElement)) return;
+    const value = event.target.value;
+    const sort = this.sortOptions.find((option) => option.value === value)?.value;
+    if (sort) this.view.update((view) => ({ ...view, sort }));
+  }
+
+  protected clearFilters(): void {
+    if (this.blocked()) return;
+    this.view.update((view) => ({ ...DEFAULT_LIBRARY_VIEW, sort: view.sort }));
+    this.searchInput().nativeElement.focus();
+  }
 
   protected editName(event: Event): void {
     if (event.target instanceof HTMLInputElement) this.name.set(event.target.value);
@@ -95,6 +138,7 @@ export class Library {
       this.editingId.set(null);
       return `Renamed to “${renamed.name}”.`;
     });
+    this.focusSearchIfHidden(record.id);
   }
 
   protected cancelRename(): void {
@@ -106,6 +150,7 @@ export class Library {
       await this.store.remove(record.id);
       return `Deleted “${record.name}”.`;
     });
+    this.focusSearchIfHidden(record.id);
   }
 
   protected async duplicateMap(record: SavedMap): Promise<void> {
@@ -120,6 +165,20 @@ export class Library {
       const favorite = await this.store.toggleFavorite(record.id);
       return favorite ? 'Added to favorites.' : 'Removed from favorites.';
     });
+    this.focusSearchIfHidden(record.id);
+  }
+
+  private focusSearchIfHidden(id: string): void {
+    if (this.visibleMaps().some((record) => record.id === id)) return;
+    afterNextRender(
+      {
+        write: () => {
+          if (!this.blocked() && !this.visibleMaps().some((record) => record.id === id))
+            this.searchInput().nativeElement.focus();
+        },
+      },
+      { injector: this.injector },
+    );
   }
 
   protected retryLibrary(): void {

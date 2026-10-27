@@ -65,15 +65,74 @@
     </label>
   </div>
 
+  <fieldset class="library-filters" [disabled]="blocked()" aria-describedby="library-result-count">
+    <legend class="sr-only">Browse saved maps</legend>
+    <div class="filter-field search-field">
+      <label for="library-search">Search saved maps</label>
+      <input
+        #librarySearch
+        id="library-search"
+        type="search"
+        [value]="view().query"
+        (input)="search($event)"
+        placeholder="Name or seed…"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <div class="filter-field">
+      <label for="library-type">Map type</label>
+      <select id="library-type" [value]="view().mapType" (change)="filterMapType($event)">
+        <option value="all">All map types</option>
+        @for (type of mapTypes; track type) {
+        <option [value]="type">{{ mapTypeLabels[type] }}</option>
+        }
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="library-sort">Sort by</label>
+      <select id="library-sort" [value]="view().sort" (change)="sortMaps($event)">
+        @for (option of sortOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+    <label class="favorites-filter" [class.selected]="view().favoritesOnly">
+      <input type="checkbox" [checked]="view().favoritesOnly" (change)="filterFavorites($event)" />
+      <forge-icon name="star" />Favorites only
+    </label>
+    <button class="clear-filters" type="button" (click)="clearFilters()" [disabled]="!hasFilters()">
+      Clear filters
+    </button>
+  </fieldset>
+  <p
+    class="library-count"
+    id="library-result-count"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+  >
+    Showing {{ visibleMaps().length }} of {{ saved().length }} saved {{ saved().length === 1 ? 'map'
+    : 'maps' }}
+  </p>
+
   @if (saved().length === 0) {
   <p class="library-empty">
     @if (libraryProblem()) { No readable saved maps are available. Your displayed map can still be
     exported as a PNG. } @else { Your library is empty. Generate a map you like, name it, and save
     it here. }
   </p>
+  } @else if (visibleMaps().length === 0) {
+  <div class="library-empty filtered-empty">
+    <strong>No matching maps</strong>
+    <p>
+      Try another name or seed, or clear the filters above. Your saved maps are still in the
+      library.
+    </p>
+  </div>
   } @else {
-  <ul class="saved-list">
-    @for (record of saved(); track record.id) {
+  <ul class="saved-list" aria-label="Saved maps">
+    @for (record of visibleMaps(); track record.id) {
     <li class="saved-item" [class.favorite]="record.favorite">
       <img
         class="thumb"
