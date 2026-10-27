@@ -115,6 +115,19 @@ for (const width of [1440, 768, 320]) {
     await page.setViewportSize({ width, height: 1100 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
+    if (width <= 800) {
+      const shortcuts = page.getByRole('navigation', { name: 'Workbench sections' });
+      await checkContrast(shortcuts.getByRole('link'), 'section shortcuts', readings);
+      const settings = shortcuts.getByRole('link', { name: 'Settings' });
+      await settings.hover();
+      await checkContrast(settings, 'section shortcut hover', readings);
+      await page.keyboard.press('Tab');
+      await settings.focus();
+      await checkContrast(settings, 'section shortcut keyboard focus', readings);
+      await page.getByLabel('World seed').fill('pending-navigation-contrast');
+      await checkContrast(settings, 'section shortcut pending changes', readings);
+      await page.getByRole('button', { name: 'Reset changes', exact: true }).click();
+    }
     await checkContrast(
       page.locator(
         [

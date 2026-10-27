@@ -25,6 +25,17 @@
     </div>
   </section>
 
+  <nav class="section-navigation" aria-label="Workbench sections">
+    <a href="#settings-title">
+      Settings @if (pending()) {
+      <span class="pending-indicator" aria-hidden="true"></span>
+      <span class="sr-only"> — changes pending</span>
+      }
+    </a>
+    <a href="#map-title">Map</a>
+    <a href="#library-title">Library</a>
+  </nav>
+
   <div class="workbench" [attr.aria-busy]="busy() !== null">
     <aside
       forge-settings-panel

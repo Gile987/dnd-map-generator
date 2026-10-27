@@ -5,7 +5,7 @@
         [name]="map().type === 'courtyard' ? 'ruin' : map().type === 'dungeon' ? 'layers' : 'tree'"
     /></span>
     <div>
-      <h2 id="map-title">{{ mapTypeLabel() }}</h2>
+      <h2 id="map-title" class="section-target map-target" tabindex="-1">{{ mapTypeLabel() }}</h2>
       <span>{{ mapSummary().type }} <b> / </b> 40 × 30 TILES</span>
     </div>
   </div>
