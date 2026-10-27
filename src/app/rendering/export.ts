@@ -22,14 +22,27 @@ export function exportFilename(map: GeneratedMap): string {
   return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
 }
 
-export async function createPng(map: GeneratedMap, grid: boolean): Promise<Blob> {
+export function configuredExportFilename(
+  map: GeneratedMap,
+  grid: boolean,
+  opacity: number,
+): string {
+  const suffix = grid ? `grid-${opacity}pct` : 'grid-off';
+  return exportFilename(map).replace(/\.png$/, `-${suffix}.png`);
+}
+
+export async function createPng(
+  map: GeneratedMap,
+  grid: boolean,
+  gridOpacity?: number,
+): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = EXPORT_WIDTH;
   canvas.height = EXPORT_HEIGHT;
   const context = canvas.getContext('2d');
   if (!context)
     throw new Error('PNG export is unavailable because a drawing surface could not be created.');
-  renderMap(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
+  renderMap(context, map, { grid, gridOpacity, pixelsPerTile: PIXELS_PER_TILE });
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);

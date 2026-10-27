@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
 import type { GeneratedMap } from '../engine/model';
-import { exportFilename } from './export';
+import { configuredExportFilename, exportFilename } from './export';
 
 const generated = generateDungeon({
   seed: 'mosslit-sanctum',
@@ -24,6 +24,19 @@ const forestBase: GeneratedMap = generatedForest.map;
 const withSeed = (seed: string): GeneratedMap => ({ ...base, seed });
 
 describe('export filename sanitation', () => {
+  test.each([
+    [true, 15, 'grid-15pct'],
+    [true, 0, 'grid-0pct'],
+    [false, 80, 'grid-off'],
+  ] as const)(
+    'distinguishes configured PNGs with grid=%s and opacity=%s',
+    (grid, opacity, suffix) => {
+      expect(configuredExportFilename(base, grid, opacity)).toBe(
+        `encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0-${suffix}.png`,
+      );
+    },
+  );
+
   test.each([
     ['mosslit-sanctum', 'encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0.png'],
     ['snake_case-2', 'encounter-snake_case-2-mosslit-balanced-r0-v4.0.0.png'],

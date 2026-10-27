@@ -399,7 +399,7 @@ test('export disables browsing controls and a failed export restores the same vi
       document.documentElement.dataset['browseExportHeld'] = 'true';
     };
   });
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-browse-export-held', 'true');
   for (const control of [
     search(page),

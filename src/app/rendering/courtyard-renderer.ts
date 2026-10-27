@@ -167,6 +167,6 @@ export function renderCourtyard(
   for (const prop of map.decoration.props.filter((p) => !p.blocking)) drawProp(ctx, prop);
   walls(ctx, map);
   for (const prop of map.decoration.props.filter((p) => p.blocking)) drawProp(ctx, prop);
-  if (options.grid) drawGrid(ctx, '#233b2b30');
+  if (options.grid) drawGrid(ctx, '#233b2b30', options.gridOpacity);
   ctx.restore();
 }

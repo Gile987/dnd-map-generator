@@ -202,7 +202,7 @@ test('navigation remains usable during export and keeps errors and recovery reac
       document.documentElement.dataset['mobileExportHeld'] = 'true';
     };
   });
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-mobile-export-held', 'true');
   await expect(page.getByLabel('World seed')).toBeDisabled();
   await expect(page.getByRole('searchbox', { name: 'Search saved maps' })).toBeDisabled();
@@ -226,7 +226,7 @@ test('navigation remains usable during export and keeps errors and recovery reac
     'retained-search',
   );
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   expect((await download).suggestedFilename()).not.toContain('pending-during-export');
   await expect(error).toBeEmpty();
   await jump(page, 'Map');

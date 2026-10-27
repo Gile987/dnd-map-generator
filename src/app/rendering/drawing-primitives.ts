@@ -21,10 +21,18 @@ export function path(
   }
 }
 
-export function drawGrid(ctx: DrawingContext, color: string): void {
+export function drawGrid(ctx: DrawingContext, color: string, opacity?: number): void {
+  if (opacity !== undefined && (!Number.isFinite(opacity) || opacity < 0 || opacity > 1))
+    throw new Error('Grid opacity must be between 0 and 1.');
   ctx.beginPath();
   ctx.lineWidth = 0.012;
-  ctx.strokeStyle = color;
+  // Renderer palettes supply #RRGGBBAA colors. Keep their original alpha unless overridden.
+  ctx.strokeStyle =
+    opacity === undefined
+      ? color
+      : `${color.slice(0, 7)}${Math.round(opacity * 255)
+          .toString(16)
+          .padStart(2, '0')}`;
   for (let x = 0; x <= WIDTH; x++) {
     ctx.moveTo(x, 0);
     ctx.lineTo(x, HEIGHT);

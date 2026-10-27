@@ -43,7 +43,7 @@ async function snapshot(page: Page, name: string) {
 
 async function png(page: Page) {
   const pending = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   const download = await pending;
   await settled(page);
   return { name: download.suggestedFilename(), bytes: await readFile(await download.path()) };
@@ -227,7 +227,7 @@ test('export disables both history directions and recovers without losing histor
       document.documentElement.dataset['historyExportHeld'] = 'true';
     };
   });
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-history-export-held', 'true');
   await expect(undo).toBeDisabled();
   await expect(redo).toBeDisabled();

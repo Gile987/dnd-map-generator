@@ -247,7 +247,7 @@ test('an export in progress disables both panels and preserves the pending draft
       document.documentElement.dataset['exportWaiting'] = 'true';
     };
   });
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-export-waiting', 'true');
   await expect(seed).toBeDisabled();
   await expect(settings.getByRole('spinbutton', { name: 'Rooms' })).toBeDisabled();
@@ -278,7 +278,7 @@ test('an export in progress disables both panels and preserves the pending draft
   expect((await downloadPromise).suggestedFilename()).toBe(
     'encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0.png',
   );
-  await expect(page.getByRole('button', { name: 'Export PNG', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Quick export PNG', exact: true })).toBeEnabled();
   await expect(seed).toBeEnabled();
   await expect(seed).toHaveValue('unapplied-panel-draft');
   await expect(selectedAddition(page, 'Forgotten study')).toBeVisible();

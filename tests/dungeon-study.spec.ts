@@ -82,7 +82,7 @@ test('study settings preserve layouts and drafts through shuffle, switching and 
   await expect(selectedAddition(page, 'Forgotten study')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeDisabled();
   const pending = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   const png = await pending;
   expect(png.suggestedFilename()).toContain('-forgotten-study-');
   expect(await PNG.read(await png.path())).toEqual({ width: 2560, height: 1920 });

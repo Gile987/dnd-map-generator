@@ -34,7 +34,7 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await canvas.focus();
   await page.keyboard.press('ArrowRight');
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG' }).click();
+  await page.getByRole('button', { name: 'Quick export PNG' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
     'encounter-mosslit-sanctum-mosslit-balanced-r1-v4.0.0.png',
@@ -45,7 +45,7 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await page.getByRole('button', { name: 'Fit', exact: true }).click();
   await expect(page.getByLabel('Zoom level')).toHaveText('100%');
   const fittedDownload = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG' }).click();
+  await page.getByRole('button', { name: 'Quick export PNG' }).click();
   await (await fittedDownload).saveAs('artifacts/browser-export-fit.png');
   expect(await readFile('artifacts/browser-export-fit.png')).toEqual(
     await readFile('artifacts/browser-export.png'),
@@ -190,7 +190,7 @@ test('preset and density drafts wait for Generate and exports use the displayed 
   await page.getByRole('radio', { name: 'Cluttered' }).check();
   await expect(page.locator('#map-summary')).toContainText('Mosslit · Balanced r1');
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG' }).click();
+  await page.getByRole('button', { name: 'Quick export PNG' }).click();
   expect((await downloadPromise).suggestedFilename()).toBe(
     'encounter-mosslit-sanctum-mosslit-balanced-r1-v4.0.0.png',
   );
@@ -208,12 +208,12 @@ test('export failure is reported and controls recover', async ({ page }) => {
       setTimeout(() => callback(null), 300);
     };
   });
-  await page.getByRole('button', { name: 'Export PNG' }).click();
+  await page.getByRole('button', { name: 'Quick export PNG' }).click();
   await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Shuffle details' })).toBeDisabled();
   await expect(page.getByRole('alert')).toContainText('could not create a PNG');
   await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'Export PNG' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Quick export PNG' })).toBeEnabled();
   await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
@@ -232,15 +232,15 @@ test('a PNG object-URL failure preserves the draft and allows export retry', asy
       throw new Error('Object URLs are unavailable.');
     };
   });
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   await expect(page.locator('#settings-error')).toContainText('Object URLs are unavailable.');
-  await expect(page.getByRole('button', { name: 'Export PNG', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Quick export PNG', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeEnabled();
   await expect(page.getByLabel('World seed')).toHaveValue('pending-download-draft');
   await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
   await expect(page.locator('a[href^="blob:"]')).toHaveCount(0);
   const pendingDownload = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   expect((await pendingDownload).suggestedFilename()).toBe(
     'encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0.png',
   );
@@ -286,7 +286,7 @@ test('map-type selector switches between dungeon and forest, preserves per-type 
   await expect(page.locator('#map-summary')).toContainText('Autumn');
 
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG' }).click();
+  await page.getByRole('button', { name: 'Quick export PNG' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
     'encounter-mosslit-sanctum-forest-autumn-balanced-r1-v4.0.0.png',

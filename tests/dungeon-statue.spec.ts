@@ -95,7 +95,7 @@ test('statue drafts preserve accepted maps, combine with studies and export the 
     };
   });
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-export-waiting', 'true');
   await expect(landmark).toBeDisabled();
   await page.screenshot({ path: 'artifacts/statue/disabled.png', fullPage: true });
