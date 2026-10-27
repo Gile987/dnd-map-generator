@@ -73,7 +73,7 @@ test('camp drafts preserve accepted maps and apply without rebuilding the cleari
   await expect(selectedAddition(page, 'Abandoned camp')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   const png = await download;
   expect(png.suggestedFilename()).toContain('-abandoned-camp-');
   expect(await PNG.read(await png.path())).toEqual({ width: 2560, height: 1920 });

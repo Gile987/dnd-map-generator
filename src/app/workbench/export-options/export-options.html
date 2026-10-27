@@ -1,0 +1,77 @@
+<dialog #dialog aria-labelledby="export-title" aria-describedby="export-hint" (close)="closed()">
+  <header>
+    <div>
+      <span class="eyebrow">Ready for your table</span>
+      <h2 #title id="export-title" tabindex="-1" autofocus>Export options</h2>
+    </div>
+    <button type="button" class="close-button" aria-label="Close export options" (click)="close()">
+      <forge-icon name="plus" />
+    </button>
+  </header>
+  <p id="export-hint">Download the displayed map at full resolution.</p>
+  @if (snapshot(); as map) {
+  <div class="content">
+    <fieldset [disabled]="disabled()" aria-describedby="export-grid-hint">
+      <legend>PNG appearance</legend>
+      <label class="grid-option"
+        ><input type="checkbox" [checked]="grid()" (change)="changeGrid($event)" />Include
+        grid</label
+      >
+      <div class="opacity-field">
+        <label for="export-opacity"
+          >Grid opacity
+          <output for="export-opacity" aria-hidden="true">{{ opacity() }}%</output></label
+        >
+        <input
+          id="export-opacity"
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          [value]="opacity()"
+          [disabled]="!grid()"
+          (input)="changeOpacity($event)"
+          [attr.aria-valuetext]="opacity() + ' percent'"
+        />
+      </div>
+      <p id="export-grid-hint">These choices are separate from the map’s Grid toggle.</p>
+      <p class="map-source">
+        <strong>{{ mapLabels[map.type] }}</strong><span>{{ map.seed }}</span>
+      </p>
+    </fieldset>
+    @let previewState = preview();
+    <figure [attr.aria-busy]="!ready() && previewState.kind === 'loading'">
+      <div class="image-frame">
+        @if (ready(); as image) {
+        <img [src]="image.url" width="2560" height="1920" alt="Full map PNG preview" />
+        } @else if (previewState.kind === 'error') {
+        <div class="preview-message">
+          <p role="alert">{{ previewState.message }}</p>
+          <button type="button" (click)="retryPreview()">Retry preview</button>
+        </div>
+        } @else {
+        <p class="preview-message" role="status">Preparing preview…</p>
+        }
+      </div>
+      <figcaption>Full map · {{ dimensions }}</figcaption>
+    </figure>
+  </div>
+  }
+  <footer>
+    <div class="feedback">
+      <p class="error" role="alert">{{ downloadError() }}</p>
+      <p role="status">{{ notice() }}</p>
+    </div>
+    <div class="actions">
+      <button type="button" class="done-button" (click)="close()">Done</button>
+      <button
+        type="button"
+        class="download-button"
+        [disabled]="disabled() || !ready()"
+        (click)="download()"
+      >
+        <forge-icon name="download" />Download PNG
+      </button>
+    </div>
+  </footer>
+</dialog>

@@ -155,6 +155,8 @@ for (const width of [1440, 768, 320]) {
           '.wheel-hint',
           '.zoom-controls output',
           '.fit',
+          '.export-options-button',
+          '.export-button',
         ]
           .map((selector) => `${selector}:visible`)
           .join(','),
@@ -170,6 +172,17 @@ for (const width of [1440, 768, 320]) {
     await checkContrast(saveName, 'save placeholder focus', readings, true);
     for (const type of ['Dungeon', 'Forest', 'Courtyard'] as const) {
       await selectMapType(page, type);
+      await page.getByRole('button', { name: 'Export options', exact: true }).click();
+      const exportDialog = page.getByRole('dialog', { name: 'Export options', exact: true });
+      await expect(exportDialog.getByRole('img')).toHaveJSProperty('naturalWidth', 2560);
+      await checkContrast(
+        exportDialog.locator(
+          'h2, .eyebrow, #export-hint, legend, .grid-option, .opacity-field label, output, #export-grid-hint, .map-source strong, .map-source span, figcaption, .actions button',
+        ),
+        `${type} export options`,
+        readings,
+      );
+      await exportDialog.getByRole('button', { name: 'Done', exact: true }).click();
       await checkContrast(
         page.locator(
           [
@@ -246,7 +259,7 @@ for (const width of [1440, 768, 320]) {
       for (const button of [
         generate,
         page.getByRole('button', { name: 'Shuffle details' }),
-        page.getByRole('button', { name: 'Export PNG', exact: true }),
+        page.getByRole('button', { name: 'Quick export PNG', exact: true }),
         page.getByRole('button', { name: 'Randomize seed', exact: true }),
         page.getByRole('button', { name: 'Reset changes', exact: true }),
       ]) {

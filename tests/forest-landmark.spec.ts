@@ -84,7 +84,7 @@ test('landmarks remain pending until generated, compose with camps, and survive 
     };
   });
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-export-waiting', 'true');
   await expect(selectedAddition(page, 'Standing-stone circle')).toBeDisabled();
   await page.screenshot({ path: 'artifacts/f10/disabled.png', fullPage: true });

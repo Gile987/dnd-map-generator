@@ -235,14 +235,22 @@ h1 {
   forge-icon {
     width: 15px;
     height: 15px;
-    &:last-child {
-      width: 13px;
-      margin-left: 9px;
-    }
   }
   &:hover {
     background: #dfe8ce;
     border-color: #9caf8b;
+  }
+}
+.export-options-button {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #c7cfb8;
+  border-radius: 5px;
+  background: #fbfaf5;
+  color: #465f3f;
+  font-size: 11px;
+  &:hover {
+    background: #e9eddd;
   }
 }
 .message-row {
@@ -426,14 +434,17 @@ footer {
     justify-content: center;
   }
   .export-action {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
     > span {
+      grid-column: 1 / -1;
       display: block;
       text-align: left;
     }
   }
   .export-button {
-    margin-left: auto;
+    justify-content: center;
     padding: 13px;
     gap: 8px;
   }

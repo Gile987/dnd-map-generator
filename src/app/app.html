@@ -80,12 +80,33 @@
     </div>
     <div class="export-action">
       <span>Ready for your table.<small>PNG · {{ exportSize }}</small></span
-      ><button class="export-button" type="button" (click)="export()" [disabled]="busy() !== null">
-        <forge-icon name="download" />{{ busy() === 'export' ? 'Preparing PNG…' : 'Export PNG'
-        }}<forge-icon name="arrow" />
+      ><button
+        class="export-options-button"
+        type="button"
+        (click)="exportOptions.show()"
+        [disabled]="busy() !== null"
+      >
+        Export options
+      </button>
+      <button
+        class="export-button"
+        type="button"
+        title="Downloads immediately using the map’s current Grid setting."
+        (click)="export()"
+        [disabled]="busy() !== null"
+      >
+        <forge-icon name="download" /><span
+          >{{ busy() === 'export' ? 'Preparing PNG…' : 'Quick export PNG' }}</span
+        >
       </button>
     </div>
   </div>
+  <forge-export-options
+    #exportOptions
+    [map]="map()"
+    [disabled]="busy() !== null"
+    (downloaded)="exportReady()"
+  />
   <div class="message-row">
     <p id="settings-error" class="error" role="alert">{{ error() }}</p>
     <p class="status" role="status" aria-live="polite">

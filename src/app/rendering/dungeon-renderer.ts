@@ -298,6 +298,6 @@ export function renderDungeon(ctx: DrawingContext, map: Dungeon, options: Render
       atmo.sconceRadius * 2,
     );
   }
-  if (options.grid) drawGrid(ctx, '#b6c7bf23');
+  if (options.grid) drawGrid(ctx, '#b6c7bf23', options.gridOpacity);
   ctx.restore();
 }

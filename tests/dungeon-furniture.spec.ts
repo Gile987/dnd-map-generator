@@ -102,7 +102,7 @@ test('furniture stays pending, applies without rebuilding, and combines with oth
     };
   });
   const pending = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-export-waiting', 'true');
   await expect(furniture).toBeDisabled();
   await page.screenshot({ path: 'artifacts/f11/disabled.png', fullPage: true });

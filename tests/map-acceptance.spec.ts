@@ -133,7 +133,7 @@ for (const type of ['dungeon', 'forest'] as const) {
     await expect(page.getByLabel('World seed')).toHaveValue('revision-recovered');
     await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
     const pending = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+    await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
     const download = await pending;
     expect(download.suggestedFilename()).toContain('-r9007199254740991-');
     expect(await page.locator('#map-summary').textContent()).toBe(summary);

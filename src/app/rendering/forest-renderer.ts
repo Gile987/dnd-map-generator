@@ -262,6 +262,6 @@ export function renderForest(
   );
   for (const prop of overProps) drawProp(ctx, prop, palette);
 
-  if (options.grid) drawGrid(ctx, atmo.grid);
+  if (options.grid) drawGrid(ctx, atmo.grid, options.gridOpacity);
   ctx.restore();
 }

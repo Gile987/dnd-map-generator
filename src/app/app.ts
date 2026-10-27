@@ -7,6 +7,7 @@ import { Library } from './save/library';
 import { MapPanel } from './workbench/map-panel/map-panel';
 import { SettingsPanel } from './workbench/settings-panel/settings-panel';
 import { WorkbenchSession } from './workbench/workbench-session';
+import { ExportOptions } from './workbench/export-options/export-options';
 import type { DraftChange } from './workbench/settings-draft';
 
 type Operation = 'generation' | 'details' | 'export';
@@ -19,7 +20,7 @@ function yieldForUi(): Promise<void> {
 
 @Component({
   selector: 'app-root',
-  imports: [Icon, Library, MapPanel, SettingsPanel],
+  imports: [Icon, Library, MapPanel, SettingsPanel, ExportOptions],
   providers: [WorkbenchSession],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -115,10 +116,13 @@ export class App {
   protected async export(): Promise<void> {
     await this.run('export', async () => {
       await downloadPng(this.map(), this.grid());
-      this.status.set(
-        `Your ${EXPORT_WIDTH} × ${EXPORT_HEIGHT} PNG is ready. Check your downloads.`,
-      );
+      this.exportReady();
     });
+  }
+
+  protected exportReady(): void {
+    this.error.set('');
+    this.status.set(`Your ${EXPORT_WIDTH} × ${EXPORT_HEIGHT} PNG is ready. Check your downloads.`);
   }
 
   protected updateDraft(change: DraftChange): void {

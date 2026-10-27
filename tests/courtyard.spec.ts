@@ -32,7 +32,7 @@ async function snapshot(page: Page, name: string) {
 
 async function png(page: Page) {
   const pending = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   const download = await pending;
   await settled(page);
   const path = await download.path();
@@ -173,7 +173,7 @@ test('courtyard controls recover from an export failure without accepting drafts
       document.documentElement.dataset['courtyardExportHeld'] = 'true';
     };
   });
-  await page.getByRole('button', { name: 'Export PNG', exact: true }).click();
+  await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-courtyard-export-held', 'true');
   await expect(page.getByRole('radio', { name: 'Courtyard', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Choose additions', exact: true })).toBeDisabled();
