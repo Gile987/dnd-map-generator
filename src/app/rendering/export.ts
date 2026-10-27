@@ -11,6 +11,8 @@ export function exportFilename(map: GeneratedMap): string {
       .replace(/^-+|-+$/g, '')
       .slice(0, 64) || 'dungeon';
   const type = map.type;
+  if (type === 'courtyard')
+    return `encounter-${seed}-courtyard${map.decoration.fountain ? '-dry-fountain' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   if (type === 'dungeon') {
     const preset = map.decoration.preset.toLowerCase();
     const scene = map.decoration.scene === 'Forgotten study' ? '-forgotten-study' : '';

@@ -105,7 +105,7 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await backupDownload;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '8.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '9.0.0' });
   await page.reload();
   await page
     .locator('.saved-item')
@@ -220,11 +220,11 @@ for (const source of ['library', 'backup'] as const) {
     const backup = await download;
     const bundle: unknown = JSON.parse(readFileSync(await backup.path(), 'utf8'));
     expect(bundle).toMatchObject({
-      saveFormatVersion: '8.0.0',
+      saveFormatVersion: '9.0.0',
       maps: expect.arrayContaining([
         expect.objectContaining({
           id: 'legacy-circle',
-          saveFormatVersion: '8.0.0',
+          saveFormatVersion: '9.0.0',
           map: result.map,
         }),
       ]),

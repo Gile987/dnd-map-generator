@@ -13,9 +13,25 @@ import {
   shuffleForestDetails,
 } from '../engine/forest-generate';
 import { generateDungeon } from '../engine/generate';
+import {
+  generateCourtyard,
+  changeCourtyardAppearance,
+  shuffleCourtyardDetails,
+} from '../engine/courtyard-generate';
 import { DEFAULT_FOREST_CHARACTER, DEFAULT_PRESET } from '../engine/model';
-import type { Dungeon, ForestClearing, GeneratedMap, MapType } from '../engine/model';
-import { dungeonDraftForMap, forestDraftForMap, parseDraft } from './settings-draft';
+import type {
+  Dungeon,
+  ForestClearing,
+  GeneratedMap,
+  MapType,
+  RuinedCourtyard,
+} from '../engine/model';
+import {
+  dungeonDraftForMap,
+  forestDraftForMap,
+  courtyardDraftForMap,
+  parseDraft,
+} from './settings-draft';
 import type { DraftChange, SettingsDrafts } from './settings-draft';
 
 const SHUFFLE_HISTORY_LIMIT = 20;
@@ -33,11 +49,16 @@ export interface ShuffleHistoryStatus {
 
 interface SessionState {
   readonly type: MapType;
-  readonly maps: { readonly dungeon: Dungeon; readonly forest: ForestClearing };
+  readonly maps: {
+    readonly dungeon: Dungeon;
+    readonly forest: ForestClearing;
+    readonly courtyard: RuinedCourtyard;
+  };
   readonly drafts: SettingsDrafts;
   readonly histories: {
     readonly dungeon: ShuffleHistory<Dungeon>;
     readonly forest: ShuffleHistory<ForestClearing>;
+    readonly courtyard: ShuffleHistory<RuinedCourtyard>;
   };
 }
 
@@ -46,6 +67,7 @@ export type ApplySettingsResult =
   | { readonly ok: false; readonly error: string };
 
 function draftsForMap(drafts: SettingsDrafts, map: GeneratedMap): SettingsDrafts {
+  if (map.type === 'courtyard') return { ...drafts, courtyard: courtyardDraftForMap(map) };
   return map.type === 'dungeon'
     ? { ...drafts, dungeon: dungeonDraftForMap(map) }
     : { ...drafts, forest: forestDraftForMap(map) };
@@ -89,11 +111,21 @@ function initialState(): SessionState {
     character: DEFAULT_FOREST_CHARACTER,
   });
   if (!forest.ok) throw new Error(forest.error);
+  const courtyard = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: false });
+  if (!courtyard.ok) throw new Error(courtyard.error);
   return {
     type: 'dungeon',
-    maps: { dungeon: dungeon.map, forest: forest.map },
-    drafts: { dungeon: dungeonDraftForMap(dungeon.map), forest: forestDraftForMap(forest.map) },
-    histories: { dungeon: { past: [], future: [] }, forest: { past: [], future: [] } },
+    maps: { dungeon: dungeon.map, forest: forest.map, courtyard: courtyard.map },
+    drafts: {
+      dungeon: dungeonDraftForMap(dungeon.map),
+      forest: forestDraftForMap(forest.map),
+      courtyard: courtyardDraftForMap(courtyard.map),
+    },
+    histories: {
+      dungeon: { past: [], future: [] },
+      forest: { past: [], future: [] },
+      courtyard: { past: [], future: [] },
+    },
   };
 }
 
@@ -116,6 +148,8 @@ export class WorkbenchSession {
   });
   private readonly layoutPending = computed(() => {
     const state = this.state();
+    if (state.type === 'courtyard')
+      return state.drafts.courtyard.seed.trim() !== state.maps.courtyard.seed;
     if (state.type === 'forest') return state.drafts.forest.seed.trim() !== state.maps.forest.seed;
     const draft = state.drafts.dungeon;
     const map = state.maps.dungeon;
@@ -127,6 +161,15 @@ export class WorkbenchSession {
   });
   readonly pending = computed(() => {
     const state = this.state();
+    if (state.type === 'courtyard') {
+      const draft = state.drafts.courtyard;
+      const decoration = state.maps.courtyard.decoration;
+      return (
+        this.layoutPending() ||
+        draft.density !== decoration.density ||
+        draft.fountain !== decoration.fountain
+      );
+    }
     if (state.type === 'forest') {
       const draft = state.drafts.forest;
       const decoration = state.maps.forest.decoration;
@@ -163,9 +206,11 @@ export class WorkbenchSession {
     this.state.update((state) => {
       if (change.type !== state.type) return state;
       const drafts =
-        change.type === 'dungeon'
-          ? { ...state.drafts, dungeon: { ...state.drafts.dungeon, ...change.changes } }
-          : { ...state.drafts, forest: { ...state.drafts.forest, ...change.changes } };
+        change.type === 'courtyard'
+          ? { ...state.drafts, courtyard: { ...state.drafts.courtyard, ...change.changes } }
+          : change.type === 'dungeon'
+            ? { ...state.drafts, dungeon: { ...state.drafts.dungeon, ...change.changes } }
+            : { ...state.drafts, forest: { ...state.drafts.forest, ...change.changes } };
       return { ...state, drafts };
     });
   }
@@ -181,7 +226,11 @@ export class WorkbenchSession {
     this.state.update((state) => ({
       type: map.type,
       maps:
-        map.type === 'dungeon' ? { ...state.maps, dungeon: map } : { ...state.maps, forest: map },
+        map.type === 'courtyard'
+          ? { ...state.maps, courtyard: map }
+          : map.type === 'dungeon'
+            ? { ...state.maps, dungeon: map }
+            : { ...state.maps, forest: map },
       drafts: draftsForMap(state.drafts, map),
       histories: { ...state.histories, [map.type]: { past: [], future: [] } },
     }));
@@ -190,7 +239,11 @@ export class WorkbenchSession {
   shuffle(): boolean {
     const current = this.map();
     const next =
-      current.type === 'dungeon' ? shuffleDetails(current) : shuffleForestDetails(current);
+      current.type === 'courtyard'
+        ? shuffleCourtyardDetails(current)
+        : current.type === 'dungeon'
+          ? shuffleDetails(current)
+          : shuffleForestDetails(current);
     if (next === current) return false;
     this.accept(next, false);
     return true;
@@ -206,6 +259,16 @@ export class WorkbenchSession {
 
   private restoreShuffle(direction: 'undo' | 'redo'): void {
     this.state.update((state) => {
+      if (state.type === 'courtyard') {
+        const next = moveShuffle(state.maps.courtyard, state.histories.courtyard, direction);
+        return next
+          ? {
+              ...state,
+              maps: { ...state.maps, courtyard: next.map },
+              histories: { ...state.histories, courtyard: next.history },
+            }
+          : state;
+      }
       if (state.type === 'dungeon') {
         const next = moveShuffle(state.maps.dungeon, state.histories.dungeon, direction);
         return next
@@ -234,7 +297,24 @@ export class WorkbenchSession {
     const state = this.state();
     const layoutChanged = this.layoutPending();
     let next: GeneratedMap;
-    if (parsed.type === 'forest') {
+    if (parsed.type === 'courtyard') {
+      if (layoutChanged) {
+        const result = generateCourtyard(parsed.settings);
+        if (!result.ok) return result;
+        next = result.map;
+      } else {
+        next = changeCourtyardAppearance(state.maps.courtyard, parsed.settings);
+      }
+      if (
+        next.decoration.fountain !== parsed.settings.fountain ||
+        next.decoration.density !== parsed.settings.density
+      )
+        return {
+          ok: false,
+          error:
+            'Those courtyard additions could not fit. Try another seed or remove the fountain.',
+        };
+    } else if (parsed.type === 'forest') {
       const settings = parsed.settings;
       let forest = state.maps.forest;
       if (layoutChanged) {
@@ -354,22 +434,33 @@ export class WorkbenchSession {
     this.state.update((state) => ({
       ...state,
       maps:
-        map.type === 'dungeon' ? { ...state.maps, dungeon: map } : { ...state.maps, forest: map },
+        map.type === 'courtyard'
+          ? { ...state.maps, courtyard: map }
+          : map.type === 'dungeon'
+            ? { ...state.maps, dungeon: map }
+            : { ...state.maps, forest: map },
       drafts: resetDraft ? draftsForMap(state.drafts, map) : state.drafts,
       histories:
-        map.type === 'dungeon'
+        map.type === 'courtyard'
           ? {
               ...state.histories,
-              dungeon: resetDraft
+              courtyard: resetDraft
                 ? { past: [], future: [] }
-                : recordShuffle(state.histories.dungeon, state.maps.dungeon),
+                : recordShuffle(state.histories.courtyard, state.maps.courtyard),
             }
-          : {
-              ...state.histories,
-              forest: resetDraft
-                ? { past: [], future: [] }
-                : recordShuffle(state.histories.forest, state.maps.forest),
-            },
+          : map.type === 'dungeon'
+            ? {
+                ...state.histories,
+                dungeon: resetDraft
+                  ? { past: [], future: [] }
+                  : recordShuffle(state.histories.dungeon, state.maps.dungeon),
+              }
+            : {
+                ...state.histories,
+                forest: resetDraft
+                  ? { past: [], future: [] }
+                  : recordShuffle(state.histories.forest, state.maps.forest),
+              },
     }));
   }
 }

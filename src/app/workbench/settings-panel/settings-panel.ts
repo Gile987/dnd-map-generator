@@ -15,6 +15,10 @@ import {
   DENSITY_DESCRIPTIONS,
   PRESET_DESCRIPTIONS,
   PRESET_LABELS,
+  MAP_TYPE_LABELS,
+  MAP_TYPE_ICONS,
+  MAP_HEADINGS,
+  COURTYARD_DESCRIPTION,
 } from '../presentation';
 import { normalizeRoomCount, stepRoomCount } from '../room-count';
 import type { DraftChange, SettingsDraft } from '../settings-draft';
@@ -49,6 +53,17 @@ export class SettingsPanel {
 
   protected readonly additions = computed<readonly MapAddition[]>(() => {
     const draft = this.draft();
+    if (draft.type === 'courtyard')
+      return [
+        {
+          id: 'dry-fountain',
+          label: 'Dry fountain',
+          description:
+            'An empty stone basin that blocks three by three tiles, with a clear rim of space.',
+          checked: draft.fountain,
+          change: { type: 'courtyard', changes: { fountain: !draft.fountain } },
+        },
+      ];
     if (draft.type === 'dungeon') {
       return [
         {
@@ -113,7 +128,19 @@ export class SettingsPanel {
   protected readonly presets = ALL_PRESETS;
   protected readonly characters = ALL_FOREST_CHARACTERS;
   protected readonly characterNames = CHARACTER_LABELS;
-  protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest'];
+  protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest', 'courtyard'];
+  protected readonly mapTypeLabels = MAP_TYPE_LABELS;
+  protected readonly mapTypeIcons = MAP_TYPE_ICONS;
+  protected readonly mapHeadings = MAP_HEADINGS;
+  protected readonly generateLabel = computed(() =>
+    this.generating()
+      ? {
+          dungeon: 'Forging your dungeon…',
+          forest: 'Growing your clearing…',
+          courtyard: 'Revealing your courtyard…',
+        }[this.map().type]
+      : `Generate ${this.map().type}`,
+  );
   protected readonly roomMin = ROOM_MIN;
   protected readonly roomMax = ROOM_MAX;
   protected readonly invalidSeed = computed(
@@ -146,18 +173,21 @@ export class SettingsPanel {
   );
   protected readonly draftStyleDescription = computed(() => {
     const draft = this.draft();
+    if (draft.type === 'courtyard') return COURTYARD_DESCRIPTION;
     return draft.type === 'dungeon'
       ? PRESET_DESCRIPTIONS[draft.preset]
       : CHARACTER_DESCRIPTIONS[draft.character];
   });
   protected readonly styleDescription = computed(() => {
     const map = this.map();
+    if (map.type === 'courtyard') return COURTYARD_DESCRIPTION;
     return map.type === 'dungeon'
       ? PRESET_DESCRIPTIONS[map.decoration.preset]
       : CHARACTER_DESCRIPTIONS[map.decoration.character];
   });
   protected readonly styleLabel = computed(() => {
     const map = this.map();
+    if (map.type === 'courtyard') return 'Overgrown ruin';
     if (map.type === 'forest') return CHARACTER_LABELS[map.decoration.character];
     return PRESET_LABELS[map.decoration.preset];
   });

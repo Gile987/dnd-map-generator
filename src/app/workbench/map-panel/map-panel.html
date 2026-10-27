@@ -1,7 +1,8 @@
 <div class="map-toolbar">
   <div class="map-heading">
     <span class="map-icon"
-      ><forge-icon [name]="map().type === 'dungeon' ? 'layers' : 'tree'"
+      ><forge-icon
+        [name]="map().type === 'courtyard' ? 'ruin' : map().type === 'dungeon' ? 'layers' : 'tree'"
     /></span>
     <div>
       <h2 id="map-title">{{ mapTypeLabel() }}</h2>
@@ -24,7 +25,9 @@
     <span>GENERATED SEED</span><strong class="seed-summary">{{ mapSummary().seed }}</strong>
   </div>
   <div>
-    <span>{{ map().type === 'dungeon' ? 'ROOMS' : 'CLEARING' }}</span
+    <span
+      >{{ map().type === 'courtyard' ? 'ACCESS' : map().type === 'dungeon' ? 'ROOMS' : 'CLEARING'
+      }}</span
     ><strong>{{ mapSummary().rooms }}</strong>
   </div>
   <div><span>DETAILS</span><strong>{{ mapSummary().details }}</strong></div>

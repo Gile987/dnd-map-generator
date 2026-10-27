@@ -44,7 +44,9 @@ export class App {
     if (type === this.mapType()) return;
     await this.run('generation', () => {
       this.session.selectMapType(type);
-      if (type === 'forest') {
+      if (type === 'courtyard') {
+        this.status.set('Ruined courtyard restored. Four open approaches await.');
+      } else if (type === 'forest') {
         this.status.set('Forest clearing restored. A woodland path awaits.');
       } else {
         this.status.set('Dungeon restored. Let the story begin.');
@@ -76,9 +78,11 @@ export class App {
       if (!this.session.shuffle())
         throw new Error('Those details could not be shuffled. Your displayed map is unchanged.');
       this.status.set(
-        this.map().type === 'dungeon'
-          ? 'Details shuffled. Your layout and floor texture are preserved.'
-          : 'Details shuffled. The clearing layout is preserved.',
+        this.map().type === 'courtyard'
+          ? 'Details shuffled. Courtyard walls, approaches, and paving are preserved.'
+          : this.map().type === 'dungeon'
+            ? 'Details shuffled. Your layout and floor texture are preserved.'
+            : 'Details shuffled. The clearing layout is preserved.',
       );
     });
   }
@@ -100,9 +104,11 @@ export class App {
     this.attempted.set(false);
     this.error.set('');
     this.status.set(
-      map.type === 'dungeon'
-        ? 'Map opened from your library.'
-        : 'Clearing opened from your library.',
+      map.type === 'courtyard'
+        ? 'Courtyard opened from your library.'
+        : map.type === 'dungeon'
+          ? 'Map opened from your library.'
+          : 'Clearing opened from your library.',
     );
   }
 
@@ -137,9 +143,11 @@ export class App {
       this.attempted.set(false);
       this.status.set(
         result.layoutChanged
-          ? this.mapType() === 'dungeon'
-            ? 'A new dungeon is ready. Let the story begin.'
-            : 'A new forest clearing is ready.'
+          ? this.mapType() === 'courtyard'
+            ? 'A new ruined courtyard is ready.'
+            : this.mapType() === 'dungeon'
+              ? 'A new dungeon is ready. Let the story begin.'
+              : 'A new forest clearing is ready.'
           : 'Settings applied. Your layout and detail revision are preserved.',
       );
     });

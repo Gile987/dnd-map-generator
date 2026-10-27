@@ -14,6 +14,7 @@ import { createThumbnail } from '../rendering/thumbnail';
 import { defaultMapName, mapSummary, parseBundle } from './save-format';
 import type { SavedMap } from './save-format';
 import { SaveStore } from './save-store';
+import { MAP_TYPE_LABELS } from '../workbench/presentation';
 
 @Component({
   selector: 'forge-library',
@@ -23,6 +24,7 @@ import { SaveStore } from './save-store';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Library {
+  protected readonly mapTypeLabels = MAP_TYPE_LABELS;
   readonly map = input.required<GeneratedMap>();
   readonly disabled = input(false);
   readonly open = output<GeneratedMap>();

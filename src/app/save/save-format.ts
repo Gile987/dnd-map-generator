@@ -3,7 +3,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '8.0.0';
+export const SAVE_FORMAT_VERSION = '9.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -117,8 +117,21 @@ const FORMAT_8_VOCABULARY: SaveVocabulary = {
   propFootprints: { dining_table: { width: 2, height: 1, rotations: [0, 1, 2, 3] } },
 };
 
+const FORMAT_9_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_8_VOCABULARY,
+  mapTypes: [...FORMAT_8_VOCABULARY.mapTypes, 'courtyard'],
+  courtyardFountains: [false, true],
+  propKinds: [...FORMAT_8_VOCABULARY.propKinds, 'low_rubble', 'dry_fountain'],
+  propFootprints: {
+    ...FORMAT_8_VOCABULARY.propFootprints,
+    dry_fountain: { width: 3, height: 3, rotations: [0] },
+  },
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '9.0.0':
+      return FORMAT_9_VOCABULARY;
     case '1.0.0':
       return FORMAT_1_VOCABULARY;
     case '2.0.0':
@@ -225,7 +238,8 @@ export function duplicateName(name: string): string {
 }
 
 export function defaultMapName(map: GeneratedMap): string {
-  const suffix = map.type === 'dungeon' ? ' dungeon' : ' clearing';
+  const suffix =
+    map.type === 'courtyard' ? ' courtyard' : map.type === 'dungeon' ? ' dungeon' : ' clearing';
   return `${map.seed.slice(0, NAME_MAX - suffix.length)}${suffix}`;
 }
 
@@ -249,6 +263,8 @@ export function makeSavedMap(
 }
 
 export function mapSummary(map: GeneratedMap): string {
+  if (map.type === 'courtyard')
+    return `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'dungeon') {
     const scene = map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : '';
     return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;

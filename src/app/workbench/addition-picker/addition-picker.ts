@@ -12,6 +12,8 @@ import type { DraftChange } from '../settings-draft';
 import { AdditionPreview } from './addition-preview';
 import type { AdditionId } from './addition-preview';
 import { Icon } from '../../icon';
+import type { MapType } from '../../engine/model';
+import { MAP_TYPE_LABELS } from '../presentation';
 
 export interface MapAddition {
   readonly id: AdditionId;
@@ -30,7 +32,8 @@ export interface MapAddition {
 })
 export class AdditionPicker {
   readonly additions = input.required<readonly MapAddition[]>();
-  readonly environment = input.required<'dungeon' | 'forest'>();
+  readonly environment = input.required<MapType>();
+  protected readonly environmentLabels = MAP_TYPE_LABELS;
   readonly disabled = input(false);
   readonly changed = output<DraftChange>();
   protected readonly query = signal('');

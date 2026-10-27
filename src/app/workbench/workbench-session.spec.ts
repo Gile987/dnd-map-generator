@@ -353,6 +353,7 @@ describe('workbench session transitions', () => {
       const session = new WorkbenchSession();
       session.selectMapType(type);
       const original = session.map();
+      if (original.type === 'courtyard') throw new Error('Expected dungeon or forest');
       const map =
         original.type === 'dungeon'
           ? {

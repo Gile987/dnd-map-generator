@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 const paths = {
+  ruin: 'M3 21V9h5V4h5v5h3v7h5v5H3Zm0-7h5m0-5v12m5-12v7m-5 0h8m0 0v5',
   dice: 'm12 3 9 5v9l-9 5-9-5V8l9-5Zm0 0v9m-9-4 9 4 9-4m-9 4v10',
   spark: 'm12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4L12 3ZM20 2v4m-2-2h4',
   shuffle:

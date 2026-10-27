@@ -4,7 +4,8 @@ import { isBlockingProp } from '../../engine/model';
 import type { Prop, PropKind } from '../../engine/model';
 import { drawProp } from '../../rendering/props';
 
-export type AdditionId = LandmarkId | 'forgotten-study' | 'abandoned-camp' | 'dining-table';
+export type AdditionId =
+  LandmarkId | 'forgotten-study' | 'abandoned-camp' | 'dining-table' | 'dry-fountain';
 
 function prop(kind: PropKind, x: number, y: number, variation = 0.3): Prop {
   return { kind, x, y, variation, blocking: isBlockingProp(kind) };
@@ -14,6 +15,11 @@ function prop(kind: PropKind, x: number, y: number, variation = 0.3): Prop {
 const illustrations: Readonly<
   Record<AdditionId, { width: number; height: number; forest?: boolean; props: readonly Prop[] }>
 > = {
+  'dry-fountain': {
+    width: 5,
+    height: 5,
+    props: [{ ...prop('dry_fountain', 1, 1), footprint: { width: 3, height: 3 }, rotation: 0 }],
+  },
   'forgotten-study': {
     width: 5,
     height: 4,

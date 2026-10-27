@@ -18,6 +18,7 @@ import {
 import type { GeneratedMap } from '../engine/model';
 import { validateDungeon } from '../engine/validation';
 import { validateForest } from '../engine/forest-validation';
+import { validateCourtyard } from '../engine/courtyard-validation';
 import { isDetailRevision } from '../engine/decoration-revision';
 
 export interface SaveVocabulary {
@@ -36,6 +37,7 @@ export interface SaveVocabulary {
   >;
   readonly dungeonLandmarks?: readonly string[];
   readonly dungeonScenes?: readonly string[];
+  readonly courtyardFountains?: readonly boolean[];
   readonly propKinds: readonly string[];
 }
 
@@ -93,6 +95,12 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
     )
       return false;
   }
+  if (
+    type === 'courtyard' &&
+    (typeof decoration['fountain'] !== 'boolean' ||
+      !vocabulary.courtyardFountains?.includes(decoration['fountain']))
+  )
+    return false;
   if (Array.isArray(decoration['props'])) {
     for (const prop of decoration['props']) {
       if (
@@ -246,6 +254,31 @@ function isForestLayout(value: unknown): boolean {
   );
 }
 
+function isArea(value: unknown): boolean {
+  return (
+    isPoint(value) &&
+    isObject(value) &&
+    isNonNegativeInt(value['width']) &&
+    isNonNegativeInt(value['height']) &&
+    value['width'] > 0 &&
+    value['width'] <= WIDTH &&
+    value['height'] > 0 &&
+    value['height'] <= HEIGHT
+  );
+}
+
+function isCourtyardLayout(value: unknown): boolean {
+  return (
+    isObject(value) &&
+    isTileField(value['tiles']) &&
+    isArea(value['bounds']) &&
+    isArea(value['encounter']) &&
+    Array.isArray(value['approaches']) &&
+    value['approaches'].length === 4 &&
+    value['approaches'].every(isPoint)
+  );
+}
+
 function isDecorationBase(value: unknown): boolean {
   if (!isObject(value)) return false;
   const { props, density, revision } = value;
@@ -291,16 +324,23 @@ function isForestDecoration(value: unknown): boolean {
 function isGeneratedMap(value: unknown): value is GeneratedMap {
   if (!isObject(value)) return false;
   const { type, version, seed, surfaceSeed, layout, decoration } = value;
-  if (type !== 'dungeon' && type !== 'forest') return false;
+  if (type !== 'dungeon' && type !== 'forest' && type !== 'courtyard') return false;
   if (typeof version !== 'string' || !version) return false;
   if (typeof seed !== 'string' || !seed || seed !== seed.trim() || seed.length > 64) return false;
   if (!isFiniteNumber(surfaceSeed)) return false;
   if (!isObject(layout) || !isObject(decoration)) return false;
   if (type === 'dungeon') return isDungeonLayout(layout) && isDungeonDecoration(decoration);
+  if (type === 'courtyard')
+    return (
+      isCourtyardLayout(layout) &&
+      isDecorationBase(decoration) &&
+      typeof decoration['fountain'] === 'boolean'
+    );
   return isForestLayout(layout) && isForestDecoration(decoration);
 }
 
 function validateMap(map: GeneratedMap): string | undefined {
+  if (map.type === 'courtyard') return validateCourtyard(map);
   return map.type === 'dungeon' ? validateDungeon(map) : validateForest(map);
 }
 

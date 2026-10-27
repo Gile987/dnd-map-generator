@@ -15,12 +15,12 @@
       <p class="eyebrow"><span></span>THE GAME MASTER'S WORKBENCH</p>
       <h1 id="page-title">Unwritten stories start here.</h1>
       <p class="intro-copy">
-        Generate a dungeon or forest clearing, shuffle details, and export a battle map.
+        Create dungeons, forest clearings, and ruined courtyards. Make your next battle map.
       </p>
     </div>
     <div class="edition">
       <forge-icon name="compass" /><span
-        >THE MOSSLIT COLLECTION<small>Stone dungeons & forest clearings · Vol. 01</small></span
+        >THE MOSSLIT COLLECTION<small>Stone, woodland & overgrown ruins · Vol. 01</small></span
       >
     </div>
   </section>
@@ -59,8 +59,11 @@
       @if (map().type === 'dungeon') {
       <span><forge-icon name="stairs" />Entrance stairs</span
       ><span><span class="objective-symbol"></span>Objective dais</span>
-      } @else {
+      } @else if (map().type === 'forest') {
       <span><forge-icon name="tree" />Forest trees</span>
+      } @else {
+      <span><forge-icon name="ruin" />Walls & columns block</span>
+      <span>Flat rubble is passable</span>
       }
       <span class="legend-divider"></span><span class="scale-note">1 square = 5 feet</span>
     </div>

@@ -11,11 +11,16 @@ interface Reading {
   readonly ratio: number;
 }
 
-async function selectMapType(page: Page, type: 'Dungeon' | 'Forest'): Promise<void> {
+async function selectMapType(page: Page, type: 'Dungeon' | 'Forest' | 'Courtyard'): Promise<void> {
   await page.getByRole('radio', { name: type, exact: true }).check();
   await expect(
     page.getByRole('heading', {
-      name: type === 'Forest' ? 'Shape your clearing' : 'Shape your dungeon',
+      name:
+        type === 'Courtyard'
+          ? 'Shape your courtyard'
+          : type === 'Forest'
+            ? 'Shape your clearing'
+            : 'Shape your dungeon',
       exact: true,
     }),
   ).toBeVisible();
@@ -150,7 +155,7 @@ for (const width of [1440, 768, 320]) {
     await checkContrast(saveName, 'save placeholder hover', readings, true);
     await saveName.focus();
     await checkContrast(saveName, 'save placeholder focus', readings, true);
-    for (const type of ['Dungeon', 'Forest'] as const) {
+    for (const type of ['Dungeon', 'Forest', 'Courtyard'] as const) {
       await selectMapType(page, type);
       await checkContrast(
         page.locator(
@@ -297,7 +302,7 @@ for (const width of [1440, 768, 320]) {
     await expect(page.locator('.library')).toHaveAttribute('aria-busy', 'false');
     await checkContrast(page.locator('.library-message .error'), 'library error', readings);
     await page.getByLabel('World seed').fill('');
-    await page.getByRole('button', { name: 'Generate forest', exact: true }).click();
+    await page.getByRole('button', { name: 'Generate courtyard', exact: true }).click();
     await expect(page.locator('#settings-error')).not.toBeEmpty();
     await checkContrast(page.locator('#settings-error, .pending'), 'settings error', readings);
     await page.locator('.library').screenshot({ path: `artifacts/qr05/library-${width}.png` });
