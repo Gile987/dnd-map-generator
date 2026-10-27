@@ -65,6 +65,26 @@
     </label>
   </div>
 
+  @if (lastDeleted()) {
+  <div class="undo-delete">
+    <div class="undo-copy">
+      <p>{{ deletionMessage() }}</p>
+      <small id="undo-delete-hint"
+        >Available in this tab until your next deletion or page refresh.</small
+      >
+      <p class="undo-error" role="alert">{{ undoError() }}</p>
+    </div>
+    <button
+      type="button"
+      (click)="undoDelete()"
+      [attr.aria-disabled]="writeBlocked()"
+      aria-describedby="undo-delete-hint"
+    >
+      <forge-icon name="undo" />Undo delete
+    </button>
+  </div>
+  }
+
   <fieldset class="library-filters" [disabled]="blocked()" aria-describedby="library-result-count">
     <legend class="sr-only">Browse saved maps</legend>
     <div class="filter-field search-field">
@@ -201,6 +221,13 @@
 
   <div class="library-message">
     <p class="error" role="alert">{{ error() }}</p>
-    <p class="notice" role="status" aria-live="polite">@if (!error()) { {{ notice() }} }</p>
+    <p
+      class="notice"
+      [class.sr-only]="lastDeleted() !== null && notice() === deletionMessage()"
+      role="status"
+      aria-live="polite"
+    >
+      @if (!error()) { {{ notice() }} }
+    </p>
   </div>
 </section>
