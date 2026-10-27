@@ -1,7 +1,7 @@
 @let activeDraft = draft();
 <div class="panel-heading">
   <span class="section-number">01</span>
-  <h2>{{ mapHeadings[map().type] }}</h2>
+  <h2 id="settings-title" class="section-target" tabindex="-1">{{ mapHeadings[map().type] }}</h2>
 </div>
 
 <fieldset class="map-type-field" [disabled]="disabled()">

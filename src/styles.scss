@@ -48,6 +48,13 @@ input:focus-visible {
   outline: 2px solid var(--focus-ring-color);
   outline-offset: 4px;
 }
+.section-target:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 4px;
+}
+.map-target:focus-visible {
+  outline-color: var(--map-focus-ring-color);
+}
 button {
   transition:
     background 0.15s,
@@ -73,6 +80,12 @@ input {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+@media (max-width: 800px) {
+  :root {
+    --section-navigation-height: calc(58px + env(safe-area-inset-top, 0px));
+    scroll-padding-top: calc(var(--section-navigation-height) + 12px);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
