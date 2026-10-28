@@ -47,6 +47,7 @@ export class App {
   protected readonly map = this.session.map;
   protected readonly draft = this.session.draft;
   protected readonly pending = this.session.pending;
+  protected readonly generationEffect = this.session.generationEffect;
   protected readonly shuffleHistory = this.session.shuffleHistory;
   protected readonly grid = signal(true);
   protected readonly focused = signal(false);

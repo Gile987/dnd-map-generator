@@ -24,7 +24,8 @@ import { normalizeRoomCount, stepRoomCount } from '../room-count';
 import type { DraftChange, SettingsDraft } from '../settings-draft';
 import { AdditionPicker } from '../addition-picker/addition-picker';
 import type { MapAddition } from '../addition-picker/addition-picker';
-import type { ShuffleHistoryStatus } from '../workbench-session';
+import type { GenerationEffect, ShuffleHistoryStatus } from '../workbench-session';
+import { pendingSettingChanges } from '../pending-changes';
 
 @Component({
   selector: 'aside[forge-settings-panel]',
@@ -38,6 +39,7 @@ export class SettingsPanel {
   readonly map = input.required<GeneratedMap>();
   readonly draft = input.required<SettingsDraft>();
   readonly pending = input.required<boolean>();
+  readonly generationEffect = input.required<GenerationEffect>();
   readonly shuffleHistory = input.required<ShuffleHistoryStatus>();
   readonly disabled = input(false);
   readonly generating = input(false);
@@ -50,6 +52,13 @@ export class SettingsPanel {
   readonly shuffleRequested = output<void>();
   readonly undoShuffleRequested = output<void>();
   readonly redoShuffleRequested = output<void>();
+
+  protected readonly changes = computed(() => pendingSettingChanges(this.map(), this.draft()));
+  protected readonly generationMessages: Readonly<Record<GenerationEffect, string>> = {
+    layout: 'Generate creates a new layout.',
+    appearance: 'Generate updates appearance and keeps the layout.',
+    invalid: 'Correct the settings before generating.',
+  };
 
   protected readonly additions = computed<readonly MapAddition[]>(() => {
     const draft = this.draft();

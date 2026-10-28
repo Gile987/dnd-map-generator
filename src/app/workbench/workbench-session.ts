@@ -47,6 +47,8 @@ export interface ShuffleHistoryStatus {
   readonly limit: number;
 }
 
+export type GenerationEffect = 'layout' | 'appearance' | 'invalid';
+
 interface SessionState {
   readonly type: MapType;
   readonly maps: {
@@ -197,6 +199,9 @@ export class WorkbenchSession {
     const result = this.parsedDraft();
     return result.ok ? undefined : result.error;
   });
+  readonly generationEffect = computed<GenerationEffect>(() =>
+    this.validationError() ? 'invalid' : this.layoutPending() ? 'layout' : 'appearance',
+  );
 
   selectMapType(type: MapType): void {
     this.state.update((state) => (state.type === type ? state : { ...state, type }));

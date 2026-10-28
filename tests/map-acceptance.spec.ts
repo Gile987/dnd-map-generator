@@ -131,7 +131,7 @@ for (const type of ['dungeon', 'forest'] as const) {
     await expect(page.getByRole('button', { name: 'Shuffle details' })).toBeEnabled();
     expect(await page.locator('#map-summary').textContent()).toBe(summary);
     await expect(page.getByLabel('World seed')).toHaveValue('revision-recovered');
-    await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Pending changes', exact: true })).toBeVisible();
     const pending = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
     const download = await pending;

@@ -191,7 +191,7 @@ test('saving with an unapplied seed draft records the generated map, not the dra
 }) => {
   await page.goto('/');
   await page.getByLabel('World seed').fill('unapplied-draft');
-  await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Pending changes', exact: true })).toBeVisible();
   await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
 
   await page.locator('#save-name').fill('Kept draft');
@@ -209,7 +209,7 @@ test('renaming a map does not reload the app and preserves the current map and d
   await page.getByRole('radio', { name: 'Forest' }).check();
   await expect(page.locator('#map-summary')).toContainText('Open clearing');
   await page.getByLabel('World seed').fill('forest-draft');
-  await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Pending changes', exact: true })).toBeVisible();
 
   await page.locator('#save-name').fill('Forest save');
   await page.getByRole('button', { name: 'Save map' }).click();

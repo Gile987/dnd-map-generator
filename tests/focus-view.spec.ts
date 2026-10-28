@@ -65,7 +65,7 @@ for (const type of ['Dungeon', 'Forest', 'Courtyard'] as const) {
       'Retained search',
     );
     await expect(page.getByRole('combobox', { name: 'Sort by' })).toHaveValue('name');
-    await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Pending changes', exact: true })).toBeVisible();
   });
 }
 
