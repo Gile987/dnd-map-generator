@@ -129,6 +129,8 @@ test('native modal focus, keyboard opacity, and Escape leave the workbench intac
   await page.getByRole('navigation').getByRole('link', { name: 'Map', exact: true }).focus();
   await expect(dialog.getByRole('button', { name: 'Close export options' })).toBeFocused();
   await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('combobox', { name: 'Export preset', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(dialog.getByRole('checkbox')).toBeFocused();
   await page.keyboard.press('Tab');
   const slider = dialog.getByRole('slider');

@@ -178,11 +178,23 @@ for (const width of [1440, 768, 320]) {
       await expect(exportDialog.getByRole('img')).toHaveJSProperty('naturalWidth', 2560);
       await checkContrast(
         exportDialog.locator(
-          'h2, .eyebrow, #export-hint, legend, .grid-option, .opacity-field label, output, #export-grid-hint, .map-source strong, .map-source span, figcaption, .actions button',
+          'h2, .eyebrow, #export-hint, legend, .preset-field label, .preset-field select, .preset-field p, .grid-option, .opacity-field label, output, #export-grid-hint, .map-source strong, .map-source span, figcaption, .actions button',
         ),
         `${type} export options`,
         readings,
       );
+      if (type === 'Dungeon') {
+        const preset = exportDialog.getByRole('combobox', { name: 'Export preset' });
+        await preset.selectOption('owlbear');
+        await expect(exportDialog.getByRole('img')).toHaveJSProperty('naturalWidth', 2560);
+        await checkContrast(
+          exportDialog.locator('.preset-field p, .preset-field a'),
+          'VTT setup guidance',
+          readings,
+        );
+        await preset.selectOption('standard');
+        await expect(exportDialog.getByRole('img')).toHaveJSProperty('naturalWidth', 2560);
+      }
       await exportDialog.getByRole('button', { name: 'Done', exact: true }).click();
       await checkContrast(
         page.locator(

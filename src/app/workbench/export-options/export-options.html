@@ -13,6 +13,37 @@
   <div class="content">
     <fieldset [disabled]="disabled()" aria-describedby="export-grid-hint">
       <legend>PNG appearance</legend>
+      <div class="preset-field">
+        <label for="export-preset">Export preset</label>
+        <select
+          id="export-preset"
+          (change)="changePreset($event)"
+          aria-describedby="preset-guidance export-scale"
+        >
+          @for (option of presets; track option.id) {
+          <option [value]="option.id" [selected]="option.id === preset().id">
+            {{ option.label }}
+          </option>
+          }
+        </select>
+        <p id="export-scale">
+          {{ columns }} × {{ rows }} squares · {{ preset().pixelsPerTile }} px/square<br />1 square
+          = 5 feet
+        </p>
+        <p id="preset-guidance">{{ preset().guidance }}</p>
+        @if (preset().guide; as guide) {
+        <a
+          [href]="guide"
+          target="_blank"
+          rel="noopener noreferrer"
+          [attr.aria-label]="preset().label + ' setup guide (opens in a new tab)'"
+          >Setup guide ↗</a
+        >
+        }
+        <p class="preset-note">
+          All presets are PNGs you can use in other apps. VTT presets start with the drawn grid off.
+        </p>
+      </div>
       <label class="grid-option"
         ><input type="checkbox" [checked]="grid()" (change)="changeGrid($event)" />Include
         grid</label
@@ -43,7 +74,12 @@
     <figure [attr.aria-busy]="!ready() && previewState.kind === 'loading'">
       <div class="image-frame">
         @if (ready(); as image) {
-        <img [src]="image.url" width="2560" height="1920" alt="Full map PNG preview" />
+        <img
+          [src]="image.url"
+          [width]="size().width"
+          [height]="size().height"
+          alt="Full map PNG preview"
+        />
         } @else if (previewState.kind === 'error') {
         <div class="preview-message">
           <p role="alert">{{ previewState.message }}</p>
@@ -53,7 +89,7 @@
         <p class="preview-message" role="status">Preparing preview…</p>
         }
       </div>
-      <figcaption>Full map · {{ dimensions }}</figcaption>
+      <figcaption>Full map · {{ dimensions() }}</figcaption>
     </figure>
   </div>
   }

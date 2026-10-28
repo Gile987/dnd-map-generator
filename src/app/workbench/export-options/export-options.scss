@@ -75,7 +75,7 @@ button:hover:not(:disabled) {
 }
 .content {
   display: grid;
-  grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
   align-items: start;
   gap: 24px;
   padding: 4px 24px 20px;
@@ -84,6 +84,46 @@ button:hover:not(:disabled) {
 }
 fieldset {
   font-size: 12px;
+}
+.preset-field {
+  margin-bottom: 16px;
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  select {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px;
+    border: 1px solid #b5c1aa;
+    border-radius: 5px;
+    background: #fffef9;
+    color: #284b38;
+    font: inherit;
+    &:focus-visible {
+      outline: 2px solid var(--focus-ring-color);
+      outline-offset: 3px;
+    }
+  }
+  p {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.6;
+    margin: 10px 0;
+  }
+  #export-scale {
+    color: #284b38;
+    font-weight: 600;
+  }
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: #284b38;
+    font-size: 11px;
+    text-underline-offset: 3px;
+  }
 }
 legend {
   margin-bottom: 16px;
@@ -234,6 +274,9 @@ footer {
     margin: 0;
   }
   #export-grid-hint {
+    grid-column: 1 / -1;
+  }
+  .preset-field {
     grid-column: 1 / -1;
   }
   .map-source {

@@ -1,6 +1,9 @@
 import { renderMap } from './render-map';
-import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from './resolution';
+import { PIXELS_PER_TILE } from './resolution';
+import { HEIGHT, WIDTH } from '../engine/model';
 import type { GeneratedMap } from '../engine/model';
+import { EXPORT_PRESETS, exportDimensions } from './export-presets';
+import type { ExportPreset } from './export-presets';
 import { downloadBlob } from '../browser/download';
 
 export function exportFilename(map: GeneratedMap): string {
@@ -26,23 +29,28 @@ export function configuredExportFilename(
   map: GeneratedMap,
   grid: boolean,
   opacity: number,
+  preset: ExportPreset = EXPORT_PRESETS[0],
 ): string {
   const suffix = grid ? `grid-${opacity}pct` : 'grid-off';
-  return exportFilename(map).replace(/\.png$/, `-${suffix}.png`);
+  const target =
+    preset.id === 'standard' ? '' : `-${preset.id}-${WIDTH}x${HEIGHT}-${preset.pixelsPerTile}px`;
+  return exportFilename(map).replace(/\.png$/, `${target}-${suffix}.png`);
 }
 
 export async function createPng(
   map: GeneratedMap,
   grid: boolean,
   gridOpacity?: number,
+  pixelsPerTile: number = PIXELS_PER_TILE,
 ): Promise<Blob> {
+  const dimensions = exportDimensions(pixelsPerTile);
   const canvas = document.createElement('canvas');
-  canvas.width = EXPORT_WIDTH;
-  canvas.height = EXPORT_HEIGHT;
+  canvas.width = dimensions.width;
+  canvas.height = dimensions.height;
   const context = canvas.getContext('2d');
   if (!context)
     throw new Error('PNG export is unavailable because a drawing surface could not be created.');
-  renderMap(context, map, { grid, gridOpacity, pixelsPerTile: PIXELS_PER_TILE });
+  renderMap(context, map, { grid, gridOpacity, pixelsPerTile });
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
