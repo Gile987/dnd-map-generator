@@ -455,3 +455,52 @@ footer {
     gap: 9px;
   }
 }
+:host(.map-focused) {
+  .site-header,
+  .intro,
+  .section-navigation,
+  aside[forge-settings-panel],
+  forge-library,
+  footer,
+  .legend,
+  .export-action > span {
+    display: none;
+  }
+  main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: none;
+    height: 100dvh;
+    min-height: 540px;
+    padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  }
+  .workbench {
+    grid-template-columns: minmax(0, 1fr);
+    flex: 1;
+    min-height: 0;
+  }
+  .export-row {
+    flex-direction: row;
+    justify-content: flex-end;
+    padding: 0;
+    gap: 0;
+  }
+  .export-action {
+    gap: 10px;
+    min-width: 0;
+  }
+  .export-button {
+    min-height: 44px;
+  }
+  .message-row {
+    min-height: 22px;
+    padding: 0;
+    .status,
+    .error {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+}

@@ -1,5 +1,13 @@
 import { LANDMARK_CATALOG } from '../../engine/landmark-catalog';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import type { GeneratedMap } from '../../engine/model';
 import { Icon } from '../../icon';
 import { Preview } from '../../preview/preview';
@@ -9,14 +17,25 @@ import { Preview } from '../../preview/preview';
   imports: [Icon, Preview],
   templateUrl: './map-panel.html',
   styleUrl: './map-panel.scss',
-  host: { class: 'map-panel', 'aria-labelledby': 'map-title' },
+  host: {
+    class: 'map-panel',
+    'aria-labelledby': 'map-title',
+    '[class.focused]': 'focused()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MapPanel {
   readonly map = input.required<GeneratedMap>();
   readonly grid = input(true);
   readonly disabled = input(false);
+  readonly focused = input(false);
   readonly gridChanged = output<boolean>();
+  readonly focusChanged = output<boolean>();
+  private readonly focusButton = viewChild.required<ElementRef<HTMLButtonElement>>('focusButton');
+
+  focusViewControl(): void {
+    this.focusButton().nativeElement.focus({ preventScroll: true });
+  }
 
   protected readonly mapTypeLabel = computed(() =>
     this.map().type === 'courtyard'

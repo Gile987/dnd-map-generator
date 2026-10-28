@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  inject,
+  Injector,
+  signal,
+  viewChild,
+} from '@angular/core';
 import type { GeneratedMap, MapType } from './engine/model';
 import { downloadPng } from './rendering/export';
 import { EXPORT_HEIGHT, EXPORT_WIDTH } from './rendering/resolution';
@@ -25,20 +33,58 @@ function yieldForUi(): Promise<void> {
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.map-focused]': 'focused()',
+    '(keydown.escape)': 'escapeFocus($event)',
+  },
 })
 export class App {
   private readonly session = inject(WorkbenchSession);
+  private readonly injector = inject(Injector);
+  private readonly mapPanel = viewChild.required(MapPanel);
+  private workbenchScroll = { x: 0, y: 0 };
   private readonly mapType = this.session.mapType;
   protected readonly map = this.session.map;
   protected readonly draft = this.session.draft;
   protected readonly pending = this.session.pending;
   protected readonly shuffleHistory = this.session.shuffleHistory;
   protected readonly grid = signal(true);
+  protected readonly focused = signal(false);
   protected readonly busy = signal<Operation | null>(null);
   protected readonly error = signal('');
   protected readonly status = signal('Your dungeon is ready.');
   protected readonly attempted = signal(false);
   protected readonly exportSize = `${EXPORT_WIDTH} × ${EXPORT_HEIGHT} px`;
+
+  protected setFocused(focused: boolean): void {
+    if (focused === this.focused()) return;
+    if (focused) this.workbenchScroll = { x: window.scrollX, y: window.scrollY };
+    this.focused.set(focused);
+    afterNextRender(
+      {
+        write: () => {
+          this.mapPanel().focusViewControl();
+          window.scrollTo({
+            left: focused ? 0 : this.workbenchScroll.x,
+            top: focused ? 0 : this.workbenchScroll.y,
+            behavior: 'instant',
+          });
+        },
+      },
+      { injector: this.injector },
+    );
+  }
+
+  protected escapeFocus(event: Event): void {
+    if (
+      !this.focused() ||
+      event.defaultPrevented ||
+      (event.target instanceof Element && event.target.closest('dialog[open]'))
+    )
+      return;
+    event.preventDefault();
+    this.setFocused(false);
+  }
 
   protected async selectMapType(type: MapType): Promise<void> {
     if (this.busy()) return;
