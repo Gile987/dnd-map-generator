@@ -31,6 +31,55 @@
     </button>
   </div>
 </div>
+<div
+  class="comparison-bar"
+  role="group"
+  aria-label="Map comparison"
+  aria-describedby="comparison-hint"
+>
+  <button
+    #pinButton
+    class="pin-button"
+    type="button"
+    [attr.aria-disabled]="disabled() || candidate() === 'pinned'"
+    (click)="!disabled() && candidate() === 'current' && pinRequested.emit()"
+  >
+    <forge-icon name="pin" />{{ hasPin() ? 'Replace pinned map' : 'Pin this map' }}
+  </button>
+  @if (hasPin()) {
+  <div class="candidate-switch" role="group" aria-label="Displayed candidate">
+    <button
+      type="button"
+      [attr.aria-pressed]="candidate() === 'current'"
+      [attr.aria-disabled]="disabled()"
+      (click)="!disabled() && candidateChanged.emit('current')"
+    >
+      Current
+    </button>
+    <button
+      type="button"
+      [attr.aria-pressed]="candidate() === 'pinned'"
+      [attr.aria-disabled]="disabled()"
+      (click)="!disabled() && candidateChanged.emit('pinned')"
+    >
+      <forge-icon name="pin" />Pinned
+    </button>
+  </div>
+  <button
+    class="clear-pin-button"
+    type="button"
+    [attr.aria-disabled]="disabled()"
+    (click)="!disabled() && clearPinRequested.emit()"
+  >
+    Clear pin
+  </button>
+  }
+  <p id="comparison-hint">
+    {{ hasPin() ? 'Viewing ' + (candidate() === 'pinned' ? 'Pinned' : 'Current') + '. Save and
+    Export use this candidate. Pins last until refresh.' : 'Keep a candidate while you explore. Pins
+    last until refresh.' }}
+  </p>
+</div>
 <forge-preview [map]="map()" [grid]="grid()" [focused]="focused()" />
 <div class="map-meta" id="map-summary">
   <div>

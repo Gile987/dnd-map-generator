@@ -11,6 +11,7 @@ import {
 import type { GeneratedMap } from '../../engine/model';
 import { Icon } from '../../icon';
 import { Preview } from '../../preview/preview';
+import type { Candidate } from '../workbench-session';
 
 @Component({
   selector: 'section[forge-map-panel]',
@@ -29,12 +30,22 @@ export class MapPanel {
   readonly grid = input(true);
   readonly disabled = input(false);
   readonly focused = input(false);
+  readonly hasPin = input(false);
+  readonly candidate = input<Candidate>('current');
+  readonly pinRequested = output<void>();
+  readonly candidateChanged = output<Candidate>();
+  readonly clearPinRequested = output<void>();
+  private readonly pinButton = viewChild.required<ElementRef<HTMLButtonElement>>('pinButton');
   readonly gridChanged = output<boolean>();
   readonly focusChanged = output<boolean>();
   private readonly focusButton = viewChild.required<ElementRef<HTMLButtonElement>>('focusButton');
 
   focusViewControl(): void {
     this.focusButton().nativeElement.focus({ preventScroll: true });
+  }
+
+  focusPinControl(): void {
+    this.pinButton().nativeElement.focus({ preventScroll: true });
   }
 
   protected readonly mapTypeLabel = computed(() =>

@@ -48,8 +48,21 @@ export interface ShuffleHistoryStatus {
 }
 
 export type GenerationEffect = 'layout' | 'appearance' | 'invalid';
+export type Candidate = 'current' | 'pinned';
+
+interface Comparison {
+  readonly pinned?: GeneratedMap;
+  readonly selected: Candidate;
+}
+
+type Comparisons = Readonly<Record<MapType, Comparison>>;
+
+function showCurrent(comparisons: Comparisons, type: MapType): Comparisons {
+  return { ...comparisons, [type]: { ...comparisons[type], selected: 'current' } };
+}
 
 interface SessionState {
+  readonly comparisons: Comparisons;
   readonly type: MapType;
   readonly maps: {
     readonly dungeon: Dungeon;
@@ -117,6 +130,11 @@ function initialState(): SessionState {
   if (!courtyard.ok) throw new Error(courtyard.error);
   return {
     type: 'dungeon',
+    comparisons: {
+      dungeon: { selected: 'current' },
+      forest: { selected: 'current' },
+      courtyard: { selected: 'current' },
+    },
     maps: { dungeon: dungeon.map, forest: forest.map, courtyard: courtyard.map },
     drafts: {
       dungeon: dungeonDraftForMap(dungeon.map),
@@ -135,10 +153,21 @@ function initialState(): SessionState {
 export class WorkbenchSession {
   private readonly state = signal<SessionState>(initialState());
   readonly mapType = computed(() => this.state().type);
-  readonly map = computed(() => {
+  readonly currentMap = computed(() => {
     const state = this.state();
     return state.maps[state.type];
   });
+  readonly comparison = computed(() => {
+    const state = this.state();
+    return state.comparisons[state.type];
+  });
+  readonly map = computed(() => {
+    const comparison = this.comparison();
+    return comparison.selected === 'pinned' && comparison.pinned
+      ? comparison.pinned
+      : this.currentMap();
+  });
+
   readonly draft = computed(() => {
     const state = this.state();
     return state.drafts[state.type];
@@ -203,6 +232,39 @@ export class WorkbenchSession {
     this.validationError() ? 'invalid' : this.layoutPending() ? 'layout' : 'appearance',
   );
 
+  pinCurrent(): void {
+    this.state.update((state) =>
+      state.comparisons[state.type].selected === 'pinned'
+        ? state
+        : {
+            ...state,
+            comparisons: {
+              ...state.comparisons,
+              [state.type]: { pinned: state.maps[state.type], selected: 'current' },
+            },
+          },
+    );
+  }
+
+  selectCandidate(selected: Candidate): void {
+    this.state.update((state) => {
+      const comparison = state.comparisons[state.type];
+      if (selected === comparison.selected || (selected === 'pinned' && !comparison.pinned))
+        return state;
+      return {
+        ...state,
+        comparisons: { ...state.comparisons, [state.type]: { ...comparison, selected } },
+      };
+    });
+  }
+
+  clearPin(): void {
+    this.state.update((state) => ({
+      ...state,
+      comparisons: { ...state.comparisons, [state.type]: { selected: 'current' } },
+    }));
+  }
+
   selectMapType(type: MapType): void {
     this.state.update((state) => (state.type === type ? state : { ...state, type }));
   }
@@ -229,7 +291,9 @@ export class WorkbenchSession {
 
   openSaved(map: GeneratedMap): void {
     this.state.update((state) => ({
+      ...state,
       type: map.type,
+      comparisons: showCurrent(state.comparisons, map.type),
       maps:
         map.type === 'courtyard'
           ? { ...state.maps, courtyard: map }
@@ -242,7 +306,7 @@ export class WorkbenchSession {
   }
 
   shuffle(): boolean {
-    const current = this.map();
+    const current = this.currentMap();
     const next =
       current.type === 'courtyard'
         ? shuffleCourtyardDetails(current)
@@ -270,6 +334,7 @@ export class WorkbenchSession {
           ? {
               ...state,
               maps: { ...state.maps, courtyard: next.map },
+              comparisons: showCurrent(state.comparisons, state.type),
               histories: { ...state.histories, courtyard: next.history },
             }
           : state;
@@ -280,6 +345,7 @@ export class WorkbenchSession {
           ? {
               ...state,
               maps: { ...state.maps, dungeon: next.map },
+              comparisons: showCurrent(state.comparisons, state.type),
               histories: { ...state.histories, dungeon: next.history },
             }
           : state;
@@ -289,6 +355,7 @@ export class WorkbenchSession {
         ? {
             ...state,
             maps: { ...state.maps, forest: next.map },
+            comparisons: showCurrent(state.comparisons, state.type),
             histories: { ...state.histories, forest: next.history },
           }
         : state;
@@ -438,6 +505,7 @@ export class WorkbenchSession {
   private accept(map: GeneratedMap, resetDraft: boolean): void {
     this.state.update((state) => ({
       ...state,
+      comparisons: showCurrent(state.comparisons, map.type),
       maps:
         map.type === 'courtyard'
           ? { ...state.maps, courtyard: map }

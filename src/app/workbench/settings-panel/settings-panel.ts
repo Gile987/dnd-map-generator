@@ -42,6 +42,7 @@ export class SettingsPanel {
   readonly generationEffect = input.required<GenerationEffect>();
   readonly shuffleHistory = input.required<ShuffleHistoryStatus>();
   readonly disabled = input(false);
+  readonly viewingPinned = input(false);
   readonly generating = input(false);
   readonly attempted = input(false);
   readonly draftChanged = output<DraftChange>();
