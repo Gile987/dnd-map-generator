@@ -61,7 +61,9 @@
       [map]="map()"
       [grid]="grid()"
       [disabled]="busy() !== null"
+      [focused]="focused()"
       (gridChanged)="grid.set($event)"
+      (focusChanged)="setFocused($event)"
     ></section>
   </div>
 

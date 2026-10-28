@@ -134,3 +134,26 @@ canvas:focus-visible {
     gap: 5px;
   }
 }
+:host(.focused) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  .viewport {
+    height: auto;
+    flex: 1;
+    min-height: 180px;
+  }
+  .view-controls {
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .zoom-controls button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .zoom-controls button:focus-visible {
+    outline-color: var(--map-focus-ring-color);
+    outline-offset: -3px;
+  }
+}

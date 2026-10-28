@@ -8,6 +8,7 @@
 }
 .map-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -15,6 +16,34 @@
   background: #223733;
   min-height: 78px;
   border-bottom: 1px solid #4e665240;
+}
+.map-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.focus-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid #789080;
+  border-radius: 5px;
+  background: #304b40;
+  color: #e4e4ca;
+  font-size: 12px;
+  &:hover {
+    background: #3e5b4b;
+  }
+  &:focus-visible {
+    outline-color: var(--map-focus-ring-color);
+    outline-offset: 3px;
+  }
+  .back-arrow {
+    transform: rotate(180deg);
+  }
 }
 .map-heading {
   display: flex;
@@ -53,6 +82,7 @@
   }
 }
 .grid-toggle {
+  min-height: 44px;
   position: relative;
   display: flex;
   align-items: center;
@@ -83,6 +113,31 @@
       transform: translateX(10px);
       background: #f0efd5;
     }
+  }
+}
+:host(.focused) {
+  display: flex;
+  flex-direction: column;
+  .map-toolbar {
+    flex-shrink: 0;
+    min-height: 64px;
+    padding: 10px 16px;
+  }
+  .map-meta {
+    // Keep the canvas's accessible description while giving its space to the map.
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+@media (max-width: 600px) {
+  .map-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 .toggle-track {

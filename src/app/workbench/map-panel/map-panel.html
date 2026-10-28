@@ -9,17 +9,29 @@
       <span>{{ mapSummary().type }} <b> / </b> 40 × 30 TILES</span>
     </div>
   </div>
-  <label class="grid-toggle"
-    ><input
-      #gridToggle
-      type="checkbox"
-      [checked]="grid()"
-      (change)="gridChanged.emit(gridToggle.checked)"
-      [disabled]="disabled()" /><forge-icon name="grid" /><span>Grid</span
-    ><span class="toggle-track" aria-hidden="true"><span></span></span
-  ></label>
+  <div class="map-actions">
+    <label class="grid-toggle"
+      ><input
+        #gridToggle
+        type="checkbox"
+        [checked]="grid()"
+        (change)="gridChanged.emit(gridToggle.checked)"
+        [disabled]="disabled()" /><forge-icon name="grid" /><span>Grid</span
+      ><span class="toggle-track" aria-hidden="true"><span></span></span
+    ></label>
+    <button
+      #focusButton
+      class="focus-button"
+      type="button"
+      (click)="focusChanged.emit(!focused())"
+      [title]="focused() ? 'Return to settings and library. Escape also returns.' : 'Give the map more screen space.'"
+    >
+      <forge-icon [name]="focused() ? 'arrow' : 'fit'" [class.back-arrow]="focused()" />
+      {{ focused() ? 'Back to workbench' : 'Focus map' }}
+    </button>
+  </div>
 </div>
-<forge-preview [map]="map()" [grid]="grid()" />
+<forge-preview [map]="map()" [grid]="grid()" [focused]="focused()" />
 <div class="map-meta" id="map-summary">
   <div>
     <span>GENERATED SEED</span><strong class="seed-summary">{{ mapSummary().seed }}</strong>

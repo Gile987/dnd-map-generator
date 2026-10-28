@@ -24,11 +24,13 @@ import { Icon } from '../icon';
   imports: [Icon],
   templateUrl: './preview.html',
   styleUrl: './preview.scss',
+  host: { '[class.focused]': 'focused()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Preview {
   readonly map = input.required<GeneratedMap>();
   readonly grid = input(true);
+  readonly focused = input(false);
   protected readonly zoom = signal(1);
   protected readonly dragging = signal(false);
   protected readonly ariaLabel = computed(() => {
@@ -110,7 +112,7 @@ export class Preview {
 
   protected zoomBy(factor: number): void {
     this.zoom.set(Math.max(0.5, Math.min(4, this.zoom() * factor)));
-    this.paint();
+    this.panBy(0, 0);
   }
 
   protected startPan(event: PointerEvent): void {
@@ -122,10 +124,8 @@ export class Preview {
 
   protected movePan(event: PointerEvent): void {
     if (!this.pointer || event.pointerId !== this.pointer.id) return;
-    this.pan.x += event.clientX - this.pointer.x;
-    this.pan.y += event.clientY - this.pointer.y;
+    this.panBy(event.clientX - this.pointer.x, event.clientY - this.pointer.y);
     this.pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
-    this.paint();
   }
 
   protected endPan(event: PointerEvent): void {
@@ -153,20 +153,16 @@ export class Preview {
         this.fit();
         break;
       case 'ArrowLeft':
-        this.pan.x += 40;
-        this.paint();
+        this.panBy(40, 0);
         break;
       case 'ArrowRight':
-        this.pan.x -= 40;
-        this.paint();
+        this.panBy(-40, 0);
         break;
       case 'ArrowUp':
-        this.pan.y += 40;
-        this.paint();
+        this.panBy(0, 40);
         break;
       case 'ArrowDown':
-        this.pan.y -= 40;
-        this.paint();
+        this.panBy(0, -40);
         break;
       default:
         return;
@@ -178,6 +174,18 @@ export class Preview {
     const rect = this.frame().nativeElement.getBoundingClientRect();
     this.width = Math.max(1, rect.width);
     this.height = Math.max(1, rect.height);
+    this.paint();
+  }
+
+  private panBy(x: number, y: number): void {
+    const scale = Math.min(this.width / WIDTH, this.height / HEIGHT) * 0.94 * this.zoom();
+    const limitX = (WIDTH * scale) / 2;
+    const limitY = (HEIGHT * scale) / 2;
+    const clamp = (offset: number, limit: number) => Math.max(-limit, Math.min(limit, offset));
+    this.pan = {
+      x: clamp(clamp(this.pan.x, limitX) + x, limitX),
+      y: clamp(clamp(this.pan.y, limitY) + y, limitY),
+    };
     this.paint();
   }
 
@@ -195,14 +203,10 @@ export class Preview {
     const scale = Math.min(this.width / WIDTH, this.height / HEIGHT) * 0.94 * this.zoom();
     const w = WIDTH * scale;
     const h = HEIGHT * scale;
-    this.pan.x = Math.max(-w / 2, Math.min(w / 2, this.pan.x));
-    this.pan.y = Math.max(-h / 2, Math.min(h / 2, this.pan.y));
-    context.drawImage(
-      this.image,
-      (this.width - w) / 2 + this.pan.x,
-      (this.height - h) / 2 + this.pan.y,
-      w,
-      h,
-    );
+    // Resizing can temporarily narrow the visible pan range. Retain the user's
+    // offset so returning from focus view restores the original viewport.
+    const panX = Math.max(-w / 2, Math.min(w / 2, this.pan.x));
+    const panY = Math.max(-h / 2, Math.min(h / 2, this.pan.y));
+    context.drawImage(this.image, (this.width - w) / 2 + panX, (this.height - h) / 2 + panY, w, h);
   }
 }
