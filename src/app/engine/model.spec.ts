@@ -26,6 +26,9 @@ describe('production option constants', () => {
 
   test('prop kinds match the supported vocabulary', () => {
     expect(ALL_PROP_KINDS).toEqual([
+      'ritual_altar',
+      'ritual_candles',
+      'ritual_offering',
       'crate',
       'barrel',
       'rubble',
