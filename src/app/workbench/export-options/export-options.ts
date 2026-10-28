@@ -12,7 +12,9 @@ import {
 import type { GeneratedMap } from '../../engine/model';
 import { downloadBlob } from '../../browser/download';
 import { configuredExportFilename, createPng } from '../../rendering/export';
-import { EXPORT_HEIGHT, EXPORT_WIDTH } from '../../rendering/resolution';
+import { HEIGHT, WIDTH } from '../../engine/model';
+import { EXPORT_PRESETS, exportDimensions } from '../../rendering/export-presets';
+import type { ExportPreset } from '../../rendering/export-presets';
 import { Icon } from '../../icon';
 import { MAP_TYPE_LABELS } from '../presentation';
 
@@ -24,6 +26,7 @@ type PreviewState =
       readonly map: GeneratedMap;
       readonly grid: boolean;
       readonly opacity: number;
+      readonly preset: ExportPreset;
       readonly blob: Blob;
       readonly url: string;
     };
@@ -42,10 +45,15 @@ export class ExportOptions {
   protected readonly snapshot = signal<GeneratedMap | null>(null);
   protected readonly grid = signal(true);
   protected readonly opacity = signal(15);
+  protected readonly presets = EXPORT_PRESETS;
+  protected readonly preset = signal<ExportPreset>(EXPORT_PRESETS[0]);
+  protected readonly columns = WIDTH;
+  protected readonly rows = HEIGHT;
+  protected readonly size = computed(() => exportDimensions(this.preset().pixelsPerTile));
   protected readonly preview = signal<PreviewState>({ kind: 'loading' });
   protected readonly notice = signal('');
   protected readonly downloadError = signal('');
-  protected readonly dimensions = `${EXPORT_WIDTH} × ${EXPORT_HEIGHT} px`;
+  protected readonly dimensions = computed(() => `${this.size().width} × ${this.size().height} px`);
   protected readonly mapLabels = MAP_TYPE_LABELS;
   private readonly retry = signal(0);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
@@ -55,7 +63,8 @@ export class ExportOptions {
     return preview.kind === 'ready' &&
       preview.map === this.snapshot() &&
       preview.grid === this.grid() &&
-      preview.opacity === this.opacity()
+      preview.opacity === this.opacity() &&
+      preview.preset === this.preset()
       ? preview
       : null;
   });
@@ -65,6 +74,7 @@ export class ExportOptions {
       const map = this.snapshot();
       const grid = this.grid();
       const opacity = this.opacity();
+      const preset = this.preset();
       this.retry();
       this.preview.set({ kind: 'loading' });
       this.notice.set('');
@@ -77,10 +87,10 @@ export class ExportOptions {
       const firstFrame = requestAnimationFrame(() => {
         secondFrame = requestAnimationFrame(async () => {
           try {
-            const blob = await createPng(map, grid, opacity / 100);
+            const blob = await createPng(map, grid, opacity / 100, preset.pixelsPerTile);
             if (!active) return;
             url = URL.createObjectURL(blob);
-            this.preview.set({ kind: 'ready', map, grid, opacity, blob, url });
+            this.preview.set({ kind: 'ready', map, grid, opacity, preset, blob, url });
           } catch (error: unknown) {
             if (active)
               this.preview.set({
@@ -121,6 +131,15 @@ export class ExportOptions {
       this.grid.set(event.target.checked);
   }
 
+  protected changePreset(event: Event): void {
+    if (this.disabled() || !(event.target instanceof HTMLSelectElement)) return;
+    const value = event.target.value;
+    const preset = EXPORT_PRESETS.find((option) => option.id === value);
+    if (!preset || preset === this.preset()) return;
+    this.preset.set(preset);
+    this.grid.set(preset.grid);
+  }
+
   protected changeOpacity(event: Event): void {
     if (this.disabled() || !this.grid() || !(event.target instanceof HTMLInputElement)) return;
     const value = event.target.valueAsNumber;
@@ -141,7 +160,7 @@ export class ExportOptions {
     try {
       downloadBlob(
         preview.blob,
-        configuredExportFilename(preview.map, preview.grid, preview.opacity),
+        configuredExportFilename(preview.map, preview.grid, preview.opacity, preview.preset),
       );
       this.notice.set('PNG ready. Check your downloads.');
       this.downloaded.emit();
