@@ -108,7 +108,7 @@ test('study artwork survives refresh and portable backup import', async ({ page,
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '9.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '10.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://127.0.0.1:4200/');
@@ -172,4 +172,61 @@ test('an imported dungeon with insufficient study space stays intact and permits
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#settings-error')).toBeEmpty();
   expect((await snapshot(page, 'Recovered study')).decoration.scene).toBe('Forgotten study');
+});
+
+test('historical study pixels survive saving, shuffle undo, and portable sharing', async ({
+  page,
+  browser,
+}) => {
+  async function png(target: Page) {
+    await expect(target.locator('.workbench')).toHaveAttribute('aria-busy', 'false');
+    const pending = target.waitForEvent('download');
+    await target.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
+    return readFileSync(await (await pending).path());
+  }
+  await page.goto('/');
+  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/study-v9.json');
+  await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
+  await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
+  const original = await snapshot(page, 'Old study');
+  expect(original.decoration).not.toHaveProperty('studySurface');
+  const oldPng = await png(page);
+  await page.getByRole('button', { name: 'Shuffle details', exact: true }).click();
+  await expect(page.locator('#map-summary')).toContainText('r1');
+  const shuffled = await snapshot(page, 'New study');
+  expect(shuffled.decoration).toMatchObject({
+    studySurface: 1,
+    scene: 'Forgotten study',
+    revision: 1,
+  });
+  expect(shuffled.layout).toEqual(original.layout);
+  const newPng = await png(page);
+  expect(newPng).not.toEqual(oldPng);
+  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await expect(page.locator('#map-summary')).toContainText('r0');
+  expect(await snapshot(page, 'Restored old study')).toEqual(original);
+  expect(await png(page)).toEqual(oldPng);
+  await page.getByRole('button', { name: 'Redo shuffle', exact: true }).click();
+  await expect(page.locator('#map-summary')).toContainText('r1');
+  expect(await snapshot(page, 'Restored new study')).toEqual(shuffled);
+  expect(await png(page)).toEqual(newPng);
+  const pending = page.waitForEvent('download');
+  await page
+    .locator('.saved-item')
+    .filter({ has: page.locator('.saved-name').getByText('New study', { exact: true }) })
+    .getByRole('button', { name: 'Export this map', exact: true })
+    .click();
+  const path = await (await pending).path();
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '10.0.0' });
+  const fresh = await browser.newPage();
+  try {
+    await fresh.goto('http://127.0.0.1:4200/');
+    await fresh.setInputFiles('.import-label input', path);
+    await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
+    await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
+    expect(await snapshot(fresh, 'Shared study')).toEqual(shuffled);
+    expect(await png(fresh)).toEqual(newPng);
+  } finally {
+    await fresh.close();
+  }
 });

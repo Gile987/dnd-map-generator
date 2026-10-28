@@ -1,7 +1,53 @@
-import type { Prop } from '../engine/model';
+import type { Layout, Prop } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
+import { exposedTileBounds } from './floor-artwork';
 
 const books = ['#867453', '#656f74', '#7e4d46', '#89906b', '#b29e77', '#5f7770'] as const;
+
+/** Fit the complete sprite to exposed floor inside its own logical tile. */
+export function drawFittedStudyProp(
+  ctx: DrawingContext,
+  prop: Prop,
+  layout: Pick<Layout, 'tiles'>,
+): boolean {
+  let draw: (ctx: DrawingContext, prop: Prop) => void;
+  let halfWidth: number;
+  let halfHeight: number;
+  switch (prop.kind) {
+    case 'desk':
+      draw = drawDesk;
+      halfWidth = 0.45;
+      halfHeight = 0.49;
+      break;
+    case 'bookshelf':
+      draw = drawBookshelf;
+      halfWidth = 0.48;
+      halfHeight = 0.42;
+      break;
+    // Includes the scrolls' additional 0.2-radian rotation and shadows.
+    case 'scroll_case':
+      draw = drawScrollCase;
+      halfWidth = 0.43;
+      halfHeight = 0.43;
+      break;
+    default:
+      return false;
+  }
+  if (Math.floor(prop.variation * 4) % 2 === 1) [halfWidth, halfHeight] = [halfHeight, halfWidth];
+  const bounds = exposedTileBounds(layout, prop);
+  const scale = Math.min(
+    1,
+    (bounds.right - bounds.left) / (2 * halfWidth),
+    (bounds.bottom - bounds.top) / (2 * halfHeight),
+  );
+  ctx.save();
+  ctx.translate((bounds.left + bounds.right) / 2, (bounds.top + bounds.bottom) / 2);
+  ctx.scale(scale, scale);
+  ctx.lineWidth = 0.025;
+  draw(ctx, prop);
+  ctx.restore();
+  return true;
+}
 
 export function drawDesk(ctx: DrawingContext, prop: Prop): void {
   ctx.rotate((Math.floor(prop.variation * 4) * Math.PI) / 2);

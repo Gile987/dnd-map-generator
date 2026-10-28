@@ -104,6 +104,11 @@ export function validateDungeon(map: Dungeon): string | undefined {
   if (layoutError) return layoutError;
   if (!ALL_DUNGEON_SCENES.includes(map.decoration.scene ?? 'None'))
     return 'Choose a valid dungeon scene.';
+  if (
+    map.decoration.studySurface !== undefined &&
+    (map.decoration.studySurface !== 1 || map.decoration.scene !== 'Forgotten study')
+  )
+    return 'Choose supported study surface artwork for a Forgotten study.';
   for (const prop of map.decoration.props) {
     const error = propFootprintError(prop);
     if (error) return error;

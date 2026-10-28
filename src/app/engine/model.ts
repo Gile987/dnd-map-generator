@@ -226,6 +226,8 @@ export interface Decoration {
   readonly density: Density;
   readonly preset: DecorationPreset;
   readonly scene?: DungeonScene;
+  /** Absent in historical studies, which retain their original floor artwork. */
+  readonly studySurface?: 1;
   readonly landmark?: DungeonLandmark;
   readonly furniture?: DungeonFurniture;
   readonly revision: number;

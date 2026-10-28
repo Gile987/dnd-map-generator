@@ -104,7 +104,7 @@ test('a camp survives refresh and a current-format backup imported into an empty
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '9.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '10.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://127.0.0.1:4200/');

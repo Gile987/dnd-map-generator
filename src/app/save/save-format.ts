@@ -3,7 +3,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '9.0.0';
+export const SAVE_FORMAT_VERSION = '10.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -128,8 +128,15 @@ const FORMAT_9_VOCABULARY: SaveVocabulary = {
   },
 };
 
+const FORMAT_10_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_9_VOCABULARY,
+  studySurfaces: [1],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '10.0.0':
+      return FORMAT_10_VOCABULARY;
     case '9.0.0':
       return FORMAT_9_VOCABULARY;
     case '1.0.0':
