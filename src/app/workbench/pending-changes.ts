@@ -17,6 +17,7 @@ function additionNames(draft: SettingsDraft): string {
   if (draft.landmark && draft.landmark !== 'None')
     names.push(LANDMARK_CATALOG[draft.landmark].label);
   if (draft.type === 'dungeon' && draft.furniture === 'dining-table') names.push('Dining table');
+  if (draft.type === 'dungeon' && draft.ritual) names.push('Ritual site');
   return names.join(', ') || 'None';
 }
 

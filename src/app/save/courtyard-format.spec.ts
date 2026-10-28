@@ -20,7 +20,7 @@ const record = makeSavedMap(
 );
 
 test('format 9 preserves courtyard models and artwork inputs exactly through records and backups', () => {
-  expect(record.saveFormatVersion).toBe('10.0.0');
+  expect(record.saveFormatVersion).toBe('11.0.0');
   expect(parseSavedMap(record)?.map).toBe(map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (const version of ['1.0.0', '2.0.0', '3.0.0', '4.0.0', '5.0.0', '6.0.0', '7.0.0', '8.0.0']) {

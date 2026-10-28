@@ -218,6 +218,7 @@ export class WorkbenchSession {
       this.layoutPending() ||
       draft.density !== decoration.density ||
       draft.preset !== decoration.preset ||
+      Boolean(draft.ritual) !== Boolean(decoration.ritual) ||
       (draft.furniture ?? 'None') !== (decoration.furniture ?? 'None') ||
       (draft.landmark ?? 'None') !== (decoration.landmark ?? 'None') ||
       (draft.scene ?? 'None') !== (decoration.scene ?? 'None')
@@ -415,6 +416,8 @@ export class WorkbenchSession {
         if (!result.ok) return result;
         dungeon = result.map;
       } else if (
+        settings.ritual ||
+        dungeon.decoration.ritual ||
         (settings.furniture ?? 'None') !== 'None' ||
         (dungeon.decoration.furniture ?? 'None') !== 'None' ||
         (settings.landmark ?? 'None') !== 'None' ||
@@ -471,6 +474,15 @@ export class WorkbenchSession {
     ) {
       return { ok: false, error: 'That camp could not fit beside the path. Try another seed.' };
     }
+    if (
+      next.type === 'dungeon' &&
+      parsed.type === 'dungeon' &&
+      Boolean(next.decoration.ritual) !== Boolean(parsed.settings.ritual)
+    )
+      return {
+        ok: false,
+        error: 'That ritual site could not fit. Try another seed or fewer additions.',
+      };
     if (
       next.type === 'dungeon' &&
       parsed.type === 'dungeon' &&

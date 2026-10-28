@@ -140,6 +140,7 @@ export function generateDungeon(
         settings.scene,
         settings.landmark,
         settings.furniture,
+        settings.ritual,
       ),
     };
     const error = validateDungeon(map);

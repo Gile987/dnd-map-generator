@@ -108,7 +108,7 @@ test('study artwork survives refresh and portable backup import', async ({ page,
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '10.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '11.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://127.0.0.1:4200/');
@@ -217,7 +217,7 @@ test('historical study pixels survive saving, shuffle undo, and portable sharing
     .getByRole('button', { name: 'Export this map', exact: true })
     .click();
   const path = await (await pending).path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '10.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '11.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://127.0.0.1:4200/');

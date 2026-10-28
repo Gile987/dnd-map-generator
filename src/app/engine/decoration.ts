@@ -1,4 +1,5 @@
-import { placeDiningTable } from './dungeon-furniture';
+import { placeRitual } from './dungeon-ritual';
+import { furnitureArea, placeDiningTable } from './dungeon-furniture';
 import { center, DENSITY_BUDGETS, indexOf, isBlockingProp, isFloor } from './model';
 import type {
   Decoration,
@@ -99,16 +100,32 @@ export function decorate(
   scene: DungeonScene = 'None',
   landmark: DungeonLandmark = 'None',
   furniture: DungeonFurniture = 'None',
+  ritual = false,
 ): Decoration {
-  const base = decorateLandmark(layout, seed, density, preset, revision, scene, landmark);
-  if (furniture === 'None') return base;
+  const original = decorateLandmark(layout, seed, density, preset, revision, scene, landmark);
+  const base =
+    furniture === 'None'
+      ? original
+      : {
+          ...original,
+          furniture,
+          props:
+            placeDiningTable(layout, original.props, seed, density, preset, revision, [
+              ...studyReservations(layout, original.props),
+              ...statueReservations(original.props),
+            ]) ?? original.props,
+        };
+  if (!ritual) return base;
   return {
     ...base,
-    furniture,
+    ritual: true,
     props:
-      placeDiningTable(layout, base.props, seed, density, preset, revision, [
+      placeRitual(layout, base.props, seed, density, preset, revision, [
         ...studyReservations(layout, base.props),
         ...statueReservations(base.props),
+        ...base.props
+          .filter((p) => p.kind === 'dining_table')
+          .map((p) => ({ area: furnitureArea(p), props: [p] })),
       ]) ?? base.props,
   };
 }
@@ -261,6 +278,7 @@ export function shuffleDetails(map: Dungeon, density: Density = map.decoration.d
     map.decoration.scene,
     map.decoration.landmark,
     map.decoration.furniture,
+    map.decoration.ritual,
   );
 }
 
@@ -273,6 +291,7 @@ export function changeDensity(map: Dungeon, density: Density): Dungeon {
     map.decoration.scene,
     map.decoration.landmark,
     map.decoration.furniture,
+    map.decoration.ritual,
   );
 }
 
@@ -285,12 +304,16 @@ export function changePreset(map: Dungeon, preset: DecorationPreset): Dungeon {
     map.decoration.scene,
     map.decoration.landmark,
     map.decoration.furniture,
+    map.decoration.ritual,
   );
 }
 
 export function changeDungeonAppearance(
   map: Dungeon,
-  settings: Pick<DungeonSettings, 'density' | 'preset' | 'scene' | 'landmark' | 'furniture'>,
+  settings: Pick<
+    DungeonSettings,
+    'density' | 'preset' | 'scene' | 'landmark' | 'furniture' | 'ritual'
+  >,
 ): Dungeon {
   return redecorate(
     map,
@@ -300,6 +323,7 @@ export function changeDungeonAppearance(
     settings.scene,
     settings.landmark,
     settings.furniture,
+    settings.ritual,
   );
 }
 
@@ -311,6 +335,7 @@ function redecorate(
   scene: DungeonScene = 'None',
   landmark: DungeonLandmark = 'None',
   furniture: DungeonFurniture = 'None',
+  ritual = false,
 ): Dungeon {
   const updated: Dungeon = {
     ...map,
@@ -323,9 +348,10 @@ function redecorate(
       scene,
       landmark,
       furniture,
+      ritual,
     ),
   };
-  return (scene === 'Forgotten study' || landmark !== 'None' || furniture !== 'None') &&
+  return (ritual || scene === 'Forgotten study' || landmark !== 'None' || furniture !== 'None') &&
     validateDungeon(updated)
     ? map
     : updated;

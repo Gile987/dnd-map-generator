@@ -55,6 +55,9 @@ export class Preview {
         (m.decoration.furniture === 'dining-table'
           ? ' A dining table blocks two tiles, with clear space around it.'
           : '') +
+        (m.decoration.ritual
+          ? ' A ritual site has a one-tile blocking altar, decorative candles and offerings, and passable floor markings.'
+          : '') +
         ' Stairs mark the entrance; a circular stone dais marks the objective. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
       );
     }

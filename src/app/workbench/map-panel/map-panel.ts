@@ -68,7 +68,7 @@ export class MapPanel {
       return {
         seed: map.seed,
         rooms: `${map.layout.rooms.length} connected`,
-        details: `${map.decoration.preset}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
+        details: `${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
         type: 'STONE DUNGEON',
       };
     }

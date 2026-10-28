@@ -7,6 +7,7 @@ import type { DrawingContext } from './drawing-context';
 import type { RenderOptions } from './render-options';
 import { boundaryLoops, traceBoundaries } from './boundaries';
 import { drawStudySurface } from './study-surface';
+import { drawDungeonRitualFloor } from './ritual-props';
 import { drawFittedStudyProp } from './study-props';
 
 interface Atmosphere {
@@ -274,6 +275,7 @@ export function renderDungeon(ctx: DrawingContext, map: Dungeon, options: Render
     );
   }
   floors(ctx, map);
+  drawDungeonRitualFloor(ctx, map);
   drawStudySurface(ctx, map);
   walls(ctx, map.layout);
   for (const prop of map.decoration.props.filter(

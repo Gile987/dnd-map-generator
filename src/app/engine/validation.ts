@@ -1,5 +1,6 @@
 import { propCells, propFootprintError } from './prop-footprint';
-import { furnitureError } from './dungeon-furniture';
+import { ritualError } from './dungeon-ritual';
+import { furnitureArea, furnitureError } from './dungeon-furniture';
 import { DUNGEON_LANDMARK_RULES, statueReservations } from './dungeon-landmark';
 import { studyReservations } from './dungeon-study';
 import {
@@ -34,6 +35,8 @@ export function validateSettings(settings: DungeonSettings): string | undefined 
     settings.roomCount > ROOM_MAX
   )
     return `Choose a whole number of rooms from ${ROOM_MIN} to ${ROOM_MAX}.`;
+  if (settings.ritual !== undefined && typeof settings.ritual !== 'boolean')
+    return 'Choose a valid ritual site option.';
   if (!ALL_DUNGEON_LANDMARKS.includes(settings.landmark ?? 'None'))
     return 'Choose a valid dungeon landmark.';
   if (!ALL_DUNGEON_FURNITURE.includes(settings.furniture ?? 'None'))
@@ -109,6 +112,19 @@ export function validateDungeon(map: Dungeon): string | undefined {
     (map.decoration.studySurface !== 1 || map.decoration.scene !== 'Forgotten study')
   )
     return 'Choose supported study surface artwork for a Forgotten study.';
+  if (map.decoration.ritual !== undefined && typeof map.decoration.ritual !== 'boolean')
+    return 'Choose a valid ritual site option.';
+  if (map.decoration.ritual) {
+    const error = ritualError(map.layout, map.decoration.props, [
+      ...studyReservations(map.layout, map.decoration.props),
+      ...statueReservations(map.decoration.props),
+      ...map.decoration.props
+        .filter((p) => p.kind === 'dining_table')
+        .map((p) => ({ area: furnitureArea(p), props: [p] })),
+    ]);
+    if (error) return error;
+  } else if (map.decoration.props.some((p) => p.kind.startsWith('ritual_')))
+    return 'Ritual objects require the ritual site option.';
   for (const prop of map.decoration.props) {
     const error = propFootprintError(prop);
     if (error) return error;

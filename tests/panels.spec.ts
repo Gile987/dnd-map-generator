@@ -16,7 +16,7 @@ test('the additions picker keeps independent drafts, supports the keyboard, and 
     picker.getByRole('heading', { name: 'Choose additions', exact: true }),
   ).toBeFocused();
   await expect(picker).toHaveAccessibleDescription(/Choose any combination. Generate to apply/);
-  await expect(picker.getByRole('checkbox')).toHaveCount(3);
+  await expect(picker.getByRole('checkbox')).toHaveCount(4);
   // Native modal behavior keeps background controls inert.
   await page.keyboard.press('Tab');
   await expect(picker.getByRole('button', { name: 'Close additions', exact: true })).toBeFocused();
@@ -80,7 +80,7 @@ test('searching the visual catalog keeps selections through filtering, empty res
   await page.goto('/');
   const picker = await openAdditions(page);
   const search = picker.getByRole('searchbox', { name: 'Find an addition' });
-  await expect(picker.locator('img')).toHaveCount(3);
+  await expect(picker.locator('img')).toHaveCount(4);
   await expect
     .poll(() =>
       picker
@@ -97,7 +97,7 @@ test('searching the visual catalog keeps selections through filtering, empty res
   const sources = await picker
     .locator('img')
     .evaluateAll((images) => images.map((image) => (image as HTMLImageElement).src));
-  expect(new Set(sources).size).toBe(3);
+  expect(new Set(sources).size).toBe(sources.length);
   await search.fill('  DESK  ');
   await expect(picker.getByRole('checkbox')).toHaveCount(1);
   await picker.getByRole('checkbox', { name: 'Forgotten study', exact: true }).check();
@@ -110,7 +110,7 @@ test('searching the visual catalog keeps selections through filtering, empty res
   await picker.screenshot({ path: 'artifacts/picker/empty.png' });
   await picker.getByRole('button', { name: 'Show all additions' }).click();
   await expect(search).toBeFocused();
-  await expect(picker.getByRole('checkbox')).toHaveCount(3);
+  await expect(picker.getByRole('checkbox')).toHaveCount(4);
   for (const name of ['Forgotten study', 'Dining table'])
     await expect(picker.getByRole('checkbox', { name, exact: true })).toBeChecked();
   await expect(
@@ -124,7 +124,7 @@ test('searching the visual catalog keeps selections through filtering, empty res
   await picker.getByRole('button', { name: 'Done', exact: true }).click();
   await openAdditions(page);
   await expect(search).toHaveValue('');
-  await expect(picker.getByRole('checkbox')).toHaveCount(3);
+  await expect(picker.getByRole('checkbox')).toHaveCount(4);
   await picker.getByRole('button', { name: 'Done', exact: true }).click();
   await expect(selectedAddition(page, 'Forgotten study')).toBeVisible();
   await expect(selectedAddition(page, 'Dining table')).toBeVisible();
