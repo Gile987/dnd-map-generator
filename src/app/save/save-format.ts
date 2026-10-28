@@ -232,6 +232,17 @@ export function normalizeName(name: string): string {
   return name.trim().slice(0, NAME_MAX);
 }
 
+export function sharedMapFilename(name: string): string {
+  const slug =
+    name
+      .normalize('NFKD')
+      .replace(/\p{M}/gu, '')
+      .replace(/[^a-zA-Z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, NAME_MAX) || 'map';
+  return `encounter-map-${slug}.json`;
+}
+
 export function duplicateName(name: string): string {
   const suffix = ' (copy)';
   return `${name.slice(0, NAME_MAX - suffix.length)}${suffix}`;

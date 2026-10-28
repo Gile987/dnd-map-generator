@@ -145,6 +145,7 @@ for (const width of [1440, 768, 320]) {
           '.status',
           'footer > span',
           '.library-note',
+          '.library-sharing-hint',
           '.library-empty',
           '.save-name-label',
           '.section-number',

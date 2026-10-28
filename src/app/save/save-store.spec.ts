@@ -77,6 +77,84 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('single-map export', () => {
+  test('exports only the latest selected snapshot without writing or acquiring a write lock', () => {
+    const storage = stubStorage();
+    const store = createStore();
+    const latest = { ...original, name: 'Latest name', favorite: false, map: incoming.map };
+    storage.values.set(SAVE_STORAGE_KEY, JSON.stringify([latest, incoming]));
+    const lock = vi.spyOn(navigator.locks, 'request');
+    const result = store.exportMap(original.id);
+    expect(result.record).toEqual(latest);
+    expect(parseBundle(result.json)).toEqual({ ok: true, maps: [latest], skipped: 0 });
+    expect(store.saved()).toEqual([latest, incoming]);
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(lock).not.toHaveBeenCalled();
+  });
+
+  test('a removed record fails rather than exporting its stale cached copy', () => {
+    const storage = stubStorage();
+    const store = createStore();
+    storage.values.set(SAVE_STORAGE_KEY, '[]');
+    expect(() => store.exportMap(original.id)).toThrow('no longer in the library');
+    expect(store.saved()).toEqual([]);
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
+
+  test('readable records can be shared while unreadable storage remains recoverable', () => {
+    const raw = JSON.stringify([original, null]);
+    const storage = stubStorage(raw);
+    const store = createStore();
+    expect(parseBundle(store.exportMap(original.id).json)).toMatchObject({
+      ok: true,
+      maps: [original],
+    });
+    expect(store.recoveryData()).toBe(raw);
+    expect(store.canWrite()).toBe(false);
+    expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
+
+  test('a temporarily unavailable read still permits exporting the last readable snapshot', () => {
+    const storage = stubStorage();
+    const store = createStore();
+    storage.getItem.mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    expect(parseBundle(store.exportMap(original.id).json)).toMatchObject({
+      ok: true,
+      maps: [original],
+    });
+    expect(store.problem()).toContain('could not read');
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
+
+  test('sharing remains available without Web Locks', () => {
+    const storage = stubStorage();
+    vi.stubGlobal('navigator', {});
+    const store = createStore();
+    expect(store.canWrite()).toBe(false);
+    expect(parseBundle(store.exportMap(original.id).json)).toMatchObject({
+      ok: true,
+      maps: [original],
+    });
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
+
+  test('sharing retains the local Undo snapshot and uses existing import deduplication', async () => {
+    const storage = stubStorage(JSON.stringify([original, incoming]));
+    const store = createStore();
+    await store.remove(incoming.id);
+    const deleted = store.lastDeleted();
+    storage.setItem.mockClear();
+    const result = parseBundle(store.exportMap(original.id).json);
+    if (!result.ok) throw new Error(result.error);
+    expect(store.lastDeleted()).toBe(deleted);
+    expect(await store.importMaps(result.maps)).toEqual({ added: 0, skipped: 1 });
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
+});
+
 describe('deletion undo', () => {
   test('the undo snapshot is readonly, local to a store, and absent after reloading the page', async () => {
     stubStorage();
