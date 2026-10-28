@@ -246,6 +246,7 @@ function decorateBase(
         preset,
         revision,
         scene,
+        studySurface: 1,
       }
     : { props, density, preset, revision };
 }

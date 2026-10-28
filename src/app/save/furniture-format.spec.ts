@@ -43,7 +43,7 @@ test.each(QUARTER_TURNS)(
     expect(saved.map.decoration.props.find((p) => p.kind === 'dining_table')?.rotation).toBe(
       rotation,
     );
-    expect(saved.saveFormatVersion).toBe('9.0.0');
+    expect(saved.saveFormatVersion).toBe('10.0.0');
     expect(parseSavedMap(saved)).toEqual(saved);
     expect(parseSavedMap({ ...saved, saveFormatVersion: '8.0.0' })).toEqual(saved);
     expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });

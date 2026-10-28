@@ -6,6 +6,8 @@ import { drawGrid, path } from './drawing-primitives';
 import type { DrawingContext } from './drawing-context';
 import type { RenderOptions } from './render-options';
 import { boundaryLoops, traceBoundaries } from './boundaries';
+import { drawStudySurface } from './study-surface';
+import { drawFittedStudyProp } from './study-props';
 
 interface Atmosphere {
   readonly background: string;
@@ -272,6 +274,7 @@ export function renderDungeon(ctx: DrawingContext, map: Dungeon, options: Render
     );
   }
   floors(ctx, map);
+  drawStudySurface(ctx, map);
   walls(ctx, map.layout);
   for (const prop of map.decoration.props.filter(
     (prop) => prop.kind === 'rug' || prop.kind === 'moss',
@@ -280,8 +283,10 @@ export function renderDungeon(ctx: DrawingContext, map: Dungeon, options: Render
   architecture(ctx, map);
   for (const prop of map.decoration.props.filter(
     (prop) => prop.kind !== 'rug' && prop.kind !== 'moss',
-  ))
+  )) {
+    if (map.decoration.studySurface === 1 && drawFittedStudyProp(ctx, prop, map.layout)) continue;
     drawProp(ctx, prop);
+  }
   for (const prop of map.decoration.props.filter((prop) => prop.kind === 'sconce')) {
     const x = prop.x + 0.5;
     const y = prop.y - 0.07;

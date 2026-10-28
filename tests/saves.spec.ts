@@ -85,9 +85,9 @@ test('imports a v3 library, reopens its original settings, and exports current-f
   const download = await downloadPromise;
   const path = await download.path();
   expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
-    saveFormatVersion: '9.0.0',
+    saveFormatVersion: '10.0.0',
     maps: Array.from({ length: 3 }, () => ({
-      saveFormatVersion: '9.0.0',
+      saveFormatVersion: '10.0.0',
       map: { version: '3.0.0', decoration: { character: 'Verdant' } },
     })),
   });
@@ -107,8 +107,8 @@ test('a Fey save survives a current-format backup round trip and refresh', async
   const download = await downloadPromise;
   const path = await download.path();
   expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
-    saveFormatVersion: '9.0.0',
-    maps: [{ saveFormatVersion: '9.0.0', map: { decoration: { character: 'Fey' } } }],
+    saveFormatVersion: '10.0.0',
+    maps: [{ saveFormatVersion: '10.0.0', map: { decoration: { character: 'Fey' } } }],
   });
   await itemByName(page, 'Fey backup').getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByText('Your library is empty.')).toBeVisible();

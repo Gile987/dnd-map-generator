@@ -37,6 +37,7 @@ export interface SaveVocabulary {
   >;
   readonly dungeonLandmarks?: readonly string[];
   readonly dungeonScenes?: readonly string[];
+  readonly studySurfaces?: readonly number[];
   readonly courtyardFountains?: readonly boolean[];
   readonly propKinds: readonly string[];
 }
@@ -46,6 +47,14 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
   const decoration = map['decoration'];
   const type = map['type'];
   if (typeof type !== 'string' || !vocabulary.mapTypes.includes(type)) return false;
+  if (
+    decoration['studySurface'] !== undefined &&
+    (type !== 'dungeon' ||
+      decoration['scene'] !== 'Forgotten study' ||
+      typeof decoration['studySurface'] !== 'number' ||
+      !vocabulary.studySurfaces?.includes(decoration['studySurface']))
+  )
+    return false;
   if (
     typeof decoration['density'] !== 'string' ||
     !vocabulary.densities.includes(decoration['density'])
@@ -304,7 +313,9 @@ function isDungeonDecoration(value: unknown): boolean {
     (value['landmark'] === undefined ||
       (typeof value['landmark'] === 'string' && isIn(value['landmark'], ALL_DUNGEON_LANDMARKS))) &&
     (value['scene'] === undefined ||
-      (typeof value['scene'] === 'string' && isIn(value['scene'], ALL_DUNGEON_SCENES)))
+      (typeof value['scene'] === 'string' && isIn(value['scene'], ALL_DUNGEON_SCENES))) &&
+    (value['studySurface'] === undefined ||
+      (value['studySurface'] === 1 && value['scene'] === 'Forgotten study'))
   );
 }
 
@@ -329,6 +340,7 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
   if (typeof seed !== 'string' || !seed || seed !== seed.trim() || seed.length > 64) return false;
   if (!isFiniteNumber(surfaceSeed)) return false;
   if (!isObject(layout) || !isObject(decoration)) return false;
+  if (type !== 'dungeon' && decoration['studySurface'] !== undefined) return false;
   if (type === 'dungeon') return isDungeonLayout(layout) && isDungeonDecoration(decoration);
   if (type === 'courtyard')
     return (
