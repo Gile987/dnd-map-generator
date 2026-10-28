@@ -4,6 +4,13 @@
   <h2 id="settings-title" class="section-target" tabindex="-1">{{ mapHeadings[map().type] }}</h2>
 </div>
 
+@if (viewingPinned()) {
+<p class="comparison-settings-note">
+  Viewing Pinned. Settings and shuffle history belong to Current. Generate or Shuffle brings Current
+  back into view.
+</p>
+}
+
 <fieldset class="map-type-field" [disabled]="disabled()">
   <legend class="sr-only">Map type</legend>
   <div class="map-type-options">

@@ -603,3 +603,12 @@ form {
     }
   }
 }
+:host .comparison-settings-note {
+  margin: 0 0 18px;
+  padding: 10px 12px;
+  border-left: 3px solid #7d8d59;
+  background: #e9ebdf;
+  color: #415447;
+  font-size: 12px;
+  line-height: 1.6;
+}

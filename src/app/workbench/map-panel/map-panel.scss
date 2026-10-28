@@ -264,3 +264,67 @@
     }
   }
 }
+.comparison-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #1c302e;
+  border-bottom: 1px solid #4e665240;
+  flex-shrink: 0;
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1px solid #6e8577;
+    border-radius: 5px;
+    background: transparent;
+    color: #dbe2cd;
+    font-size: 12px;
+    cursor: pointer;
+    &:hover:not([aria-disabled='true']) {
+      background: #354e40;
+    }
+    &:focus-visible {
+      outline-color: var(--map-focus-ring-color);
+      outline-offset: 3px;
+    }
+    &[aria-disabled='true'] {
+      opacity: 0.5;
+      cursor: default;
+    }
+    forge-icon {
+      width: 15px;
+      height: 15px;
+    }
+  }
+  .candidate-switch {
+    display: flex;
+    padding: 3px;
+    border: 1px solid #627969;
+    border-radius: 7px;
+    button {
+      border: 0;
+    }
+    button[aria-pressed='true'] {
+      background: #cfdbad;
+      color: #213b2f;
+    }
+  }
+  .clear-pin-button {
+    border-color: transparent;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  p {
+    flex-basis: 100%;
+    margin: 0;
+    color: #aebfae;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+}

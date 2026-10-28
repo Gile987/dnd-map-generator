@@ -39,7 +39,8 @@
   <div class="workbench" [attr.aria-busy]="busy() !== null">
     <aside
       forge-settings-panel
-      [map]="map()"
+      [map]="currentMap()"
+      [viewingPinned]="comparison().selected === 'pinned'"
       [draft]="draft()"
       [pending]="pending()"
       [generationEffect]="generationEffect()"
@@ -63,6 +64,11 @@
       [grid]="grid()"
       [disabled]="busy() !== null"
       [focused]="focused()"
+      [hasPin]="!!comparison().pinned"
+      [candidate]="comparison().selected"
+      (pinRequested)="pinCurrent()"
+      (candidateChanged)="selectCandidate($event)"
+      (clearPinRequested)="clearPin()"
       (gridChanged)="grid.set($event)"
       (focusChanged)="setFocused($event)"
     ></section>

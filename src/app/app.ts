@@ -17,6 +17,7 @@ import { SettingsPanel } from './workbench/settings-panel/settings-panel';
 import { WorkbenchSession } from './workbench/workbench-session';
 import { ExportOptions } from './workbench/export-options/export-options';
 import type { DraftChange } from './workbench/settings-draft';
+import type { Candidate } from './workbench/workbench-session';
 
 type Operation = 'generation' | 'details' | 'export';
 
@@ -45,6 +46,8 @@ export class App {
   private workbenchScroll = { x: 0, y: 0 };
   private readonly mapType = this.session.mapType;
   protected readonly map = this.session.map;
+  protected readonly currentMap = this.session.currentMap;
+  protected readonly comparison = this.session.comparison;
   protected readonly draft = this.session.draft;
   protected readonly pending = this.session.pending;
   protected readonly generationEffect = this.session.generationEffect;
@@ -56,6 +59,29 @@ export class App {
   protected readonly status = signal('Your dungeon is ready.');
   protected readonly attempted = signal(false);
   protected readonly exportSize = `${EXPORT_WIDTH} × ${EXPORT_HEIGHT} px`;
+
+  protected pinCurrent(): void {
+    if (this.busy() || this.comparison().selected === 'pinned') return;
+    this.session.pinCurrent();
+    this.status.set(
+      'Current map pinned for this session. Generate or Shuffle to explore another candidate.',
+    );
+  }
+
+  protected selectCandidate(candidate: Candidate): void {
+    if (this.busy()) return;
+    this.session.selectCandidate(candidate);
+    this.status.set(
+      `Showing ${this.comparison().selected === 'pinned' ? 'Pinned' : 'Current'}. Save and Export use this candidate.`,
+    );
+  }
+
+  protected clearPin(): void {
+    if (this.busy()) return;
+    this.session.clearPin();
+    this.status.set('Pin cleared. Showing Current. Your library is unchanged.');
+    afterNextRender(() => this.mapPanel().focusPinControl(), { injector: this.injector });
+  }
 
   protected setFocused(focused: boolean): void {
     if (focused === this.focused()) return;
