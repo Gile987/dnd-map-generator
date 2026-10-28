@@ -212,6 +212,12 @@ export class SaveStore {
     return serializeBundle(this.saved());
   }
 
+  exportMap(id: string): { readonly record: SavedMap; readonly json: string } {
+    this.reload();
+    const record = requireRecord(this.saved(), id);
+    return { record, json: serializeBundle([record]) };
+  }
+
   private async commit<T>(change: (records: readonly SavedMap[]) => LibraryChange<T>): Promise<T> {
     if (!this.locks) throw new Error(LOCKS_UNAVAILABLE);
     return this.locks.request(WRITE_LOCK, () => {

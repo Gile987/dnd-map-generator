@@ -28,11 +28,23 @@ import {
   parseSavedMap,
   saveVocabulary,
   serializeBundle,
+  sharedMapFilename,
   uniqueById,
 } from './save-format';
 import type { SavedMap } from './save-format';
 import { isUsableMap, mapUsesVocabulary } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
+
+test.each([
+  ['Forgotten study', 'Forgotten-study'],
+  ['Oaken Café', 'Oaken-Cafe'],
+  ['../../vault\\escape?.json', 'vault-escape-json'],
+  ['!!!', 'map'],
+  ['龍宮', 'map'],
+  ['a'.repeat(100), 'a'.repeat(64)],
+])('single-map filename for %j is bounded and safe', (name, expected) => {
+  expect(sharedMapFilename(name)).toBe(`encounter-map-${expected}.json`);
+});
 
 const dungeon = generateDungeon({
   seed: 'mosslit-sanctum',

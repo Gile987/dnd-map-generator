@@ -15,7 +15,7 @@ import type { GeneratedMap, MapType } from '../engine/model';
 import { downloadBlob } from '../browser/download';
 import { Icon } from '../icon';
 import { createThumbnail } from '../rendering/thumbnail';
-import { defaultMapName, mapSummary, parseBundle } from './save-format';
+import { defaultMapName, mapSummary, parseBundle, sharedMapFilename } from './save-format';
 import type { SavedMap } from './save-format';
 import { SaveStore } from './save-store';
 import { MAP_TYPE_LABELS } from '../workbench/presentation';
@@ -239,6 +239,33 @@ export class Library {
       this.notice.set('');
       this.error.set('This backup could not be downloaded. Please try again.');
     }
+  }
+
+  protected downloadMap(record: SavedMap): void {
+    if (this.blocked()) return;
+    try {
+      const exported = this.store.exportMap(record.id);
+      try {
+        downloadBlob(
+          new Blob([exported.json], { type: 'application/json' }),
+          sharedMapFilename(exported.record.name),
+        );
+      } catch {
+        throw new Error('This map file could not be downloaded. Please try again.');
+      }
+      this.error.set('');
+      this.notice.set(
+        `Exported “${exported.record.name}” as JSON. Use Import backup to open it here.`,
+      );
+    } catch (error: unknown) {
+      this.notice.set('');
+      this.error.set(
+        error instanceof Error
+          ? error.message
+          : 'This map file could not be downloaded. Please try again.',
+      );
+    }
+    this.focusSearchIfHidden(record.id);
   }
 
   protected async importBackup(event: Event): Promise<void> {

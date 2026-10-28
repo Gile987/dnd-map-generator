@@ -65,6 +65,11 @@
     </label>
   </div>
 
+  <p class="library-sharing-hint" id="map-sharing-hint">
+    Export this map downloads one saved map as JSON to share or reopen with Import backup. Download
+    backup includes your whole library. For a map image, use PNG export above.
+  </p>
+
   @if (lastDeleted()) {
   <div class="undo-delete">
     <div class="undo-copy">
@@ -199,6 +204,14 @@
       </div>
       <div class="saved-actions">
         <button type="button" (click)="openMap(record)" [disabled]="blocked()">Open</button>
+        <button
+          type="button"
+          (click)="downloadMap(record)"
+          [disabled]="blocked()"
+          aria-describedby="map-sharing-hint"
+        >
+          Export this map
+        </button>
         <button type="button" (click)="startRename(record)" [disabled]="writeBlocked()">
           Rename
         </button>
