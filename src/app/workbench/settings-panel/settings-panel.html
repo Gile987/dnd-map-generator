@@ -161,23 +161,43 @@
       <p class="field-hint">{{ densityDescription() }}</p>
     </fieldset>
     @if (pending()) {
-    <div class="pending-settings" aria-live="polite">
-      <p class="pending"><span></span>Settings changed. Generate to apply.</p>
+    <section class="pending-settings" aria-labelledby="pending-title">
+      <h3 id="pending-title">Pending changes</h3>
+      <dl>
+        @for (change of changes(); track change.label) {
+        <div class="pending-change">
+          <dt>{{ change.label }}</dt>
+          <dd>
+            <span class="previous-value">{{ change.before }}</span>
+            <forge-icon name="arrow" /><span class="sr-only">to</span>
+            <span class="next-value">{{ change.after }}</span>
+          </dd>
+        </div>
+        }
+      </dl>
+      <p id="pending-impact" class="pending-impact" aria-live="polite">
+        {{ generationMessages[generationEffect()] }}
+      </p>
+      <p class="pending-hint">Save and Export still use the displayed map.</p>
       <button class="text-button" type="button" (click)="resetRequested.emit()">
         Reset changes
       </button>
-    </div>
+    </section>
     }
-    <button class="generate-button" type="submit" [disabled]="disabled() || !pending()">
+    <button
+      class="generate-button"
+      type="submit"
+      [disabled]="disabled() || !pending()"
+      [attr.aria-describedby]="pending() ? 'pending-impact' : null"
+    >
       <forge-icon [name]="mapTypeIcons[map().type]" />{{ generateLabel() }}<forge-icon
         class="generate-arrow"
         name="arrow"
       />
     </button>
-    <p class="generate-note">
-      {{ pending() ? 'Generate applies your pending settings.' : 'Randomize the seed for a different
-      map.' }}
-    </p>
+    @if (!pending()) {
+    <p class="generate-note">Randomize the seed for a different map.</p>
+    }
   </fieldset>
 </form>
 <forge-addition-picker

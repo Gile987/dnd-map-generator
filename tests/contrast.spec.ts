@@ -252,7 +252,13 @@ for (const width of [1440, 768, 320]) {
         await input.uncheck();
       }
       await picker.getByRole('button', { name: 'Done', exact: true }).click();
-      await checkContrast(page.locator('.pending'), `${type} pending notice`, readings);
+      await checkContrast(
+        page.locator(
+          '.pending-settings h3, .pending-settings dt, .previous-value, .next-value, .pending-impact, .pending-hint',
+        ),
+        `${type} pending summary`,
+        readings,
+      );
       const generate = page.getByRole('button', {
         name: `Generate ${type.toLowerCase()}`,
         exact: true,
@@ -396,7 +402,11 @@ for (const width of [1440, 768, 320]) {
     await page.getByLabel('World seed').fill('');
     await page.getByRole('button', { name: 'Generate courtyard', exact: true }).click();
     await expect(page.locator('#settings-error')).not.toBeEmpty();
-    await checkContrast(page.locator('#settings-error, .pending'), 'settings error', readings);
+    await checkContrast(
+      page.locator('#settings-error, .pending-impact'),
+      'settings error',
+      readings,
+    );
     await page.locator('.library').screenshot({ path: `artifacts/qr05/library-${width}.png` });
     const path = `artifacts/qr05/contrast-${width}.json`;
     await writeFile(path, JSON.stringify(readings, null, 2));

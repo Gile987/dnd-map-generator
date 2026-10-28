@@ -21,7 +21,7 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await page.screenshot({ path: 'artifacts/desktop.png', fullPage: true });
 
   await page.getByLabel('World seed').fill('unapplied-seed');
-  await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Pending changes', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   await expect(page.locator('#map-summary')).toContainText('mosslit-sanctum');
@@ -54,7 +54,9 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await expect(page.locator('#map-summary')).toContainText('unapplied-seed');
   await expect(page.locator('#map-summary')).toContainText('r0');
   await expect(page.locator('#map-summary')).toContainText('Cluttered');
-  await expect(page.getByText('Settings changed. Generate to apply.')).not.toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Pending changes', exact: true }),
+  ).not.toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -180,7 +182,7 @@ test('preset and density drafts wait for Generate and exports use the displayed 
   await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
   await expect(page.locator('#map-summary')).toContainText('Mosslit');
   await page.getByLabel('World seed').fill('draft-seed');
-  await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Pending changes', exact: true })).toBeVisible();
   await page.getByRole('radio', { name: 'Sanctuary', exact: true }).check();
   await expect(page.locator('#map-summary')).toContainText('Mosslit');
   await expect(page.locator('#map-summary')).not.toContainText('draft-seed');
@@ -279,7 +281,9 @@ test('map-type selector switches between dungeon and forest, preserves per-type 
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).toContainText('Autumn · Balanced r0');
   await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
-  await expect(page.getByText('Settings changed. Generate to apply.')).not.toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Pending changes', exact: true }),
+  ).not.toBeVisible();
 
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');

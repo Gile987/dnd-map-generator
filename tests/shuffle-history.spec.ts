@@ -102,7 +102,7 @@ for (const type of ['Dungeon', 'Forest'] as const) {
     await expect(page.locator('#map-summary')).toContainText('r0');
     await expect(page.getByLabel('World seed')).toHaveValue('unapplied-history-seed');
     await expect(page.getByRole('radio', { name: 'Cluttered', exact: true })).toBeChecked();
-    await expect(page.getByText('Settings changed. Generate to apply.')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Pending changes', exact: true })).toBeVisible();
     expect(await snapshot(page, 'Restored original')).toEqual(original);
     await expect.poll(pixels).toBe(originalPixels);
     expect(await png(page)).toEqual(originalPng);
