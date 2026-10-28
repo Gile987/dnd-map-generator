@@ -97,6 +97,7 @@ export const ALL_FOREST_CHARACTERS: readonly ForestCharacter[] = [
 ];
 
 export interface DungeonSettings {
+  readonly ritual?: boolean;
   readonly seed: string;
   readonly roomCount: number;
   readonly density: Density;
@@ -154,6 +155,9 @@ export type MapSettings =
   | (CourtyardSettings & { readonly mapType: 'courtyard' });
 
 export const DUNGEON_PROP_KINDS = [
+  'ritual_altar',
+  'ritual_candles',
+  'ritual_offering',
   'crate',
   'barrel',
   'rubble',
@@ -222,6 +226,7 @@ export interface Prop extends Point {
 }
 
 export interface Decoration {
+  readonly ritual?: boolean;
   readonly props: readonly Prop[];
   readonly density: Density;
   readonly preset: DecorationPreset;
@@ -301,6 +306,7 @@ export function contains(room: Room, point: Point): boolean {
 
 export function isBlockingProp(kind: PropKind): boolean {
   return (
+    kind === 'ritual_altar' ||
     kind === 'crate' ||
     kind === 'barrel' ||
     kind === 'rubble' ||

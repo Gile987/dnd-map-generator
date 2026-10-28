@@ -3,7 +3,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '10.0.0';
+export const SAVE_FORMAT_VERSION = '11.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -133,8 +133,21 @@ const FORMAT_10_VOCABULARY: SaveVocabulary = {
   studySurfaces: [1],
 };
 
+const FORMAT_11_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_10_VOCABULARY,
+  dungeonRituals: [false, true],
+  propKinds: [
+    ...FORMAT_10_VOCABULARY.propKinds,
+    'ritual_altar',
+    'ritual_candles',
+    'ritual_offering',
+  ],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '11.0.0':
+      return FORMAT_11_VOCABULARY;
     case '10.0.0':
       return FORMAT_10_VOCABULARY;
     case '9.0.0':
@@ -285,7 +298,7 @@ export function mapSummary(map: GeneratedMap): string {
     return `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'dungeon') {
     const scene = map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : '';
-    return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
+    return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? ' · Abandoned camp' : '';
   return `${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;

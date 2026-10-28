@@ -1,4 +1,5 @@
 import { drawDiningTable } from './furniture-props';
+import { drawRitualAltar, drawRitualCandles, drawRitualOffering } from './ritual-props';
 import { drawDryFountain, drawLowRubble } from './courtyard-props';
 import { propBounds } from '../engine/prop-footprint';
 import { drawStandingStone, drawWeatheredStatue } from './landmark-props';
@@ -33,6 +34,9 @@ import {
 type PropDrawer = (ctx: DrawingContext, prop: Prop, forest: ForestPalette) => void;
 
 const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
+  ritual_altar: drawRitualAltar,
+  ritual_candles: drawRitualCandles,
+  ritual_offering: drawRitualOffering,
   crate: drawCrate,
   barrel: drawBarrel,
   rubble: drawRubble,

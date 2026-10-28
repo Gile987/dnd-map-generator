@@ -36,6 +36,7 @@ export interface SaveVocabulary {
     >
   >;
   readonly dungeonLandmarks?: readonly string[];
+  readonly dungeonRituals?: readonly boolean[];
   readonly dungeonScenes?: readonly string[];
   readonly studySurfaces?: readonly number[];
   readonly courtyardFountains?: readonly boolean[];
@@ -47,6 +48,13 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
   const decoration = map['decoration'];
   const type = map['type'];
   if (typeof type !== 'string' || !vocabulary.mapTypes.includes(type)) return false;
+  if (
+    decoration['ritual'] !== undefined &&
+    (type !== 'dungeon' ||
+      typeof decoration['ritual'] !== 'boolean' ||
+      !vocabulary.dungeonRituals?.includes(decoration['ritual']))
+  )
+    return false;
   if (
     decoration['studySurface'] !== undefined &&
     (type !== 'dungeon' ||
@@ -305,6 +313,7 @@ function isDungeonDecoration(value: unknown): boolean {
   return (
     isDecorationBase(value) &&
     isObject(value) &&
+    (value['ritual'] === undefined || typeof value['ritual'] === 'boolean') &&
     typeof value['preset'] === 'string' &&
     isIn(value['preset'], ALL_PRESETS) &&
     (value['furniture'] === undefined ||
@@ -340,7 +349,11 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
   if (typeof seed !== 'string' || !seed || seed !== seed.trim() || seed.length > 64) return false;
   if (!isFiniteNumber(surfaceSeed)) return false;
   if (!isObject(layout) || !isObject(decoration)) return false;
-  if (type !== 'dungeon' && decoration['studySurface'] !== undefined) return false;
+  if (
+    type !== 'dungeon' &&
+    (decoration['studySurface'] !== undefined || decoration['ritual'] !== undefined)
+  )
+    return false;
   if (type === 'dungeon') return isDungeonLayout(layout) && isDungeonDecoration(decoration);
   if (type === 'courtyard')
     return (

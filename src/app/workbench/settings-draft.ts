@@ -25,6 +25,7 @@ interface CommonDraft {
 }
 
 export interface DungeonDraft extends CommonDraft {
+  readonly ritual?: boolean;
   readonly type: 'dungeon';
   readonly rooms: string;
   readonly preset: DecorationPreset;
@@ -71,6 +72,7 @@ export function dungeonDraftForMap(map: Dungeon): DungeonDraft {
     rooms: String(map.layout.rooms.length),
     density: map.decoration.density,
     preset: map.decoration.preset,
+    ...(map.decoration.ritual !== undefined ? { ritual: map.decoration.ritual } : {}),
     ...(map.decoration.furniture ? { furniture: map.decoration.furniture } : {}),
     ...(map.decoration.landmark ? { landmark: map.decoration.landmark } : {}),
     ...(map.decoration.scene ? { scene: map.decoration.scene } : {}),
@@ -114,6 +116,7 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
     roomCount: Number(draft.rooms),
     density: draft.density,
     preset: draft.preset,
+    ...(draft.ritual !== undefined ? { ritual: draft.ritual } : {}),
     ...(draft.furniture ? { furniture: draft.furniture } : {}),
     ...(draft.landmark ? { landmark: draft.landmark } : {}),
     ...(draft.scene ? { scene: draft.scene } : {}),

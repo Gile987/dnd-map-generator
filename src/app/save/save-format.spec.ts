@@ -309,6 +309,7 @@ describe('save format', () => {
       '8.0.0',
       '9.0.0',
       '10.0.0',
+      '11.0.0',
     ]) {
       test.each([
         '1.0.0',
@@ -321,13 +322,14 @@ describe('save format', () => {
         '8.0.0',
         '9.0.0',
         '10.0.0',
+        '11.0.0',
       ])(
         `accepts header ${header} with record version %s and preserves the map`,
         (saveFormatVersion) => {
           const saved = record(dungeon.map, { saveFormatVersion });
           expect(parseBundle(bundle([saved], header))).toEqual({
             ok: true,
-            maps: [{ ...saved, saveFormatVersion: '10.0.0' }],
+            maps: [{ ...saved, saveFormatVersion: '11.0.0' }],
             skipped: 0,
           });
         },
@@ -352,7 +354,7 @@ describe('save format', () => {
         '1.9.0',
         '0.0.0',
         '2.0.1',
-        '11.0.0',
+        '12.0.0',
         '99.0.0',
         '01.0.0',
         '1.00.0',
@@ -474,7 +476,7 @@ describe('save format', () => {
       if (typeof legacy !== 'object' || legacy === null || !('map' in legacy))
         throw new Error('Legacy fixture has no map');
       expect(parseSavedMap(legacy)).toEqual(entry);
-      expect(entry.saveFormatVersion).toBe('10.0.0');
+      expect(entry.saveFormatVersion).toBe('11.0.0');
       expect(entry.map.type).toBe('forest');
       if (entry.map.type !== 'forest') throw new Error('Expected forest');
       const { character, ...decoration } = entry.map.decoration;
@@ -487,7 +489,7 @@ describe('save format', () => {
   });
 
   test.each(ALL_FOREST_CHARACTERS)(
-    'writes %s records and backups as format 10.0.0 so older readers reject them',
+    'writes %s records and backups as format 11.0.0 so older readers reject them',
     (character) => {
       const result = generateForestClearing({
         seed: 'character-save',
@@ -496,11 +498,11 @@ describe('save format', () => {
       });
       if (!result.ok) throw new Error(result.error);
       const saved = record(result.map);
-      expect(saved.saveFormatVersion).toBe('10.0.0');
+      expect(saved.saveFormatVersion).toBe('11.0.0');
       const text = serializeBundle([saved]);
       expect(JSON.parse(text)).toMatchObject({
-        saveFormatVersion: '10.0.0',
-        maps: [{ saveFormatVersion: '10.0.0' }],
+        saveFormatVersion: '11.0.0',
+        maps: [{ saveFormatVersion: '11.0.0' }],
       });
       expect(parseBundle(text)).toEqual({ ok: true, maps: [saved], skipped: 0 });
     },
@@ -515,7 +517,7 @@ describe('save format', () => {
     if (!result.ok) throw new Error(result.error);
     const initial = record(result.map, { saveFormatVersion: '1.0.0' });
     const parsed = parseSavedMap(initial);
-    expect(parsed).toEqual({ ...initial, saveFormatVersion: '10.0.0' });
+    expect(parsed).toEqual({ ...initial, saveFormatVersion: '11.0.0' });
     expect(initial.saveFormatVersion).toBe('1.0.0');
   });
 
@@ -536,7 +538,7 @@ describe('save format', () => {
     const legacy = record(dungeon.map, { saveFormatVersion: '1.0.0' });
     expect(parseBundle(bundle([legacy], '1.0.0'))).toEqual({
       ok: true,
-      maps: [{ ...legacy, saveFormatVersion: '10.0.0' }],
+      maps: [{ ...legacy, saveFormatVersion: '11.0.0' }],
       skipped: 0,
     });
   });

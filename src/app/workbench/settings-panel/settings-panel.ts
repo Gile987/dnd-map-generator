@@ -106,6 +106,14 @@ export class SettingsPanel {
             changes: { furniture: draft.furniture === 'dining-table' ? 'None' : 'dining-table' },
           },
         },
+        {
+          id: 'ritual-site',
+          label: 'Ritual site',
+          description:
+            'A stone altar, candle clusters, faded floor markings, and offerings in a clear ritual space.',
+          checked: Boolean(draft.ritual),
+          change: { type: 'dungeon', changes: { ritual: !draft.ritual } },
+        },
       ];
     }
     return [

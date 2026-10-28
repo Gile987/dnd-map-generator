@@ -2,10 +2,16 @@ import { Directive, computed, input } from '@angular/core';
 import type { LandmarkId } from '../../engine/landmark-catalog';
 import { isBlockingProp } from '../../engine/model';
 import type { Prop, PropKind } from '../../engine/model';
+import { drawRitualFloor } from '../../rendering/ritual-props';
 import { drawProp } from '../../rendering/props';
 
 export type AdditionId =
-  LandmarkId | 'forgotten-study' | 'abandoned-camp' | 'dining-table' | 'dry-fountain';
+  | LandmarkId
+  | 'ritual-site'
+  | 'forgotten-study'
+  | 'abandoned-camp'
+  | 'dining-table'
+  | 'dry-fountain';
 
 function prop(kind: PropKind, x: number, y: number, variation = 0.3): Prop {
   return { kind, x, y, variation, blocking: isBlockingProp(kind) };
@@ -15,6 +21,17 @@ function prop(kind: PropKind, x: number, y: number, variation = 0.3): Prop {
 const illustrations: Readonly<
   Record<AdditionId, { width: number; height: number; forest?: boolean; props: readonly Prop[] }>
 > = {
+  'ritual-site': {
+    width: 5,
+    height: 5,
+    props: [
+      prop('ritual_altar', 2, 1, 0),
+      prop('ritual_candles', 1, 1, 0),
+      prop('ritual_candles', 3, 1, 0),
+      prop('ritual_offering', 1, 3, 0),
+      prop('ritual_offering', 3, 3, 0),
+    ],
+  },
   'dry-fountain': {
     width: 5,
     height: 5,
@@ -95,6 +112,7 @@ export class AdditionPreview {
         ctx.fillRect(x, y, 1, 1);
         ctx.strokeRect(x, y, 1, 1);
       }
+    if (this.id() === 'ritual-site') drawRitualFloor(ctx, scene.props, 'Mosslit');
     for (const object of scene.props) drawProp(ctx, object);
     return canvas.toDataURL();
   });

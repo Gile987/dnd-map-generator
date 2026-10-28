@@ -105,7 +105,7 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await backupDownload;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '10.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '11.0.0' });
   await page.reload();
   await page
     .locator('.saved-item')
