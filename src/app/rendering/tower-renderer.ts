@@ -141,7 +141,13 @@ export function renderTower(ctx: DrawingContext, map: Tower, options: RenderOpti
       1,
       f.secret ? '#d9c3f0' : '#dbc795',
     );
-    text(ctx, f.purpose, f.x + 7, f.y - 1.2, 0.48);
+    text(
+      ctx,
+      map.decoration.laboratoryFloor === f.number ? 'Alchemist’s laboratory' : f.purpose,
+      f.x + 7,
+      f.y - 1.2,
+      0.48,
+    );
     floorArtwork(ctx, map, f);
   }
   for (const p of map.decoration.props) {

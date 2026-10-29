@@ -87,7 +87,7 @@ export class MapPanel {
       return {
         seed: map.seed,
         rooms: `${map.layout.floors.length} floors`,
-        details: `Ruined wizard’s tower · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · ${map.decoration.density} r${map.decoration.revision}`,
+        details: `Ruined wizard’s tower · ${TOWER_STAIR_LABELS[towerStairStyle(map)]}${map.decoration.laboratoryFloor !== undefined ? ' · Laboratory on floor ' + map.decoration.laboratoryFloor : ''} · ${map.decoration.density} r${map.decoration.revision}`,
         type: 'WIZARD’S TOWER',
       };
     if (map.type === 'courtyard')

@@ -33,6 +33,14 @@ import { CharacterPicker } from '../character-picker/character-picker';
 import { CharacterPreview } from '../character-picker/character-preview';
 import { CHARACTER_OPTIONS } from '../character-picker/character-options';
 
+function laboratoryFloorOf(draft: SettingsDraft): number | null {
+  return draft.type === 'tower' &&
+    draft.laboratoryFloor !== 'none' &&
+    /^\d+$/.test(draft.laboratoryFloor)
+    ? Number(draft.laboratoryFloor)
+    : null;
+}
+
 @Component({
   selector: 'aside[forge-settings-panel]',
   imports: [Icon, AdditionPicker, CharacterPicker, CharacterPreview],
@@ -75,7 +83,22 @@ export class SettingsPanel {
 
   protected readonly additions = computed<readonly MapAddition[]>(() => {
     const draft = this.draft();
-    if (draft.type === 'tower') return [];
+    if (draft.type === 'tower') {
+      const enabled = laboratoryFloorOf(draft) !== null;
+      return [
+        {
+          id: 'alchemist-laboratory',
+          label: 'Alchemist’s laboratory',
+          description:
+            'A bubbling cauldron, workbench, bookshelf, scrolls, and candles on one floor.',
+          checked: enabled,
+          change: {
+            type: 'tower',
+            changes: { laboratoryFloor: enabled ? 'none' : '2' },
+          },
+        },
+      ];
+    }
     if (draft.type === 'courtyard')
       return [
         {
@@ -285,6 +308,14 @@ export class SettingsPanel {
     if (style) this.draftChanged.emit({ type: 'tower', changes: { stairStyle: style } });
   }
   protected readonly floorCounts = [3, 4, 5, 6, 7, 8];
+  protected readonly laboratoryEnabled = computed(() => laboratoryFloorOf(this.draft()) !== null);
+  protected readonly laboratoryFloors = computed(() => {
+    const draft = this.draft();
+    const count = draft.type === 'tower' ? Number(draft.floors) : 0;
+    return Number.isInteger(count) && count >= 3 && count <= 8
+      ? Array.from({ length: count }, (_, i) => i + 1)
+      : [];
+  });
   protected readonly portalSources = computed(() => {
     const draft = this.draft();
     const count = draft.type === 'tower' ? Number(draft.floors) : 0;
@@ -305,6 +336,10 @@ export class SettingsPanel {
           draft.portalFloor !== 'none' && Number(draft.portalFloor) > Number(floors)
             ? 'none'
             : draft.portalFloor,
+        laboratoryFloor:
+          laboratoryFloorOf(draft) !== null && Number(draft.laboratoryFloor) > Number(floors)
+            ? 'none'
+            : draft.laboratoryFloor,
       },
     });
   }
@@ -315,6 +350,14 @@ export class SettingsPanel {
       event.target instanceof HTMLSelectElement
     )
       this.draftChanged.emit({ type: 'tower', changes: { portalFloor: event.target.value } });
+  }
+  protected editLaboratory(event: Event): void {
+    if (
+      !this.disabled() &&
+      this.draft().type === 'tower' &&
+      event.target instanceof HTMLSelectElement
+    )
+      this.draftChanged.emit({ type: 'tower', changes: { laboratoryFloor: event.target.value } });
   }
 
   protected submit(event: SubmitEvent): void {

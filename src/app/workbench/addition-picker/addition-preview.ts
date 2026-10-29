@@ -11,7 +11,8 @@ export type AdditionId =
   | 'forgotten-study'
   | 'abandoned-camp'
   | 'dining-table'
-  | 'dry-fountain';
+  | 'dry-fountain'
+  | 'alchemist-laboratory';
 
 function prop(kind: PropKind, x: number, y: number, variation = 0.3): Prop {
   return { kind, x, y, variation, blocking: isBlockingProp(kind) };
@@ -64,6 +65,17 @@ const illustrations: Readonly<
       prop('bedroll', 5, 3),
       prop('fire_ring', 3, 2),
       prop('supply_bundle', 4, 1),
+    ],
+  },
+  'alchemist-laboratory': {
+    width: 5,
+    height: 5,
+    props: [
+      prop('cauldron', 2, 1, 0.25),
+      prop('desk', 0, 2, 0.25),
+      prop('bookshelf', 4, 2, 0.25),
+      prop('scroll_case', 1, 4, 0.25),
+      prop('ritual_candles', 3, 4, 0.25),
     ],
   },
   'standing-stone-circle': {

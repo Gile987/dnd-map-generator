@@ -25,7 +25,7 @@ function record() {
 
 test('the current format preserves a landmark and camp together; older vocabularies reject both metadata and stones', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('14.0.0');
+  expect(saved.saveFormatVersion).toBe('15.0.0');
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseSavedMap({ ...saved, saveFormatVersion: '6.0.0' })).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
@@ -118,7 +118,7 @@ test('format-5 landmark aliases migrate immutably while preserving all saved art
     ),
   ).toEqual({ ok: true, maps: [current], skipped: 0 });
   expect(JSON.parse(serializeBundle(parsed ? [parsed] : []))).toMatchObject({
-    saveFormatVersion: '14.0.0',
+    saveFormatVersion: '15.0.0',
     maps: [{ map: { decoration: { landmark: 'standing-stone-circle' } } }],
   });
   // Each format is checked before normalization; aliases cannot bypass its vocabulary.

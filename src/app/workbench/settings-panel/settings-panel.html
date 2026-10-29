@@ -146,7 +146,27 @@
         portal pair is its only access. It counts toward your total. Generate to apply.
       </p>
     </div>
-    } @if (selectedCharacter(); as choice) {
+    @if (laboratoryEnabled()) {
+    <div class="field tower-field">
+      <label for="tower-laboratory">Laboratory floor</label>
+      <select
+        id="tower-laboratory"
+        [value]="activeDraft.laboratoryFloor"
+        (change)="editLaboratory($event)"
+        aria-describedby="tower-laboratory-hint"
+      >
+        @for(source of laboratoryFloors();track source){
+        <option [value]="source" [selected]="activeDraft.laboratoryFloor === source.toString()">
+          Floor {{ source }}
+        </option>
+        }
+      </select>
+      <p class="field-hint" id="tower-laboratory-hint">
+        Cauldron, workbench, and bookshelf each block one square. The arrangement stays fixed when
+        you shuffle. Generate to apply.
+      </p>
+    </div>
+    } } @if (selectedCharacter(); as choice) {
     <fieldset class="preset-field">
       <legend>Character <span>YOUR MAP'S IDENTITY</span></legend>
       <button
@@ -168,7 +188,7 @@
         {{ choice.description }} Choose a character, then Generate to apply.
       </p>
     </fieldset>
-    } @if(activeDraft.type !== 'tower') {
+    }
     <fieldset class="additions-field" aria-describedby="additions-hint">
       <legend>Add to this map</legend>
       @if (selectedAdditions().length) {
@@ -193,7 +213,6 @@
       </button>
       <p class="field-hint" id="additions-hint">Choose any combination. Generate to apply.</p>
     </fieldset>
-    }
     <fieldset class="density-field">
       <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
       @let selectedDensity = activeDraft.density;

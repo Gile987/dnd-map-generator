@@ -4,7 +4,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '14.0.0';
+export const SAVE_FORMAT_VERSION = '15.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -160,8 +160,16 @@ const FORMAT_14_VOCABULARY: SaveVocabulary = {
   towerStairStyles: ['separate', 'spiral'],
 };
 
+const FORMAT_15_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_14_VOCABULARY,
+  towerLaboratoryFloors: [1, 2, 3, 4, 5, 6, 7, 8],
+  propKinds: [...FORMAT_14_VOCABULARY.propKinds, 'cauldron'],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '15.0.0':
+      return FORMAT_15_VOCABULARY;
     case '14.0.0':
       return FORMAT_14_VOCABULARY;
     case '13.0.0':
@@ -323,7 +331,7 @@ export function makeSavedMap(
 
 export function mapSummary(map: GeneratedMap): string {
   if (map.type === 'tower')
-    return `${map.layout.floors.length} floors · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · Wizard’s tower · ${map.decoration.density} r${map.decoration.revision}`;
+    return `${map.layout.floors.length} floors · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · Wizard’s tower${map.decoration.laboratoryFloor !== undefined ? ' · Laboratory on floor ' + map.decoration.laboratoryFloor : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'courtyard')
     return `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'dungeon') {

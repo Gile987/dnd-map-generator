@@ -16,7 +16,10 @@ export interface PendingChange {
 }
 
 function additionNames(draft: SettingsDraft): string {
-  if (draft.type === 'tower') return 'None';
+  if (draft.type === 'tower')
+    return /^\d+$/.test(draft.laboratoryFloor) && draft.laboratoryFloor !== 'none'
+      ? 'Alchemist’s laboratory'
+      : 'None';
   if (draft.type === 'courtyard') return draft.fountain ? 'Dry fountain' : 'None';
   const names: string[] = [];
   if (draft.scene && draft.scene !== 'None') names.push(draft.scene);
@@ -60,6 +63,11 @@ export function pendingSettingChanges(
       'Secret portal',
       accepted.portalFloor === 'none' ? 'None' : `Floor ${accepted.portalFloor} → Secret floor`,
       draft.portalFloor === 'none' ? 'None' : `Floor ${draft.portalFloor} → Secret floor`,
+    );
+    add(
+      'Laboratory floor',
+      accepted.laboratoryFloor === 'none' ? 'None' : `Floor ${accepted.laboratoryFloor}`,
+      draft.laboratoryFloor === 'none' ? 'None' : `Floor ${draft.laboratoryFloor}`,
     );
   }
   if (accepted.type === 'dungeon' && draft.type === 'dungeon') {

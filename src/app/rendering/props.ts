@@ -7,6 +7,7 @@ import type { Prop, PropKind } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import { drawTent, drawBedroll, drawFireRing, drawSupplyBundle } from './camp-props';
 import { drawDesk, drawBookshelf, drawScrollCase } from './study-props';
+import { drawCauldron } from './laboratory-props';
 import {
   drawBarrel,
   drawBrokenColumn,
@@ -66,6 +67,7 @@ const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   scroll_case: drawScrollCase,
   dry_fountain: drawDryFountain,
   low_rubble: drawLowRubble,
+  cauldron: drawCauldron,
 };
 
 export function drawProp(

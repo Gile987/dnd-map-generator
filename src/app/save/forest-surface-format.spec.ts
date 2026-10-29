@@ -25,7 +25,7 @@ function record() {
 
 test('format 12 round-trips forest artwork metadata while all older vocabularies stay frozen', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('14.0.0');
+  expect(saved.saveFormatVersion).toBe('15.0.0');
   expect(saved.map.decoration).toHaveProperty('forestSurface', 1);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   if (saved.map.type !== 'forest') throw new Error('Missing forest');
@@ -44,7 +44,7 @@ test('loading, rewriting and backing up captured forests preserves every histori
   const parsed = parseBundle(JSON.stringify(fixture));
   if (!parsed.ok) throw new Error(parsed.error);
   expect(parsed.maps).toEqual(
-    fixture.maps.map((entry) => ({ ...entry, saveFormatVersion: '14.0.0' })),
+    fixture.maps.map((entry) => ({ ...entry, saveFormatVersion: '15.0.0' })),
   );
   for (const entry of parsed.maps) expect(entry.map.decoration).not.toHaveProperty('forestSurface');
   expect(parseBundle(serializeBundle(parsed.maps))).toEqual(parsed);

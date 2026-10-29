@@ -23,7 +23,7 @@ function record() {
 
 test('statue snapshots round-trip in current format and historical vocabularies reject new metadata and objects', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('14.0.0');
+  expect(saved.saveFormatVersion).toBe('15.0.0');
   expect(parseSavedMap(saved)).toEqual(saved);
   const historical = {
     ...saved,

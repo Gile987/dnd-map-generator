@@ -297,7 +297,7 @@ test('a filtered-out save and a full-library backup retain their exact models', 
   const download = await pending;
   const bundle: unknown = JSON.parse((await readFile(await download.path())).toString());
   expect(bundle).toMatchObject({
-    saveFormatVersion: '14.0.0',
+    saveFormatVersion: '15.0.0',
     maps: expect.arrayContaining(
       records.map((record) => expect.objectContaining({ id: record.id, map: record.map })),
     ),
