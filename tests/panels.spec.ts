@@ -1,3 +1,4 @@
+import { openCharacters } from './characters';
 import { openAdditions, selectedAddition, setAddition } from './additions';
 import { expect, test } from '@playwright/test';
 
@@ -195,9 +196,11 @@ test('panel landmarks retain descriptions and native keyboard submission applies
 
   await seed.fill('keyboard-crypt');
   await rooms.fill('4');
-  await settings.getByRole('radio', { name: 'Mosslit', exact: true }).focus();
+  const characters = await openCharacters(page);
+  await characters.getByRole('radio', { name: 'Mosslit stone', exact: true }).focus();
   await page.keyboard.press('ArrowRight');
-  await expect(settings.getByRole('radio', { name: 'Crypt', exact: true })).toBeChecked();
+  await expect(characters.getByRole('radio', { name: 'Ancient crypt', exact: true })).toBeChecked();
+  await characters.getByRole('button', { name: 'Done', exact: true }).click();
   await expect(map.locator('#map-summary')).toContainText('Mosslit · Balanced r0');
   await seed.press('Enter');
   await expect(map.locator('#map-summary')).toContainText('keyboard-crypt');

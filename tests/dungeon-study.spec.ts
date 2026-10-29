@@ -1,3 +1,4 @@
+import { selectCharacter } from './characters';
 import { selectedAddition, setAddition } from './additions';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
@@ -60,7 +61,7 @@ test('study settings preserve layouts and drafts through shuffle, switching and 
   expect(shuffled.layout).toEqual(study.layout);
   await page.getByRole('button', { name: 'Reset changes' }).click();
   await expect(selectedAddition(page, 'Forgotten study')).toBeVisible();
-  await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await selectCharacter(page, 'Crypt');
   await page.getByRole('radio', { name: 'Cluttered', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   const crypt = await snapshot(page, 'Crypt study');

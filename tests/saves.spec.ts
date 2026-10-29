@@ -1,3 +1,4 @@
+import { selectCharacter, characterLabel } from './characters';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
@@ -76,7 +77,9 @@ test('imports a v3 library, reopens its original settings, and exports current-f
   await itemByName(page, 'ancient-grove legacy clearing')
     .getByRole('button', { name: 'Open', exact: true })
     .click();
-  await expect(page.getByRole('radio', { name: 'Verdant woodland', exact: true })).toBeChecked();
+  await expect(page.locator('#character-selection strong')).toHaveText(
+    characterLabel('Verdant woodland'),
+  );
   await expect(page.getByRole('radio', { name: 'Cluttered', exact: true })).toBeChecked();
   await expect(page.locator('#map-summary')).toContainText('Verdant · Cluttered r2');
   await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
@@ -96,7 +99,7 @@ test('imports a v3 library, reopens its original settings, and exports current-f
 test('a Fey save survives a current-format backup round trip and refresh', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
-  await page.getByRole('radio', { name: 'Fey glade', exact: true }).check();
+  await selectCharacter(page, 'Fey glade');
   await page.getByRole('button', { name: 'Generate forest' }).click();
   await expect(page.locator('#map-summary')).toContainText('Fey · Balanced r0');
   await page.locator('#save-name').fill('Fey backup');
@@ -116,7 +119,7 @@ test('a Fey save survives a current-format backup round trip and refresh', async
   await expect(itemByName(page, 'Fey backup')).toBeVisible();
   await page.reload();
   await itemByName(page, 'Fey backup').getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(page.getByRole('radio', { name: 'Fey glade', exact: true })).toBeChecked();
+  await expect(page.locator('#character-selection strong')).toHaveText(characterLabel('Fey glade'));
   await expect(page.locator('#map-summary')).toContainText('Fey · Balanced r0');
   await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
 });
@@ -129,7 +132,7 @@ test('saves a generated map, restores it after refresh, and keeps drafts out of 
 
   await page.getByLabel('World seed').fill('amber-vault');
   await page.getByRole('spinbutton', { name: 'Rooms' }).fill('4');
-  await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await selectCharacter(page, 'Crypt');
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('amber-vault');
   await expect(page.locator('#map-summary')).toContainText('4 connected');

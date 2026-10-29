@@ -1,3 +1,4 @@
+import { selectCharacter } from './characters';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { expect, test } from '@playwright/test';
@@ -86,7 +87,7 @@ test('new forest surface art survives refresh, backup/share import and VTT expor
 }) => {
   await page.goto('/');
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
-  await page.getByRole('radio', { name: 'Autumn grove', exact: true }).check();
+  await selectCharacter(page, 'Autumn grove');
   await setAddition(page, 'Abandoned camp');
   await page.getByRole('button', { name: 'Generate forest', exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('Abandoned camp');
@@ -153,7 +154,7 @@ test('surface details follow accepted character and additions while drafts, focu
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
   const original = await snapshot(page, 'Original clearing');
   const before = await download(page, 'Quick export PNG');
-  await page.getByRole('radio', { name: 'Fey glade', exact: true }).check();
+  await selectCharacter(page, 'Fey glade');
   await setAddition(page, 'Abandoned camp');
   expect(await snapshot(page, 'Unapplied forest choices')).toEqual(original);
   expect((await download(page, 'Quick export PNG')).bytes).toEqual(before.bytes);
