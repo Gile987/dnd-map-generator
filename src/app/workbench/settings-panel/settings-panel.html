@@ -87,42 +87,27 @@
       </div>
       <p class="field-hint" id="room-hint">Connected chambers. Unexpected turns.</p>
     </div>
+    } @if (selectedCharacter(); as choice) {
     <fieldset class="preset-field">
-      <legend>Character <span>THE DUNGEON'S IDENTITY</span></legend>
-      @let selectedPreset = activeDraft.preset;
-      <div class="preset-options">
-        @for (preset of presets; track preset) {
-        <label [class.selected]="selectedPreset === preset"
-          ><input
-            type="radio"
-            name="preset"
-            [value]="preset"
-            [checked]="selectedPreset === preset"
-            (change)="draftChanged.emit({ type: 'dungeon', changes: { preset: preset } })"
-          /><span>{{ preset }}</span></label
-        >
-        }
-      </div>
-      <p class="field-hint">{{ draftStyleDescription() }}</p>
-    </fieldset>
-    } @if (activeDraft.type === 'forest') {
-    <fieldset class="preset-field">
-      <legend>Character <span>THE CLEARING'S IDENTITY</span></legend>
-      @let selectedCharacter = activeDraft.character;
-      <div class="preset-options">
-        @for (item of characters; track item) {
-        <label [class.selected]="selectedCharacter === item"
-          ><input
-            type="radio"
-            name="character"
-            [value]="item"
-            [checked]="selectedCharacter === item"
-            (change)="draftChanged.emit({ type: 'forest', changes: { character: item } })"
-          /><span>{{ characterNames[item] }}</span></label
-        >
-        }
-      </div>
-      <p class="field-hint">{{ draftStyleDescription() }}</p>
+      <legend>Character <span>YOUR MAP'S IDENTITY</span></legend>
+      <button
+        class="choose-character"
+        type="button"
+        aria-label="Choose character"
+        aria-describedby="character-selection character-hint"
+        [disabled]="disabled()"
+        (click)="openCharacterPicker()"
+      >
+        <img [forgeCharacterPreview]="choice" width="96" height="60" alt="" />
+        <span class="character-selection" id="character-selection"
+          ><strong>{{ choice.label }}</strong> @if (characterPending()) {
+          <span class="character-pending">Pending</span> }
+          <span class="character-change">Change character <forge-icon name="arrow" /></span>
+        </span>
+      </button>
+      <p class="field-hint" id="character-hint">
+        {{ choice.description }} Choose a character, then Generate to apply.
+      </p>
     </fieldset>
     }
     <fieldset class="additions-field" aria-describedby="additions-hint">
@@ -207,6 +192,14 @@
     }
   </fieldset>
 </form>
+@if (selectedCharacter(); as choice) {
+<forge-character-picker
+  [options]="characterOptions()"
+  [selected]="choice.id"
+  [disabled]="disabled()"
+  (changed)="draftChanged.emit($event)"
+/>
+}
 <forge-addition-picker
   #picker
   [additions]="additions()"

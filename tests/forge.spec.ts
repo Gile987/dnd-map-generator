@@ -1,3 +1,4 @@
+import { selectCharacter, characterLabel } from './characters';
 import { expect, test } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -179,16 +180,16 @@ test('preset and density drafts wait for Generate and exports use the displayed 
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await selectCharacter(page, 'Crypt');
   await expect(page.locator('#map-summary')).toContainText('Mosslit');
   await page.getByLabel('World seed').fill('draft-seed');
   await expect(page.getByRole('region', { name: 'Pending changes', exact: true })).toBeVisible();
-  await page.getByRole('radio', { name: 'Sanctuary', exact: true }).check();
+  await selectCharacter(page, 'Sanctuary');
   await expect(page.locator('#map-summary')).toContainText('Mosslit');
   await expect(page.locator('#map-summary')).not.toContainText('draft-seed');
   await page.getByRole('button', { name: 'Shuffle details' }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
-  await page.getByRole('radio', { name: 'Storehouse', exact: true }).check();
+  await selectCharacter(page, 'Storehouse');
   await page.getByRole('radio', { name: 'Cluttered' }).check();
   await expect(page.locator('#map-summary')).toContainText('Mosslit · Balanced r1');
   const downloadPromise = page.waitForEvent('download');
@@ -259,7 +260,7 @@ test('map-type selector switches between dungeon and forest, preserves per-type 
   await expect(page.locator('#map-summary')).toContainText('connected');
   await expect(page.getByRole('button', { name: 'Generate dungeon' })).toBeVisible();
 
-  await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await selectCharacter(page, 'Crypt');
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('Crypt');
 
@@ -273,9 +274,11 @@ test('map-type selector switches between dungeon and forest, preserves per-type 
   await expect(page.locator('#map-summary')).toContainText('Verdant · Balanced r0');
   await expect(page.getByRole('button', { name: 'Generate forest' })).toBeVisible();
   await expect(page.locator('#map-summary')).not.toContainText('connected');
-  await expect(page.getByRole('radio', { name: 'Verdant woodland' })).toBeChecked();
+  await expect(page.locator('#character-selection strong')).toHaveText(
+    characterLabel('Verdant woodland'),
+  );
 
-  await page.getByRole('radio', { name: 'Autumn grove' }).check();
+  await selectCharacter(page, 'Autumn grove');
   await expect(page.locator('#map-summary')).toContainText('Verdant · Balanced r0');
   await expect(page.getByRole('button', { name: 'Generate forest' })).toBeEnabled();
   await page.getByRole('button', { name: 'Generate forest' }).click();

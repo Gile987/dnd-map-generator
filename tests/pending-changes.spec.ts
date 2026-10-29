@@ -1,3 +1,4 @@
+import { selectCharacter } from './characters';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -36,9 +37,8 @@ for (const type of ['Dungeon', 'Forest', 'Courtyard'] as const) {
     const accepted = await page.locator('#map-summary').textContent();
     await expect(summary(page)).toBeHidden();
     await page.getByRole('radio', { name: 'Sparse', exact: true }).check();
-    if (type === 'Dungeon') await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
-    else if (type === 'Forest')
-      await page.getByRole('radio', { name: 'Fey glade', exact: true }).check();
+    if (type === 'Dungeon') await selectCharacter(page, 'Crypt');
+    else if (type === 'Forest') await selectCharacter(page, 'Fey glade');
     else await setAddition(page, 'Dry fountain');
     await expect(summary(page)).toContainText('Balanced');
     await expect(summary(page)).toContainText('Sparse');
@@ -114,7 +114,7 @@ test('per-type summaries survive focus, save and export without applying their d
 }) => {
   await page.goto('/');
   const before = await png(page);
-  await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await selectCharacter(page, 'Crypt');
   await selectType(page, 'Forest');
   await page.getByLabel('World seed').fill('unapplied-forest-summary');
   await expect(summary(page)).toContainText('Generate creates a new layout.');
@@ -151,7 +151,7 @@ for (const width of [320, 390, 768, 1440]) {
     await page.goto('/');
     await page.getByLabel('World seed').fill('x'.repeat(64));
     await page.getByRole('spinbutton', { name: /^Rooms/ }).fill('8');
-    await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+    await selectCharacter(page, 'Crypt');
     for (const addition of ['Forgotten study', 'Weathered statue', 'Dining table'])
       await setAddition(page, addition);
     await page.getByRole('radio', { name: 'Cluttered', exact: true }).check();
@@ -187,7 +187,7 @@ test('pending changes stay readable and reset is disabled while exporting, then 
 }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto('/');
-  await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await selectCharacter(page, 'Crypt');
   await page.evaluate(() => {
     const original = HTMLCanvasElement.prototype.toBlob;
     HTMLCanvasElement.prototype.toBlob = function (callback) {

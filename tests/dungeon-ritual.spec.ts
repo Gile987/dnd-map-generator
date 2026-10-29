@@ -1,3 +1,4 @@
+import { selectCharacter } from './characters';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -92,7 +93,7 @@ test('ritual picker is illustrated and searchable, drafts stay pending, and hist
   await expect(page.locator('#map-summary')).toContainText('r1');
   expect(await snapshot(page, 'Redone ritual')).toEqual(shuffled);
   await page.getByRole('button', { name: 'Reset changes', exact: true }).click();
-  await page.getByRole('radio', { name: 'Crypt', exact: true }).check();
+  await selectCharacter(page, 'Crypt');
   await page.getByRole('radio', { name: 'Cluttered', exact: true }).check();
   await page.getByRole('button', { name: 'Generate dungeon', exact: true }).click();
   const crypt = await snapshot(page, 'Crypt ritual');

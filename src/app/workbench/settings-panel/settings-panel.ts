@@ -1,12 +1,13 @@
 import { LANDMARK_CATALOG, landmarkIdsFor } from '../../engine/landmark-catalog';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import {
-  ALL_DENSITIES,
-  ALL_FOREST_CHARACTERS,
-  ALL_PRESETS,
-  ROOM_MAX,
-  ROOM_MIN,
-} from '../../engine/model';
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
+import { ALL_DENSITIES, ROOM_MAX, ROOM_MIN } from '../../engine/model';
 import type { GeneratedMap, MapType } from '../../engine/model';
 import { Icon } from '../../icon';
 import {
@@ -26,10 +27,13 @@ import { AdditionPicker } from '../addition-picker/addition-picker';
 import type { MapAddition } from '../addition-picker/addition-picker';
 import type { GenerationEffect, ShuffleHistoryStatus } from '../workbench-session';
 import { pendingSettingChanges } from '../pending-changes';
+import { CharacterPicker } from '../character-picker/character-picker';
+import { CharacterPreview } from '../character-picker/character-preview';
+import { CHARACTER_OPTIONS } from '../character-picker/character-options';
 
 @Component({
   selector: 'aside[forge-settings-panel]',
-  imports: [Icon, AdditionPicker],
+  imports: [Icon, AdditionPicker, CharacterPicker, CharacterPreview],
   templateUrl: './settings-panel.html',
   styleUrl: './settings-panel.scss',
   host: { class: 'settings-panel', 'aria-label': 'Map settings' },
@@ -53,6 +57,12 @@ export class SettingsPanel {
   readonly shuffleRequested = output<void>();
   readonly undoShuffleRequested = output<void>();
   readonly redoShuffleRequested = output<void>();
+
+  private readonly characterPicker = viewChild(CharacterPicker);
+
+  protected openCharacterPicker(): void {
+    if (!this.disabled()) this.characterPicker()?.show();
+  }
 
   protected readonly changes = computed(() => pendingSettingChanges(this.map(), this.draft()));
   protected readonly generationMessages: Readonly<Record<GenerationEffect, string>> = {
@@ -143,9 +153,6 @@ export class SettingsPanel {
     this.additions().filter((item) => item.checked),
   );
   protected readonly densities = ALL_DENSITIES;
-  protected readonly presets = ALL_PRESETS;
-  protected readonly characters = ALL_FOREST_CHARACTERS;
-  protected readonly characterNames = CHARACTER_LABELS;
   protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest', 'courtyard'];
   protected readonly mapTypeLabels = MAP_TYPE_LABELS;
   protected readonly mapTypeIcons = MAP_TYPE_ICONS;
@@ -189,12 +196,28 @@ export class SettingsPanel {
   protected readonly densityDescription = computed(
     () => DENSITY_DESCRIPTIONS[this.draft().density],
   );
-  protected readonly draftStyleDescription = computed(() => {
+  protected readonly characterOptions = computed(() => {
+    const type = this.draft().type;
+    return type === 'courtyard' ? [] : CHARACTER_OPTIONS[type];
+  });
+  protected readonly selectedCharacter = computed(() => {
     const draft = this.draft();
-    if (draft.type === 'courtyard') return COURTYARD_DESCRIPTION;
-    return draft.type === 'dungeon'
-      ? PRESET_DESCRIPTIONS[draft.preset]
-      : CHARACTER_DESCRIPTIONS[draft.character];
+    const id =
+      draft.type === 'dungeon'
+        ? draft.preset
+        : draft.type === 'forest'
+          ? draft.character
+          : undefined;
+    return this.characterOptions().find((choice) => choice.id === id);
+  });
+  protected readonly characterPending = computed(() => {
+    const choice = this.selectedCharacter(),
+      map = this.map();
+    if (choice?.type === 'dungeon' && map.type === 'dungeon')
+      return choice.id !== map.decoration.preset;
+    if (choice?.type === 'forest' && map.type === 'forest')
+      return choice.id !== map.decoration.character;
+    return false;
   });
   protected readonly styleDescription = computed(() => {
     const map = this.map();

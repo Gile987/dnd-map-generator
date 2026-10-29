@@ -1,3 +1,4 @@
+import { selectCharacter } from './characters';
 import { selectedAddition, setAddition } from './additions';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
@@ -51,7 +52,7 @@ test('camp drafts preserve accepted maps and apply without rebuilding the cleari
   expect(shuffled.decoration.props).not.toEqual(camp.decoration.props);
   await page.getByRole('button', { name: 'Reset changes' }).click();
   await expect(selectedAddition(page, 'Abandoned camp')).toBeVisible();
-  await page.getByRole('radio', { name: 'Fey glade', exact: true }).check();
+  await selectCharacter(page, 'Fey glade');
   await page.getByRole('radio', { name: 'Sparse', exact: true }).check();
   await page.getByRole('button', { name: 'Generate forest' }).click();
   const fey = await snapshot(page, 'Fey camp');

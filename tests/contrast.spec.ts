@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { openAdditions } from './additions';
+import { openCharacters } from './characters';
 import { SAVE_STORAGE_KEY } from '../src/app/save/save-format';
 
 interface Reading {
@@ -221,9 +222,7 @@ for (const width of [1440, 768, 320]) {
         `${type} settings`,
         readings,
       );
-      for (const label of await page
-        .locator('.preset-options label, .density-options label')
-        .all()) {
+      for (const label of await page.locator('.density-options label').all()) {
         const input = label.locator('input');
         const text = label.locator('span');
         await checkContrast(text, `${type} option normal`, readings);
@@ -235,6 +234,38 @@ for (const width of [1440, 768, 320]) {
         await checkContrast(text, `${type} option keyboard focus`, readings);
         await input.check();
         await checkContrast(text, `${type} option selected`, readings);
+      }
+      if (type !== 'Courtyard') {
+        await checkContrast(
+          page.locator('.choose-character strong, .character-change, #character-hint'),
+          `${type} selected character`,
+          readings,
+        );
+        const characters = await openCharacters(page);
+        await checkContrast(
+          characters.locator('h2, .eyebrow, #character-picker-hint, footer > span, .done-button'),
+          `${type} character dialog`,
+          readings,
+        );
+        for (const card of await characters.locator('.character-option').all()) {
+          const text = card.locator('.character-copy > *');
+          const radio = card.getByRole('radio');
+          await checkContrast(text, `${type} character normal`, readings);
+          await card.hover();
+          await checkContrast(text, `${type} character hover`, readings);
+          await page.keyboard.press('Tab');
+          await radio.focus();
+          expect(await radio.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+          await checkContrast(text, `${type} character focus`, readings);
+          await radio.check();
+          await checkContrast(text, `${type} character selected`, readings);
+        }
+        await characters.getByRole('button', { name: 'Done', exact: true }).click();
+        await checkContrast(
+          page.locator('.character-pending'),
+          `${type} pending character`,
+          readings,
+        );
       }
       const picker = await openAdditions(page);
       await checkContrast(
