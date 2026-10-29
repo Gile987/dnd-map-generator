@@ -96,7 +96,7 @@ test('new forest surface art survives refresh, backup/share import and VTT expor
   const before = await download(page, 'Quick export PNG');
   const backup = await download(page, 'Download backup');
   expect(JSON.parse(backup.bytes.toString())).toMatchObject({
-    saveFormatVersion: '14.0.0',
+    saveFormatVersion: '15.0.0',
     maps: [{ map: { decoration: { forestSurface: 1 } } }],
   });
   await page.reload();

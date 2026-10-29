@@ -1,7 +1,7 @@
 import type { Tower } from '../engine/tower';
 import {
   generateTower,
-  changeTowerDensity,
+  changeTowerAppearance,
   shuffleTowerDetails,
   towerStairStyle,
   DEFAULT_TOWER_STAIR_STYLE,
@@ -144,6 +144,7 @@ function initialState(): SessionState {
     seed: 'astral-watch',
     floorCount: 4,
     portalFloor: null,
+    laboratoryFloor: null,
     density: 'Balanced',
   });
   if (!tower.ok) throw new Error(tower.error);
@@ -225,10 +226,19 @@ export class WorkbenchSession {
   });
   readonly pending = computed(() => {
     const state = this.state();
-    if (state.type === 'tower')
+    if (state.type === 'tower') {
+      const draft = state.drafts.tower,
+        decoration = state.maps.tower.decoration;
       return (
-        this.layoutPending() || state.drafts.tower.density !== state.maps.tower.decoration.density
+        this.layoutPending() ||
+        draft.density !== decoration.density ||
+        (draft.laboratoryFloor === 'none'
+          ? null
+          : /^\d+$/.test(draft.laboratoryFloor)
+            ? Number(draft.laboratoryFloor)
+            : NaN) !== (decoration.laboratoryFloor ?? null)
       );
+    }
     if (state.type === 'courtyard') {
       const draft = state.drafts.courtyard;
       const decoration = state.maps.courtyard.decoration;
@@ -429,7 +439,7 @@ export class WorkbenchSession {
         const result = generateTower(parsed.settings);
         if (!result.ok) return result;
         next = result.map;
-      } else next = changeTowerDensity(state.maps.tower, parsed.settings.density);
+      } else next = changeTowerAppearance(state.maps.tower, parsed.settings);
     } else if (parsed.type === 'courtyard') {
       if (layoutChanged) {
         const result = generateCourtyard(parsed.settings);
@@ -494,6 +504,15 @@ export class WorkbenchSession {
       }
       next = dungeon;
     }
+    if (
+      next.type === 'tower' &&
+      parsed.type === 'tower' &&
+      next.decoration.laboratoryFloor !== (parsed.settings.laboratoryFloor ?? undefined)
+    )
+      return {
+        ok: false,
+        error: 'That laboratory could not fit on that floor. Try another floor or seed.',
+      };
     if (next.decoration.density !== parsed.settings.density) {
       return {
         ok: false,

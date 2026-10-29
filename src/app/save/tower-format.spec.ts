@@ -30,7 +30,7 @@ test('format 14 round-trips both staircase styles and older vocabularies reject 
           'tower',
           '2026-10-29T12:00:00Z',
         );
-        expect(saved.saveFormatVersion).toBe('14.0.0');
+        expect(saved.saveFormatVersion).toBe('15.0.0');
         expect(isUsableMap(map)).toBe(true);
         expect(map.layout.stairStyle).toBe(stairStyle);
         expect(parseSavedMap({ ...saved, saveFormatVersion: '13.0.0' })).toBeUndefined();

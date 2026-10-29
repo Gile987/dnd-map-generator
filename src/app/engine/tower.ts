@@ -1,7 +1,8 @@
 import type { Density, Point, Prop, TileArea } from './model';
-import { ALL_DENSITIES, isBlockingProp } from './model';
+import { ALL_DENSITIES, DENSITY_BUDGETS, isBlockingProp } from './model';
 import { isDetailRevision, nextDetailRevision } from './decoration-revision';
 import { Random, hashSeed } from './random';
+import { towerLaboratoryProps, laboratoryFloorUsable } from './tower-laboratory';
 
 // Tower has its own stream version: existing generators and artwork stay unchanged.
 export const TOWER_GENERATOR_VERSION = '3.0.0';
@@ -19,6 +20,7 @@ export interface TowerSettings {
   readonly seed: string;
   readonly floorCount: number;
   readonly portalFloor: number | null;
+  readonly laboratoryFloor?: number | null;
   readonly density: Density;
 }
 export interface TowerFloor extends TileArea {
@@ -51,6 +53,7 @@ export interface Tower {
   readonly decoration: {
     readonly density: Density;
     readonly revision: number;
+    readonly laboratoryFloor?: number;
     readonly props: readonly Prop[];
   };
 }
@@ -92,6 +95,13 @@ export function validateTowerSettings(settings: TowerSettings): string | undefin
     !TOWER_STAIR_STYLES.some((style) => style === settings.stairStyle)
   )
     return 'Choose a supported staircase style.';
+  if (
+    settings.laboratoryFloor != null &&
+    (!Number.isInteger(settings.laboratoryFloor) ||
+      settings.laboratoryFloor < 1 ||
+      settings.laboratoryFloor > settings.floorCount)
+  )
+    return 'Choose a floor for the laboratory.';
   if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a supported decoration density.';
   return undefined;
 }
@@ -241,17 +251,26 @@ export function towerFloorAt(map: Tower, p: Point): TowerFloor | undefined {
     (f) => p.x >= f.x && p.y >= f.y && p.x < f.x + f.width && p.y < f.y + f.height,
   );
 }
-function reserved(layout: Tower['layout'], p: Point, version: string): boolean {
+// Stairs, portals and their landings claim their tiles on every floor they touch.
+export function towerConnectionReserved(
+  layout: Tower['layout'],
+  p: Point,
+  version: string,
+): boolean {
   const spiral = towerStairStyle({ layout, version }) === 'spiral';
+  return layout.connections.some((c) =>
+    [c.departure, c.arrival].some(
+      (end) =>
+        Math.abs(end.x - p.x) <= (spiral && c.kind === 'stairs' ? 2 : 1) &&
+        p.y >= end.y - 1 &&
+        p.y <= end.y + (spiral && c.kind === 'stairs' ? 3 : 2),
+    ),
+  );
+}
+function reserved(layout: Tower['layout'], p: Point, version: string): boolean {
   return (
-    layout.connections.some((c) =>
-      [c.departure, c.arrival].some(
-        (end) =>
-          Math.abs(end.x - p.x) <= (spiral && c.kind === 'stairs' ? 2 : 1) &&
-          p.y >= end.y - 1 &&
-          p.y <= end.y + (spiral && c.kind === 'stairs' ? 3 : 2),
-      ),
-    ) || layout.floors.some((f) => Math.abs(f.x + 6 - p.x) <= 1 && Math.abs(f.y + 6 - p.y) <= 1)
+    towerConnectionReserved(layout, p, version) ||
+    layout.floors.some((f) => Math.abs(f.x + 6 - p.x) <= 1 && Math.abs(f.y + 6 - p.y) <= 1)
   );
 }
 function decorate(
@@ -260,8 +279,19 @@ function decorate(
   density: Density,
   revision: number,
   version: string,
-): Tower['decoration'] {
+  laboratoryFloor?: number | null,
+): Tower['decoration'] | undefined {
   const random = new Random(hashSeed(`tower:${version}:${seed}:details:${revision}`));
+  // The laboratory draws from its own deterministic placement, never from the
+  // details stream, so toggling it leaves every other floor's objects in place.
+  const laboratory =
+    laboratoryFloor == null
+      ? undefined
+      : towerLaboratoryProps(layout, laboratoryFloor, (p) =>
+          towerConnectionReserved(layout, p, version),
+        );
+  if (laboratoryFloor != null && !laboratory) return undefined;
+  const laboratoryTiles = new Set(laboratory?.map((p) => `${p.x},${p.y}`) ?? []);
   const props: Prop[] = [];
   const furnishings = [
     ['crate', 'barrel', 'crate', 'moss'],
@@ -297,7 +327,59 @@ function decorate(
       });
     }
   }
-  return { density, revision, props };
+  // Consume the original details stream before removing occupied laboratory cells.
+  // This preserves every unrelated floor, even when a laboratory replaces props.
+  let ordinary = props.filter((p) => !laboratoryTiles.has(`${p.x},${p.y}`));
+  const floor = layout.floors.find((f) => f.number === laboratoryFloor);
+  if (floor && laboratory) {
+    const area = layout.tiles.filter(
+      (tile, i) =>
+        tile &&
+        i % layout.width >= floor.x &&
+        i % layout.width < floor.x + floor.width &&
+        Math.floor(i / layout.width) >= floor.y &&
+        Math.floor(i / layout.width) < floor.y + floor.height,
+    ).length;
+    let remaining =
+      Math.floor(area * DENSITY_BUDGETS[density]) - laboratory.filter((p) => p.blocking).length;
+    ordinary = ordinary.filter((p) => {
+      if (
+        !p.blocking ||
+        p.x < floor.x ||
+        p.x >= floor.x + floor.width ||
+        p.y < floor.y ||
+        p.y >= floor.y + floor.height
+      )
+        return true;
+      return remaining-- > 0;
+    });
+  }
+  if (laboratory && laboratoryFloor != null && floor) {
+    while (!laboratoryFloorUsable(layout, laboratoryFloor, [...laboratory, ...ordinary], density)) {
+      let index = -1;
+      for (let i = ordinary.length - 1; i >= 0; i--) {
+        const p = ordinary[i];
+        if (
+          p?.blocking &&
+          p.x >= floor.x &&
+          p.x < floor.x + floor.width &&
+          p.y >= floor.y &&
+          p.y < floor.y + floor.height
+        ) {
+          index = i;
+          break;
+        }
+      }
+      if (index < 0) return undefined;
+      ordinary = ordinary.filter((_, i) => i !== index);
+    }
+  }
+  return {
+    density,
+    revision,
+    ...(laboratory && laboratoryFloor != null ? { laboratoryFloor } : {}),
+    props: laboratory ? [...laboratory, ...ordinary] : props,
+  };
 }
 export function generateTower(
   settings: TowerSettings,
@@ -312,6 +394,19 @@ export function generateTower(
     TOWER_GENERATOR_VERSION,
     settings.stairStyle ?? DEFAULT_TOWER_STAIR_STYLE,
   );
+  const decoration = decorate(
+    seed,
+    layout,
+    settings.density,
+    0,
+    TOWER_GENERATOR_VERSION,
+    settings.laboratoryFloor,
+  );
+  if (!decoration)
+    return {
+      ok: false,
+      error: 'That laboratory could not fit on that floor. Try another floor or seed.',
+    };
   return {
     ok: true,
     map: {
@@ -320,24 +415,45 @@ export function generateTower(
       seed,
       layout,
       surfaceSeed: hashSeed(`tower:${TOWER_GENERATOR_VERSION}:${seed}:surface`),
-      decoration: decorate(seed, layout, settings.density, 0, TOWER_GENERATOR_VERSION),
+      decoration,
     },
   };
 }
 export function changeTowerDensity(map: Tower, density: Density): Tower {
-  return ALL_DENSITIES.includes(density)
-    ? {
-        ...map,
-        decoration: decorate(map.seed, map.layout, density, map.decoration.revision, map.version),
-      }
-    : map;
+  if (!ALL_DENSITIES.includes(density)) return map;
+  const decoration = decorate(
+    map.seed,
+    map.layout,
+    density,
+    map.decoration.revision,
+    map.version,
+    map.decoration.laboratoryFloor,
+  );
+  return decoration ? { ...map, decoration } : map;
+}
+export function changeTowerAppearance(map: Tower, settings: TowerSettings): Tower {
+  if (validateTowerSettings(settings)) return map;
+  const decoration = decorate(
+    map.seed,
+    map.layout,
+    settings.density,
+    map.decoration.revision,
+    map.version,
+    settings.laboratoryFloor,
+  );
+  return decoration ? { ...map, decoration } : map;
 }
 export function shuffleTowerDetails(map: Tower): Tower {
   const revision = nextDetailRevision(map.decoration.revision);
-  return {
-    ...map,
-    decoration: decorate(map.seed, map.layout, map.decoration.density, revision, map.version),
-  };
+  const decoration = decorate(
+    map.seed,
+    map.layout,
+    map.decoration.density,
+    revision,
+    map.version,
+    map.decoration.laboratoryFloor,
+  );
+  return decoration ? { ...map, decoration } : map;
 }
 function object(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -373,8 +489,13 @@ export function isUsableTower(value: unknown): value is Tower {
     d['forestSurface'] !== undefined ||
     d['studySurface'] !== undefined ||
     d['ritual'] !== undefined ||
+    (d['laboratoryFloor'] !== undefined &&
+      (typeof d['laboratoryFloor'] !== 'number' ||
+        !Number.isInteger(d['laboratoryFloor']) ||
+        d['laboratoryFloor'] < 1 ||
+        d['laboratoryFloor'] > l['floors'].length)) ||
     !Array.isArray(d['props']) ||
-    d['props'].length > 72 ||
+    d['props'].length > 77 ||
     !isDetailRevision(d['revision']) ||
     typeof d['density'] !== 'string' ||
     !ALL_DENSITIES.some((x) => x === d['density'])
@@ -440,6 +561,19 @@ export function isUsableTower(value: unknown): value is Tower {
   )
     return false;
   const occupied = new Set<string>();
+  const checkedCells: Pick<Prop, 'x' | 'y' | 'blocking'>[] = [];
+  const version = value['version'];
+  const laboratory =
+    d['laboratoryFloor'] === undefined
+      ? undefined
+      : towerLaboratoryProps(expected, d['laboratoryFloor'], (p) =>
+          towerConnectionReserved(expected, p, version),
+        );
+  // A stored laboratory must be exactly the placement the layout produces.
+  if (d['laboratoryFloor'] !== undefined && !laboratory) return false;
+  const laboratoryTiles = new Map<string, Prop>(
+    laboratory?.map((p) => [`${p.x},${p.y}`, p] as const) ?? [],
+  );
   for (const p of d['props']) {
     if (
       !object(p) ||
@@ -452,30 +586,46 @@ export function isUsableTower(value: unknown): value is Tower {
       p['x'] >= expected.width ||
       p['y'] >= expected.height ||
       !expected.tiles[p['y'] * expected.width + p['x']] ||
-      reserved(expected, { x: p['x'], y: p['y'] }, value['version']) ||
-      p['footprint'] !== undefined ||
-      p['rotation'] !== undefined ||
       typeof p['kind'] !== 'string' ||
-      ![
-        'crate',
-        'bookshelf',
-        'barrel',
-        'scroll_case',
-        'ritual_altar',
-        'bedroll',
-        'ritual_candles',
-        'desk',
-        'ritual_offering',
-        'moss',
-      ].includes(String(p['kind'])) ||
-      p['blocking'] !==
-        ['crate', 'bookshelf', 'barrel', 'ritual_altar', 'desk'].includes(String(p['kind'])) ||
       typeof p['variation'] !== 'number' ||
       !Number.isFinite(p['variation']) ||
       p['variation'] < 0 ||
       p['variation'] >= 1
     )
       return false;
+    const key = `${p['x']},${p['y']}`;
+    const expectedLaboratory = laboratoryTiles.get(key);
+    if (expectedLaboratory) {
+      if (
+        p['kind'] !== expectedLaboratory.kind ||
+        p['blocking'] !== expectedLaboratory.blocking ||
+        p['variation'] !== expectedLaboratory.variation ||
+        p['footprint'] !== undefined ||
+        p['rotation'] !== undefined
+      )
+        return false;
+    } else {
+      if (
+        reserved(expected, { x: p['x'], y: p['y'] }, value['version']) ||
+        p['footprint'] !== undefined ||
+        p['rotation'] !== undefined ||
+        ![
+          'crate',
+          'bookshelf',
+          'barrel',
+          'scroll_case',
+          'ritual_altar',
+          'bedroll',
+          'ritual_candles',
+          'desk',
+          'ritual_offering',
+          'moss',
+        ].includes(p['kind']) ||
+        p['blocking'] !==
+          ['crate', 'bookshelf', 'barrel', 'ritual_altar', 'desk'].includes(p['kind'])
+      )
+        return false;
+    }
     const f = expected.floors.find(
       (f) =>
         Number(p['x']) >= f.x &&
@@ -485,20 +635,33 @@ export function isUsableTower(value: unknown): value is Tower {
     );
     if (
       !f ||
-      Math.hypot(p['x'] + 0.5 - (f.x + 7), p['y'] + 0.5 - (f.y + 6.5)) < 3.8 ||
-      Math.hypot(p['x'] + 0.5 - (f.x + 7), p['y'] + 0.5 - (f.y + 6.5)) > 4.7
+      (!expectedLaboratory &&
+        (Math.hypot(p['x'] + 0.5 - (f.x + 7), p['y'] + 0.5 - (f.y + 6.5)) < 3.8 ||
+          Math.hypot(p['x'] + 0.5 - (f.x + 7), p['y'] + 0.5 - (f.y + 6.5)) > 4.7))
     )
       return false;
-    const key = `${p['x']},${p['y']}`;
     if (occupied.has(key)) return false;
     occupied.add(key);
+    checkedCells.push({ x: p['x'], y: p['y'], blocking: p['blocking'] === true });
   }
+  if (
+    d['laboratoryFloor'] !== undefined &&
+    !laboratoryFloorUsable(expected, d['laboratoryFloor'], checkedCells, d['density'] as Density)
+  )
+    return false;
   const props = d['props'];
+  if (
+    laboratoryTiles.size > 0 &&
+    props.filter((p) => object(p) && laboratoryTiles.has(`${p['x']},${p['y']}`)).length !==
+      laboratoryTiles.size
+  )
+    return false;
   return expected.floors.every(
     (f) =>
       props.filter(
         (p) =>
           object(p) &&
+          !laboratoryTiles.has(`${p['x']},${p['y']}`) &&
           Number(p['x']) >= f.x &&
           Number(p['x']) < f.x + f.width &&
           Number(p['y']) >= f.y &&

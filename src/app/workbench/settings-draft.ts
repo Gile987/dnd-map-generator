@@ -60,6 +60,7 @@ export interface TowerDraft extends CommonDraft {
   readonly stairStyle?: TowerStairStyle;
   readonly floors: string;
   readonly portalFloor: string;
+  readonly laboratoryFloor: string;
 }
 export function towerDraftForMap(map: Tower): TowerDraft {
   return {
@@ -69,6 +70,10 @@ export function towerDraftForMap(map: Tower): TowerDraft {
     density: map.decoration.density,
     floors: String(map.layout.floors.length),
     portalFloor: map.layout.portalFloor === null ? 'none' : String(map.layout.portalFloor),
+    laboratoryFloor:
+      map.decoration.laboratoryFloor === undefined
+        ? 'none'
+        : String(map.decoration.laboratoryFloor),
   };
 }
 export type SettingsDraft = DungeonDraft | ForestDraft | CourtyardDraft | TowerDraft;
@@ -123,6 +128,12 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
           ? null
           : /^\d+$/.test(draft.portalFloor)
             ? Number(draft.portalFloor)
+            : NaN,
+      laboratoryFloor:
+        draft.laboratoryFloor === 'none'
+          ? null
+          : /^\d+$/.test(draft.laboratoryFloor)
+            ? Number(draft.laboratoryFloor)
             : NaN,
     };
     const error = validateTowerSettings(settings);

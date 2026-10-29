@@ -1,7 +1,43 @@
 import '@angular/compiler';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
+import * as laboratory from '../engine/tower-laboratory';
 import { WorkbenchSession } from './workbench-session';
 import { pendingSettingChanges } from './pending-changes';
+
+test('refused laboratory and density changes report the laboratory failure and recover without losing state', () => {
+  const session = new WorkbenchSession();
+  session.selectMapType('tower');
+  session.pinCurrent();
+  session.shuffle();
+  session.updateDraft({ type: 'tower', changes: { laboratoryFloor: '2', density: 'Sparse' } });
+  const accepted = session.map();
+  const draft = session.draft();
+  const comparison = session.comparison();
+  const history = session.shuffleHistory();
+  const placement = vi.spyOn(laboratory, 'towerLaboratoryProps').mockReturnValue(undefined);
+  try {
+    expect(session.generate()).toEqual({
+      ok: false,
+      error: 'That laboratory could not fit on that floor. Try another floor or seed.',
+    });
+    expect(session.map()).toBe(accepted);
+    expect(session.currentMap()).toBe(accepted);
+    expect(session.draft()).toBe(draft);
+    expect(session.comparison()).toBe(comparison);
+    expect(session.shuffleHistory()).toEqual(history);
+    expect(session.pending()).toBe(true);
+  } finally {
+    placement.mockRestore();
+  }
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  expect(session.map().layout).toBe(accepted.layout);
+  expect(session.map().decoration).toMatchObject({
+    laboratoryFloor: 2,
+    density: 'Sparse',
+    revision: accepted.decoration.revision,
+  });
+  expect(session.pending()).toBe(false);
+});
 
 test('tower drafts, pins, retained maps, density, shuffle history, rejection and recovery follow the workbench contract', () => {
   const session = new WorkbenchSession(),
@@ -98,4 +134,53 @@ test('staircase choices remain drafts, reset and retain independently, then gene
   expect(session.map()).toBe(separate);
   session.resetChanges();
   expect(session.pending()).toBe(false);
+});
+
+test('laboratory choices retain accepted maps, drafts, pins and history until a successful appearance commit', () => {
+  const session = new WorkbenchSession();
+  session.selectMapType('tower');
+  const original = session.map();
+  session.shuffle();
+  const shuffled = session.map();
+  session.pinCurrent();
+  session.updateDraft({ type: 'tower', changes: { laboratoryFloor: '2' } });
+  expect(session.pending()).toBe(true);
+  expect(session.generationEffect()).toBe('appearance');
+  expect(session.map()).toBe(shuffled);
+  session.selectMapType('forest');
+  session.selectMapType('tower');
+  expect(session.draft()).toMatchObject({ laboratoryFloor: '2' });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const accepted = session.map();
+  if (accepted.type !== 'tower') throw new Error('Expected tower');
+  expect(accepted.decoration.laboratoryFloor).toBe(2);
+  expect(accepted.layout).toBe(original.layout);
+  expect(accepted.decoration.revision).toBe(shuffled.decoration.revision);
+  expect(session.shuffleHistory().undo).toBe(0);
+  session.updateDraft({ type: 'tower', changes: { laboratoryFloor: '3' } });
+  session.shuffle();
+  session.undoShuffle();
+  expect(session.map()).toBe(accepted);
+  expect(session.draft()).toMatchObject({ laboratoryFloor: '3' });
+  session.resetChanges();
+  expect(session.draft()).toMatchObject({ laboratoryFloor: '2' });
+  expect(session.pending()).toBe(false);
+  session.openSaved(accepted);
+  expect(session.draft()).toMatchObject({ laboratoryFloor: '2' });
+  session.updateDraft({ type: 'tower', changes: { laboratoryFloor: '99' } });
+  expect(session.generate().ok).toBe(false);
+  expect(session.map()).toBe(accepted);
+  expect(session.draft()).toMatchObject({ laboratoryFloor: '99' });
+  session.resetChanges();
+  expect(session.pending()).toBe(false);
+  session.updateDraft({ type: 'tower', changes: { laboratoryFloor: 'none' } });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const removed = session.map();
+  expect(removed.decoration).not.toHaveProperty('laboratoryFloor');
+  expect(removed.decoration.props.some((p) => p.kind === 'cauldron')).toBe(false);
+  session.updateDraft({ type: 'tower', changes: { laboratoryFloor: 'invalid' } });
+  expect(session.pending()).toBe(true);
+  expect(session.validationError()).toContain('laboratory');
+  expect(session.generate().ok).toBe(false);
+  expect(session.map()).toBe(removed);
 });

@@ -58,6 +58,7 @@ describe('production option constants', () => {
       'standing_stone',
       'low_rubble',
       'dry_fountain',
+      'cauldron',
     ]);
   });
 });

@@ -15,7 +15,7 @@ export function exportFilename(map: GeneratedMap, showSecrets = false): string {
       .slice(0, 64) || 'dungeon';
   const type = map.type;
   if (type === 'tower')
-    return `encounter-${seed}-tower-${map.layout.floors.length}floors${map.layout.stairStyle ? '-' + map.layout.stairStyle : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}${map.layout.portalFloor !== null ? (showSecrets ? '-gm-secrets' : '-player') : ''}.png`;
+    return `encounter-${seed}-tower-${map.layout.floors.length}floors${map.layout.stairStyle ? '-' + map.layout.stairStyle : ''}${map.decoration.laboratoryFloor !== undefined && (showSecrets || !map.layout.floors.find((f) => f.number === map.decoration.laboratoryFloor)?.secret) ? '-laboratory-floor-' + map.decoration.laboratoryFloor : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}${map.layout.portalFloor !== null ? (showSecrets ? '-gm-secrets' : '-player') : ''}.png`;
   if (type === 'courtyard')
     return `encounter-${seed}-courtyard${map.decoration.fountain ? '-dry-fountain' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   if (type === 'dungeon') {

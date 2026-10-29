@@ -26,7 +26,7 @@ function record() {
 
 test('format 10 preserves new surface artwork through backup round trips', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('14.0.0');
+  expect(saved.saveFormatVersion).toBe('15.0.0');
   expect(saved.map.decoration).toHaveProperty('studySurface', 1);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   for (let version = 1; version <= 9; version++) {
@@ -38,7 +38,7 @@ test('historical study models upgrade only the record version and never acquire 
   const snapshot = structuredClone(fixture);
   for (let version = 4; version <= 10; version++) {
     const stored = { ...fixture.maps[0], saveFormatVersion: `${version}.0.0` };
-    expect(parseSavedMap(stored)).toEqual({ ...stored, saveFormatVersion: '14.0.0' });
+    expect(parseSavedMap(stored)).toEqual({ ...stored, saveFormatVersion: '15.0.0' });
   }
   const parsed = parseBundle(JSON.stringify(fixture));
   if (!parsed.ok) throw new Error(parsed.error);
