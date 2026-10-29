@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   afterNextRender,
   inject,
   Injector,
@@ -9,7 +10,8 @@ import {
 } from '@angular/core';
 import type { GeneratedMap, MapType } from './engine/model';
 import { downloadPng } from './rendering/export';
-import { EXPORT_HEIGHT, EXPORT_WIDTH } from './rendering/resolution';
+import { mapDimensions } from './engine/model';
+import { PIXELS_PER_TILE } from './rendering/resolution';
 import { Icon } from './icon';
 import { Library } from './save/library';
 import { MapPanel } from './workbench/map-panel/map-panel';
@@ -53,12 +55,16 @@ export class App {
   protected readonly generationEffect = this.session.generationEffect;
   protected readonly shuffleHistory = this.session.shuffleHistory;
   protected readonly grid = signal(true);
+  protected readonly showSecrets = signal(false);
   protected readonly focused = signal(false);
   protected readonly busy = signal<Operation | null>(null);
   protected readonly error = signal('');
   protected readonly status = signal('Your dungeon is ready.');
   protected readonly attempted = signal(false);
-  protected readonly exportSize = `${EXPORT_WIDTH} × ${EXPORT_HEIGHT} px`;
+  protected readonly exportSize = computed(() => {
+    const { width, height } = mapDimensions(this.map());
+    return `${width * PIXELS_PER_TILE} × ${height * PIXELS_PER_TILE} px`;
+  });
 
   protected pinCurrent(): void {
     if (this.busy() || this.comparison().selected === 'pinned') return;
@@ -118,7 +124,9 @@ export class App {
     if (type === this.mapType()) return;
     await this.run('generation', () => {
       this.session.selectMapType(type);
-      if (type === 'courtyard') {
+      if (type === 'tower') {
+        this.status.set('Tower restored. Follow the matching floor connections.');
+      } else if (type === 'courtyard') {
         this.status.set('Ruined courtyard restored. Four open approaches await.');
       } else if (type === 'forest') {
         this.status.set('Forest clearing restored. A woodland path awaits.');
@@ -152,11 +160,13 @@ export class App {
       if (!this.session.shuffle())
         throw new Error('Those details could not be shuffled. Your displayed map is unchanged.');
       this.status.set(
-        this.map().type === 'courtyard'
-          ? 'Details shuffled. Courtyard walls, approaches, and paving are preserved.'
-          : this.map().type === 'dungeon'
-            ? 'Details shuffled. Your layout and floor texture are preserved.'
-            : 'Details shuffled. The clearing layout is preserved.',
+        this.map().type === 'tower'
+          ? 'Details shuffled. Floors, connections, and stonework are preserved.'
+          : this.map().type === 'courtyard'
+            ? 'Details shuffled. Courtyard walls, approaches, and paving are preserved.'
+            : this.map().type === 'dungeon'
+              ? 'Details shuffled. Your layout and floor texture are preserved.'
+              : 'Details shuffled. The clearing layout is preserved.',
       );
     });
   }
@@ -178,24 +188,28 @@ export class App {
     this.attempted.set(false);
     this.error.set('');
     this.status.set(
-      map.type === 'courtyard'
-        ? 'Courtyard opened from your library.'
-        : map.type === 'dungeon'
-          ? 'Map opened from your library.'
-          : 'Clearing opened from your library.',
+      map.type === 'tower'
+        ? 'Tower opened from your library.'
+        : map.type === 'courtyard'
+          ? 'Courtyard opened from your library.'
+          : map.type === 'dungeon'
+            ? 'Map opened from your library.'
+            : 'Clearing opened from your library.',
     );
   }
 
   protected async export(): Promise<void> {
     await this.run('export', async () => {
-      await downloadPng(this.map(), this.grid());
+      await downloadPng(this.map(), this.grid(), this.showSecrets());
       this.exportReady();
     });
   }
 
   protected exportReady(): void {
     this.error.set('');
-    this.status.set(`Your ${EXPORT_WIDTH} × ${EXPORT_HEIGHT} PNG is ready. Check your downloads.`);
+    this.status.set(
+      `Your ${this.exportSize().replace(' px', '')} PNG is ready. Check your downloads.`,
+    );
   }
 
   protected updateDraft(change: DraftChange): void {
@@ -220,11 +234,13 @@ export class App {
       this.attempted.set(false);
       this.status.set(
         result.layoutChanged
-          ? this.mapType() === 'courtyard'
-            ? 'A new ruined courtyard is ready.'
-            : this.mapType() === 'dungeon'
-              ? 'A new dungeon is ready. Let the story begin.'
-              : 'A new forest clearing is ready.'
+          ? this.mapType() === 'tower'
+            ? 'A new tower is ready. Follow the floor connections.'
+            : this.mapType() === 'courtyard'
+              ? 'A new ruined courtyard is ready.'
+              : this.mapType() === 'dungeon'
+                ? 'A new dungeon is ready. Let the story begin.'
+                : 'A new forest clearing is ready.'
           : 'Settings applied. Your layout and detail revision are preserved.',
       );
     });

@@ -664,3 +664,26 @@ form {
   padding: 2px 5px;
   background: #e4eacb;
 }
+
+.tower-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem;
+  border: 1px solid #d9ddce;
+  border-radius: 6px;
+  background: #fffef7;
+  color: #284b38;
+  font: inherit;
+}
+.tower-field select:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 3px;
+}
+
+.map-type-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  label {
+    min-height: 40px;
+  }
+}

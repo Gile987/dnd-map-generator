@@ -1,3 +1,4 @@
+import { TOWER_STAIR_STYLES } from '../../engine/tower';
 import { LANDMARK_CATALOG, landmarkIdsFor } from '../../engine/landmark-catalog';
 import {
   ChangeDetectionStrategy,
@@ -20,6 +21,7 @@ import {
   MAP_TYPE_ICONS,
   MAP_HEADINGS,
   COURTYARD_DESCRIPTION,
+  TOWER_STAIR_LABELS,
 } from '../presentation';
 import { normalizeRoomCount, stepRoomCount } from '../room-count';
 import type { DraftChange, SettingsDraft } from '../settings-draft';
@@ -73,6 +75,7 @@ export class SettingsPanel {
 
   protected readonly additions = computed<readonly MapAddition[]>(() => {
     const draft = this.draft();
+    if (draft.type === 'tower') return [];
     if (draft.type === 'courtyard')
       return [
         {
@@ -153,13 +156,14 @@ export class SettingsPanel {
     this.additions().filter((item) => item.checked),
   );
   protected readonly densities = ALL_DENSITIES;
-  protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest', 'courtyard'];
+  protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest', 'courtyard', 'tower'];
   protected readonly mapTypeLabels = MAP_TYPE_LABELS;
   protected readonly mapTypeIcons = MAP_TYPE_ICONS;
   protected readonly mapHeadings = MAP_HEADINGS;
   protected readonly generateLabel = computed(() =>
     this.generating()
       ? {
+          tower: 'Raising your tower…',
           dungeon: 'Forging your dungeon…',
           forest: 'Growing your clearing…',
           courtyard: 'Revealing your courtyard…',
@@ -198,7 +202,7 @@ export class SettingsPanel {
   );
   protected readonly characterOptions = computed(() => {
     const type = this.draft().type;
-    return type === 'courtyard' ? [] : CHARACTER_OPTIONS[type];
+    return type === 'courtyard' || type === 'tower' ? [] : CHARACTER_OPTIONS[type];
   });
   protected readonly selectedCharacter = computed(() => {
     const draft = this.draft();
@@ -221,6 +225,8 @@ export class SettingsPanel {
   });
   protected readonly styleDescription = computed(() => {
     const map = this.map();
+    if (map.type === 'tower')
+      return 'Connected stone chambers, arcane details, and a clear route between floors.';
     if (map.type === 'courtyard') return COURTYARD_DESCRIPTION;
     return map.type === 'dungeon'
       ? PRESET_DESCRIPTIONS[map.decoration.preset]
@@ -228,6 +234,7 @@ export class SettingsPanel {
   });
   protected readonly styleLabel = computed(() => {
     const map = this.map();
+    if (map.type === 'tower') return 'Ruined wizard’s tower';
     if (map.type === 'courtyard') return 'Overgrown ruin';
     if (map.type === 'forest') return CHARACTER_LABELS[map.decoration.character];
     return PRESET_LABELS[map.decoration.preset];
@@ -262,6 +269,52 @@ export class SettingsPanel {
         type: 'dungeon',
         changes: { rooms: stepRoomCount(draft.rooms, delta) },
       });
+  }
+
+  protected readonly stairStyles = TOWER_STAIR_STYLES;
+  protected readonly stairLabels = TOWER_STAIR_LABELS;
+  protected editStairStyle(event: Event): void {
+    if (
+      this.disabled() ||
+      this.draft().type !== 'tower' ||
+      !(event.target instanceof HTMLSelectElement)
+    )
+      return;
+    const value = event.target.value;
+    const style = TOWER_STAIR_STYLES.find((style) => style === value);
+    if (style) this.draftChanged.emit({ type: 'tower', changes: { stairStyle: style } });
+  }
+  protected readonly floorCounts = [3, 4, 5, 6, 7, 8];
+  protected readonly portalSources = computed(() => {
+    const draft = this.draft();
+    const count = draft.type === 'tower' ? Number(draft.floors) : 0;
+    return Number.isInteger(count) && count >= 3 && count <= 8
+      ? Array.from({ length: count }, (_, i) => i + 1)
+      : [];
+  });
+  protected editFloors(event: Event): void {
+    const draft = this.draft();
+    if (this.disabled() || draft.type !== 'tower' || !(event.target instanceof HTMLSelectElement))
+      return;
+    const floors = event.target.value;
+    this.draftChanged.emit({
+      type: 'tower',
+      changes: {
+        floors,
+        portalFloor:
+          draft.portalFloor !== 'none' && Number(draft.portalFloor) > Number(floors)
+            ? 'none'
+            : draft.portalFloor,
+      },
+    });
+  }
+  protected editPortal(event: Event): void {
+    if (
+      !this.disabled() &&
+      this.draft().type === 'tower' &&
+      event.target instanceof HTMLSelectElement
+    )
+      this.draftChanged.emit({ type: 'tower', changes: { portalFloor: event.target.value } });
   }
 
   protected submit(event: SubmitEvent): void {

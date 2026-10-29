@@ -22,13 +22,19 @@ const forest = generateForestClearing({
 });
 const courtyard = generateCourtyard({ seed: 'ivy-seed', density: 'Balanced', fountain: true });
 if (!dungeon.ok || !forest.ok || !courtyard.ok) throw new Error('Missing browser fixtures');
-const maps: Readonly<Record<MapType, GeneratedMap>> = {
+const maps: Readonly<Record<Exclude<MapType, 'tower'>, GeneratedMap>> = {
   dungeon: dungeon.map,
   forest: forest.map,
   courtyard: courtyard.map,
 };
 
-function saved(id: string, name: string, type: MapType, day: number, favorite = false) {
+function saved(
+  id: string,
+  name: string,
+  type: Exclude<MapType, 'tower'>,
+  day: number,
+  favorite = false,
+) {
   const canvas = createCanvas(320, 240);
   renderMap(canvas.getContext('2d'), maps[type], { grid: false, pixelsPerTile: 8 });
   return {
@@ -291,7 +297,7 @@ test('a filtered-out save and a full-library backup retain their exact models', 
   const download = await pending;
   const bundle: unknown = JSON.parse((await readFile(await download.path())).toString());
   expect(bundle).toMatchObject({
-    saveFormatVersion: '12.0.0',
+    saveFormatVersion: '14.0.0',
     maps: expect.arrayContaining(
       records.map((record) => expect.objectContaining({ id: record.id, map: record.map })),
     ),

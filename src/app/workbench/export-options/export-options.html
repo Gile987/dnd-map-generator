@@ -27,10 +27,10 @@
           }
         </select>
         <p id="export-scale">
-          {{ columns }} × {{ rows }} squares · {{ preset().pixelsPerTile }} px/square<br />1 square
-          = 5 feet
+          {{ columns() }} × {{ rows() }} squares · {{ preset().pixelsPerTile }} px/square<br />1
+          square = 5 feet
         </p>
-        <p id="preset-guidance">{{ preset().guidance }}</p>
+        <p id="preset-guidance">{{ guidance() }}</p>
         @if (preset().guide; as guide) {
         <a
           [href]="guide"
@@ -44,6 +44,16 @@
           All presets are PNGs you can use in other apps. VTT presets start with the drawn grid off.
         </p>
       </div>
+      @if(map.type==='tower' && map.layout.portalFloor!==null){
+      <label class="grid-option"
+        ><input type="checkbox" [checked]="secrets()" (change)="changeSecrets($event)" />Show
+        secrets</label
+      >
+      <p>
+        {{ secrets() ? 'GM image: includes the secret floor and both portal markers.' : 'Player
+        image: omits the secret floor and both portal markers. Other floors stay in place.' }}
+      </p>
+      }
       <label class="grid-option"
         ><input type="checkbox" [checked]="grid()" (change)="changeGrid($event)" />Include
         grid</label

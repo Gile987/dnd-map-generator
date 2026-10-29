@@ -19,7 +19,7 @@ const forest = generateForestClearing({
 });
 const courtyard = generateCourtyard({ seed: 'ivy-seed', density: 'Balanced', fountain: false });
 if (!dungeon.ok || !forest.ok || !courtyard.ok) throw new Error('Missing library fixtures');
-const maps: Readonly<Record<MapType, GeneratedMap>> = {
+const maps: Readonly<Record<Exclude<MapType, 'tower'>, GeneratedMap>> = {
   dungeon: dungeon.map,
   forest: forest.map,
   courtyard: courtyard.map,
@@ -28,7 +28,7 @@ const maps: Readonly<Record<MapType, GeneratedMap>> = {
 function record(
   id: string,
   name: string,
-  type: MapType,
+  type: Exclude<MapType, 'tower'>,
   savedAt: string,
   favorite = false,
 ): SavedMap {

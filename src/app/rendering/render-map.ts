@@ -1,3 +1,4 @@
+import { renderTower } from './tower-renderer';
 import type { GeneratedMap } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import type { RenderOptions } from './render-options';
@@ -7,6 +8,8 @@ import { renderCourtyard } from './courtyard-renderer';
 
 export function renderMap(ctx: DrawingContext, map: GeneratedMap, options: RenderOptions): void {
   switch (map.type) {
+    case 'tower':
+      return renderTower(ctx, map, options);
     case 'dungeon':
       return renderDungeon(ctx, map, options);
     case 'forest':

@@ -1,5 +1,8 @@
 export type DrawingContext = Pick<
   CanvasRenderingContext2D,
+  | 'font'
+  | 'textAlign'
+  | 'fillText'
   | 'fillStyle'
   | 'strokeStyle'
   | 'lineWidth'

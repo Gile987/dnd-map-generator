@@ -1,3 +1,5 @@
+import type { Tower, TowerSettings, TowerStairStyle } from '../engine/tower';
+import { validateTowerSettings, towerStairStyle } from '../engine/tower';
 import type {
   DecorationPreset,
   Density,
@@ -45,6 +47,7 @@ export interface SettingsDrafts {
   readonly dungeon: DungeonDraft;
   readonly forest: ForestDraft;
   readonly courtyard: CourtyardDraft;
+  readonly tower: TowerDraft;
 }
 
 export interface CourtyardDraft extends CommonDraft {
@@ -52,14 +55,32 @@ export interface CourtyardDraft extends CommonDraft {
   readonly fountain: boolean;
 }
 
-export type SettingsDraft = DungeonDraft | ForestDraft | CourtyardDraft;
+export interface TowerDraft extends CommonDraft {
+  readonly type: 'tower';
+  readonly stairStyle?: TowerStairStyle;
+  readonly floors: string;
+  readonly portalFloor: string;
+}
+export function towerDraftForMap(map: Tower): TowerDraft {
+  return {
+    type: 'tower',
+    stairStyle: towerStairStyle(map),
+    seed: map.seed,
+    density: map.decoration.density,
+    floors: String(map.layout.floors.length),
+    portalFloor: map.layout.portalFloor === null ? 'none' : String(map.layout.portalFloor),
+  };
+}
+export type SettingsDraft = DungeonDraft | ForestDraft | CourtyardDraft | TowerDraft;
 
 export type DraftChange =
+  | { readonly type: 'tower'; readonly changes: Partial<Omit<TowerDraft, 'type'>> }
   | { readonly type: 'dungeon'; readonly changes: Partial<Omit<DungeonDraft, 'type'>> }
   | { readonly type: 'forest'; readonly changes: Partial<Omit<ForestDraft, 'type'>> }
   | { readonly type: 'courtyard'; readonly changes: Partial<Omit<CourtyardDraft, 'type'>> };
 
 type ParsedDraft =
+  | { readonly ok: true; readonly type: 'tower'; readonly settings: TowerSettings }
   | { readonly ok: true; readonly type: 'dungeon'; readonly settings: DungeonSettings }
   | { readonly ok: true; readonly type: 'forest'; readonly settings: ForestSettings }
   | { readonly ok: true; readonly type: 'courtyard'; readonly settings: CourtyardSettings }
@@ -91,6 +112,22 @@ export function forestDraftForMap(map: ForestClearing): ForestDraft {
 }
 
 export function parseDraft(draft: SettingsDraft): ParsedDraft {
+  if (draft.type === 'tower') {
+    const settings: TowerSettings = {
+      seed: draft.seed,
+      density: draft.density,
+      stairStyle: draft.stairStyle,
+      floorCount: /^\d+$/.test(draft.floors) ? Number(draft.floors) : NaN,
+      portalFloor:
+        draft.portalFloor === 'none'
+          ? null
+          : /^\d+$/.test(draft.portalFloor)
+            ? Number(draft.portalFloor)
+            : NaN,
+    };
+    const error = validateTowerSettings(settings);
+    return error ? { ok: false, error } : { ok: true, type: 'tower', settings };
+  }
   if (draft.type === 'courtyard') {
     const settings: CourtyardSettings = {
       seed: draft.seed,

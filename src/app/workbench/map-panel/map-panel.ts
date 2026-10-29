@@ -1,3 +1,6 @@
+import { towerStairStyle } from '../../engine/tower';
+import { TOWER_STAIR_LABELS } from '../presentation';
+import { mapDimensions } from '../../engine/model';
 import { LANDMARK_CATALOG } from '../../engine/landmark-catalog';
 import {
   ChangeDetectionStrategy,
@@ -28,6 +31,22 @@ import type { Candidate } from '../workbench-session';
 export class MapPanel {
   readonly map = input.required<GeneratedMap>();
   readonly grid = input(true);
+  readonly showSecrets = input(false);
+  readonly secretsChanged = output<boolean>();
+  protected readonly dimensions = computed(() => mapDimensions(this.map()));
+  protected readonly tower = computed(() => {
+    const map = this.map();
+    return map.type === 'tower' ? map : null;
+  });
+  protected readonly stairLabel = computed(() => {
+    const map = this.tower();
+    return map ? TOWER_STAIR_LABELS[towerStairStyle(map)] : '';
+  });
+  protected readonly towerConnections = computed(
+    () =>
+      this.tower()?.layout.connections.filter((c) => c.kind !== 'portal' || this.showSecrets()) ??
+      [],
+  );
   readonly disabled = input(false);
   readonly focused = input(false);
   readonly hasPin = input(false);
@@ -40,6 +59,11 @@ export class MapPanel {
   readonly focusChanged = output<boolean>();
   private readonly focusButton = viewChild.required<ElementRef<HTMLButtonElement>>('focusButton');
 
+  protected changeSecrets(event: Event): void {
+    if (!this.disabled() && event.target instanceof HTMLInputElement)
+      this.secretsChanged.emit(event.target.checked);
+  }
+
   focusViewControl(): void {
     this.focusButton().nativeElement.focus({ preventScroll: true });
   }
@@ -49,14 +73,23 @@ export class MapPanel {
   }
 
   protected readonly mapTypeLabel = computed(() =>
-    this.map().type === 'courtyard'
-      ? 'Ruined Courtyard'
-      : this.map().type === 'dungeon'
-        ? 'Stone Dungeon'
-        : 'Forest Clearing',
+    this.map().type === 'tower'
+      ? 'Wizard’s Tower'
+      : this.map().type === 'courtyard'
+        ? 'Ruined Courtyard'
+        : this.map().type === 'dungeon'
+          ? 'Stone Dungeon'
+          : 'Forest Clearing',
   );
   protected readonly mapSummary = computed(() => {
     const map = this.map();
+    if (map.type === 'tower')
+      return {
+        seed: map.seed,
+        rooms: `${map.layout.floors.length} floors`,
+        details: `Ruined wizard’s tower · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · ${map.decoration.density} r${map.decoration.revision}`,
+        type: 'WIZARD’S TOWER',
+      };
     if (map.type === 'courtyard')
       return {
         seed: map.seed,

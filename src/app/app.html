@@ -15,7 +15,7 @@
       <p class="eyebrow"><span></span>THE GAME MASTER'S WORKBENCH</p>
       <h1 id="page-title">Unwritten stories start here.</h1>
       <p class="intro-copy">
-        Create dungeons, forest clearings, and ruined courtyards. Make your next battle map.
+        Create dungeons, forest clearings, ruined courtyards, and towers. Make your next battle map.
       </p>
     </div>
     <div class="edition">
@@ -62,6 +62,8 @@
       forge-map-panel
       [map]="map()"
       [grid]="grid()"
+      [showSecrets]="showSecrets()"
+      (secretsChanged)="!busy() && showSecrets.set($event)"
       [disabled]="busy() !== null"
       [focused]="focused()"
       [hasPin]="!!comparison().pinned"
@@ -88,7 +90,7 @@
       <span class="legend-divider"></span><span class="scale-note">1 square = 5 feet</span>
     </div>
     <div class="export-action">
-      <span>Ready for your table.<small>PNG · {{ exportSize }}</small></span
+      <span>Ready for your table.<small>PNG · {{ exportSize() }}</small></span
       ><button
         class="export-options-button"
         type="button"
@@ -111,6 +113,7 @@
     </div>
   </div>
   <forge-export-options
+    [showSecrets]="showSecrets()"
     #exportOptions
     [map]="map()"
     [disabled]="busy() !== null"

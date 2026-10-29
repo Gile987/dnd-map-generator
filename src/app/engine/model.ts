@@ -1,3 +1,4 @@
+import type { Tower, TowerSettings } from './tower';
 import { landmarkIdsFor } from './landmark-catalog';
 import type { LandmarkIdFor } from './landmark-catalog';
 
@@ -7,7 +8,7 @@ export const ROOM_MIN = 4;
 export const ROOM_MAX = 8;
 export const GENERATOR_VERSION = '4.0.0';
 
-export type MapType = 'dungeon' | 'forest' | 'courtyard';
+export type MapType = 'dungeon' | 'forest' | 'courtyard' | 'tower';
 
 export interface Point {
   readonly x: number;
@@ -152,7 +153,8 @@ export interface RuinedCourtyard {
 export type MapSettings =
   | (DungeonSettings & { readonly mapType: 'dungeon' })
   | (ForestSettings & { readonly mapType: 'forest' })
-  | (CourtyardSettings & { readonly mapType: 'courtyard' });
+  | (CourtyardSettings & { readonly mapType: 'courtyard' })
+  | (TowerSettings & { readonly mapType: 'tower' });
 
 export const DUNGEON_PROP_KINDS = [
   'ritual_altar',
@@ -274,7 +276,7 @@ export interface ForestClearing {
   readonly surfaceSeed: number;
 }
 
-export type GeneratedMap = Dungeon | ForestClearing | RuinedCourtyard;
+export type GeneratedMap = Dungeon | ForestClearing | RuinedCourtyard | Tower;
 
 export type GenerationResult =
   { readonly ok: true; readonly map: Dungeon } | { readonly ok: false; readonly error: string };
@@ -330,4 +332,10 @@ export function isBlockingProp(kind: PropKind): boolean {
 
 export function center(room: Room): Point {
   return { x: room.x + Math.floor(room.width / 2), y: room.y + Math.floor(room.height / 2) };
+}
+
+export function mapDimensions(map: GeneratedMap): { width: number; height: number } {
+  return map.type === 'tower'
+    ? { width: map.layout.width, height: map.layout.height }
+    : { width: WIDTH, height: HEIGHT };
 }

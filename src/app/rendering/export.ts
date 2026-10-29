@@ -1,12 +1,12 @@
 import { renderMap } from './render-map';
 import { PIXELS_PER_TILE } from './resolution';
-import { HEIGHT, WIDTH } from '../engine/model';
+import { mapDimensions } from '../engine/model';
 import type { GeneratedMap } from '../engine/model';
 import { EXPORT_PRESETS, exportDimensions } from './export-presets';
 import type { ExportPreset } from './export-presets';
 import { downloadBlob } from '../browser/download';
 
-export function exportFilename(map: GeneratedMap): string {
+export function exportFilename(map: GeneratedMap, showSecrets = false): string {
   const seed =
     map.seed
       .normalize('NFKD')
@@ -14,6 +14,8 @@ export function exportFilename(map: GeneratedMap): string {
       .replace(/^-+|-+$/g, '')
       .slice(0, 64) || 'dungeon';
   const type = map.type;
+  if (type === 'tower')
+    return `encounter-${seed}-tower-${map.layout.floors.length}floors${map.layout.stairStyle ? '-' + map.layout.stairStyle : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}${map.layout.portalFloor !== null ? (showSecrets ? '-gm-secrets' : '-player') : ''}.png`;
   if (type === 'courtyard')
     return `encounter-${seed}-courtyard${map.decoration.fountain ? '-dry-fountain' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   if (type === 'dungeon') {
@@ -30,11 +32,13 @@ export function configuredExportFilename(
   grid: boolean,
   opacity: number,
   preset: ExportPreset = EXPORT_PRESETS[0],
+  showSecrets = false,
 ): string {
   const suffix = grid ? `grid-${opacity}pct` : 'grid-off';
+  const { width, height } = mapDimensions(map);
   const target =
-    preset.id === 'standard' ? '' : `-${preset.id}-${WIDTH}x${HEIGHT}-${preset.pixelsPerTile}px`;
-  return exportFilename(map).replace(/\.png$/, `${target}-${suffix}.png`);
+    preset.id === 'standard' ? '' : `-${preset.id}-${width}x${height}-${preset.pixelsPerTile}px`;
+  return exportFilename(map, showSecrets).replace(/\.png$/, `${target}-${suffix}.png`);
 }
 
 export async function createPng(
@@ -42,15 +46,16 @@ export async function createPng(
   grid: boolean,
   gridOpacity?: number,
   pixelsPerTile: number = PIXELS_PER_TILE,
+  showSecrets = false,
 ): Promise<Blob> {
-  const dimensions = exportDimensions(pixelsPerTile);
+  const dimensions = exportDimensions(pixelsPerTile, map);
   const canvas = document.createElement('canvas');
   canvas.width = dimensions.width;
   canvas.height = dimensions.height;
   const context = canvas.getContext('2d');
   if (!context)
     throw new Error('PNG export is unavailable because a drawing surface could not be created.');
-  renderMap(context, map, { grid, gridOpacity, pixelsPerTile });
+  renderMap(context, map, { grid, gridOpacity, pixelsPerTile, showSecrets });
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
@@ -59,7 +64,11 @@ export async function createPng(
   );
 }
 
-export async function downloadPng(map: GeneratedMap, grid: boolean): Promise<void> {
-  const blob = await createPng(map, grid);
-  downloadBlob(blob, exportFilename(map));
+export async function downloadPng(
+  map: GeneratedMap,
+  grid: boolean,
+  showSecrets = false,
+): Promise<void> {
+  const blob = await createPng(map, grid, undefined, PIXELS_PER_TILE, showSecrets);
+  downloadBlob(blob, exportFilename(map, showSecrets));
 }

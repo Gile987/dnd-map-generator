@@ -161,6 +161,7 @@
     <li class="saved-item" [class.favorite]="record.favorite">
       <img
         class="thumb"
+        [class.tower-thumbnail]="record.map.type === 'tower'"
         [src]="record.thumbnail"
         [alt]="record.name + ' thumbnail'"
         width="160"
