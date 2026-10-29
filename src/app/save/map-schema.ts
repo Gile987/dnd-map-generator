@@ -22,6 +22,7 @@ import { validateCourtyard } from '../engine/courtyard-validation';
 import { isDetailRevision } from '../engine/decoration-revision';
 
 export interface SaveVocabulary {
+  readonly forestSurfaces?: readonly number[];
   readonly mapTypes: readonly string[];
   readonly densities: readonly string[];
   readonly presets: readonly string[];
@@ -48,6 +49,13 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
   const decoration = map['decoration'];
   const type = map['type'];
   if (typeof type !== 'string' || !vocabulary.mapTypes.includes(type)) return false;
+  if (
+    decoration['forestSurface'] !== undefined &&
+    (type !== 'forest' ||
+      typeof decoration['forestSurface'] !== 'number' ||
+      !vocabulary.forestSurfaces?.includes(decoration['forestSurface']))
+  )
+    return false;
   if (
     decoration['ritual'] !== undefined &&
     (type !== 'dungeon' ||
@@ -332,6 +340,7 @@ function isForestDecoration(value: unknown): boolean {
   return (
     isObject(value) &&
     isDecorationBase(value) &&
+    (value['forestSurface'] === undefined || value['forestSurface'] === 1) &&
     typeof value['character'] === 'string' &&
     isIn(value['character'], ALL_FOREST_CHARACTERS) &&
     (value['landmark'] === undefined ||
@@ -349,6 +358,7 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
   if (typeof seed !== 'string' || !seed || seed !== seed.trim() || seed.length > 64) return false;
   if (!isFiniteNumber(surfaceSeed)) return false;
   if (!isObject(layout) || !isObject(decoration)) return false;
+  if (type !== 'forest' && decoration['forestSurface'] !== undefined) return false;
   if (
     type !== 'dungeon' &&
     (decoration['studySurface'] !== undefined || decoration['ritual'] !== undefined)

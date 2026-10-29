@@ -75,7 +75,10 @@ function generatedForest(character: ForestCharacter): ForestClearing {
     character,
   });
   if (!result.ok) throw new Error(result.error);
-  return result.map;
+  // These literal pixel baselines protect the original, unmarked forest artwork.
+  const { forestSurface, ...decoration } = result.map.decoration;
+  expect(forestSurface).toBe(1);
+  return { ...result.map, decoration };
 }
 
 function completeForest(character: ForestCharacter): ForestClearing {

@@ -60,7 +60,13 @@ function validMap(settings: ForestSettings): ForestClearing {
 }
 
 function digest(map: ForestClearing): string {
-  return createHash('sha256').update(JSON.stringify(map)).digest('hex').slice(0, 16);
+  // Preserve the literal pre-surface model hashes; only artwork metadata is additive.
+  const { forestSurface, ...decoration } = map.decoration;
+  expect(forestSurface).toBe(1);
+  return createHash('sha256')
+    .update(JSON.stringify({ ...map, decoration }))
+    .digest('hex')
+    .slice(0, 16);
 }
 
 describe('deterministic forest clearing generation', () => {

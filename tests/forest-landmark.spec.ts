@@ -105,7 +105,7 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await backupDownload;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '11.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '12.0.0' });
   await page.reload();
   await page
     .locator('.saved-item')
@@ -176,8 +176,11 @@ for (const source of ['library', 'backup'] as const) {
       landmark: 'standing-stone-circle',
     });
     if (!result.ok) throw new Error(result.error);
+    const { forestSurface, ...decoration } = result.map.decoration;
+    expect(forestSurface).toBe(1);
+    const historical = { ...result.map, decoration };
     const saved = makeSavedMap(
-      result.map,
+      historical,
       'Legacy circle',
       'data:image/png;base64,AAAA',
       'legacy-circle',
@@ -214,18 +217,18 @@ for (const source of ['library', 'backup'] as const) {
     await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
     await expect(selectedAddition(page, 'Standing-stone circle')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
-    expect(await snapshot(page, 'Migrated circle')).toEqual(result.map);
+    expect(await snapshot(page, 'Migrated circle')).toEqual(historical);
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Download backup', exact: true }).click();
     const backup = await download;
     const bundle: unknown = JSON.parse(readFileSync(await backup.path(), 'utf8'));
     expect(bundle).toMatchObject({
-      saveFormatVersion: '9.0.0',
+      saveFormatVersion: '12.0.0',
       maps: expect.arrayContaining([
         expect.objectContaining({
           id: 'legacy-circle',
-          saveFormatVersion: '9.0.0',
-          map: result.map,
+          saveFormatVersion: '12.0.0',
+          map: historical,
         }),
       ]),
     });

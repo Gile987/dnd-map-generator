@@ -239,6 +239,8 @@ export interface Decoration {
 }
 
 export interface ForestDecoration {
+  /** Missing on historical maps, whose original floor artwork is retained. */
+  readonly forestSurface?: 1;
   readonly props: readonly Prop[];
   readonly density: Density;
   readonly character: ForestCharacter;
