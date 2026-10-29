@@ -1,4 +1,5 @@
-import { HEIGHT, WIDTH } from '../engine/model';
+import type { GeneratedMap } from '../engine/model';
+import { mapDimensions, HEIGHT, WIDTH } from '../engine/model';
 import { PIXELS_PER_TILE } from './resolution';
 
 export const EXPORT_PRESETS = [
@@ -39,8 +40,17 @@ export const EXPORT_PRESETS = [
 
 export type ExportPreset = (typeof EXPORT_PRESETS)[number];
 
-export function exportDimensions(pixelsPerTile: number = PIXELS_PER_TILE) {
+export function exportDimensions(pixelsPerTile: number = PIXELS_PER_TILE, map?: GeneratedMap) {
   if (!EXPORT_PRESETS.some((preset) => preset.pixelsPerTile === pixelsPerTile))
     throw new Error('Choose a supported PNG export resolution.');
-  return { width: WIDTH * pixelsPerTile, height: HEIGHT * pixelsPerTile };
+  const dimensions = map ? mapDimensions(map) : { width: WIDTH, height: HEIGHT };
+  return { width: dimensions.width * pixelsPerTile, height: dimensions.height * pixelsPerTile };
+}
+
+export function exportGuidance(preset: ExportPreset, map: GeneratedMap): string {
+  const { width, height } = mapDimensions(map);
+  return preset.guidance
+    .replaceAll('40x30', `${width}x${height}`)
+    .replaceAll('40 columns and 30 rows', `${width} columns and ${height} rows`)
+    .replaceAll('40 × 30', `${width} × ${height}`);
 }

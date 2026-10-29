@@ -87,6 +87,65 @@
       </div>
       <p class="field-hint" id="room-hint">Connected chambers. Unexpected turns.</p>
     </div>
+    } @if (activeDraft.type === 'tower') {
+    <div class="field tower-field">
+      <label for="tower-floors">Floors <span>3–8 CHAMBERS</span></label>
+      <select
+        id="tower-floors"
+        [value]="activeDraft.floors"
+        (change)="editFloors($event)"
+        aria-describedby="tower-floor-hint"
+      >
+        @for(count of floorCounts;track count){
+        <option [value]="count" [selected]="activeDraft.floors === count.toString()">
+          {{ count }} floors
+        </option>
+        }
+      </select>
+      <p class="field-hint" id="tower-floor-hint">
+        One sheet, numbered floors. Each chamber keeps the same playable scale.
+      </p>
+    </div>
+    <div class="field tower-field">
+      <label for="tower-stairs">Staircase style</label>
+      <select
+        id="tower-stairs"
+        (change)="editStairStyle($event)"
+        aria-describedby="tower-stair-hint"
+      >
+        @for(style of stairStyles;track style){
+        <option [value]="style" [selected]="(activeDraft.stairStyle ?? 'spiral')===style">
+          {{ stairLabels[style] }}
+        </option>
+        }
+      </select>
+      <p class="field-hint" id="tower-stair-hint">
+        Separate stairs use distinct up/down flights. Shared spiral uses one stairwell for both
+        directions. Positions vary with the seed. Generate to apply.
+      </p>
+    </div>
+    <div class="field tower-field">
+      <label for="tower-portal">Secret portal</label>
+      <select
+        id="tower-portal"
+        [value]="activeDraft.portalFloor"
+        (change)="editPortal($event)"
+        aria-describedby="tower-portal-hint"
+      >
+        <option value="none" [selected]="activeDraft.portalFloor === 'none'">
+          None — stairs connect every floor
+        </option>
+        @for(source of portalSources();track source){
+        <option [value]="source" [selected]="activeDraft.portalFloor === source.toString()">
+          Portal on floor {{ source }}
+        </option>
+        }
+      </select>
+      <p class="field-hint" id="tower-portal-hint">
+        Optional: the seed chooses a secret floor, excluding the entrance and portal source. One
+        portal pair is its only access. It counts toward your total. Generate to apply.
+      </p>
+    </div>
     } @if (selectedCharacter(); as choice) {
     <fieldset class="preset-field">
       <legend>Character <span>YOUR MAP'S IDENTITY</span></legend>
@@ -109,7 +168,7 @@
         {{ choice.description }} Choose a character, then Generate to apply.
       </p>
     </fieldset>
-    }
+    } @if(activeDraft.type !== 'tower') {
     <fieldset class="additions-field" aria-describedby="additions-hint">
       <legend>Add to this map</legend>
       @if (selectedAdditions().length) {
@@ -134,6 +193,7 @@
       </button>
       <p class="field-hint" id="additions-hint">Choose any combination. Generate to apply.</p>
     </fieldset>
+    }
     <fieldset class="density-field">
       <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
       @let selectedDensity = activeDraft.density;
@@ -213,7 +273,8 @@
     <h2>Make it feel lived in</h2>
   </div>
   <p>
-    {{ map().type === 'courtyard' ? 'Keep the broken walls. Rearrange the columns and scattered
+    {{ map().type === 'tower' ? 'Keep every floor and connection. Rearrange the small details.' :
+    map().type === 'courtyard' ? 'Keep the broken walls. Rearrange the columns and scattered
     details.' : map().type === 'dungeon' ? 'Love the layout? Give its rooms a different kind of
     character.' : 'Love the clearing? Give it a different woodland character.' }}
   </p>
@@ -253,9 +314,9 @@
     Up to {{ shuffleHistory().limit }} shuffles. Generate or Open starts over.
   </p>
   <span class="preserve-note"
-    ><forge-icon name="lock" />{{ map().type === 'courtyard' ? 'Your walls and approaches stay put.'
-    : map().type === 'dungeon' ? 'Your rooms and paths stay put.' : 'Your clearing and path stay
-    put.' }}</span
+    ><forge-icon name="lock" />{{ map().type === 'tower' ? 'Your floors and connections stay put.' :
+    map().type === 'courtyard' ? 'Your walls and approaches stay put.' : map().type === 'dungeon' ?
+    'Your rooms and paths stay put.' : 'Your clearing and path stay put.' }}</span
   >
 </div>
 <div class="style-note">

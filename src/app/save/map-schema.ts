@@ -1,3 +1,4 @@
+import { isUsableTower } from '../engine/tower';
 import {
   ALL_DENSITIES,
   ALL_DUNGEON_SCENES,
@@ -22,6 +23,7 @@ import { validateCourtyard } from '../engine/courtyard-validation';
 import { isDetailRevision } from '../engine/decoration-revision';
 
 export interface SaveVocabulary {
+  readonly towerStairStyles?: readonly string[];
   readonly forestSurfaces?: readonly number[];
   readonly mapTypes: readonly string[];
   readonly densities: readonly string[];
@@ -49,6 +51,15 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
   const decoration = map['decoration'];
   const type = map['type'];
   if (typeof type !== 'string' || !vocabulary.mapTypes.includes(type)) return false;
+  const layout = map['layout'];
+  if (
+    isObject(layout) &&
+    layout['stairStyle'] !== undefined &&
+    (type !== 'tower' ||
+      typeof layout['stairStyle'] !== 'string' ||
+      !vocabulary.towerStairStyles?.includes(layout['stairStyle']))
+  )
+    return false;
   if (
     decoration['forestSurface'] !== undefined &&
     (type !== 'forest' ||
@@ -375,11 +386,13 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
 }
 
 function validateMap(map: GeneratedMap): string | undefined {
+  if (map.type === 'tower') return isUsableTower(map) ? undefined : 'Invalid tower.';
   if (map.type === 'courtyard') return validateCourtyard(map);
   return map.type === 'dungeon' ? validateDungeon(map) : validateForest(map);
 }
 
 export function isUsableMap(value: unknown): value is GeneratedMap {
+  if (isObject(value) && value['type'] === 'tower') return isUsableTower(value);
   if (!isGeneratedMap(value)) return false;
   try {
     return validateMap(value) === undefined;

@@ -223,7 +223,8 @@ for (const type of ['dungeon', 'forest'] as const) {
     const session = new WorkbenchSession();
     session.selectMapType(type);
     const original = session.map();
-    if (original.type === 'courtyard') throw new Error('Expected dungeon or forest');
+    if (original.type === 'courtyard' || original.type === 'tower')
+      throw new Error('Expected dungeon or forest');
     const almostExhausted = {
       ...original,
       decoration: { ...original.decoration, revision: Number.MAX_SAFE_INTEGER - 1 },

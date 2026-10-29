@@ -1,17 +1,21 @@
+export { TOWER_STAIR_LABELS } from '../engine/tower';
 import type { DecorationPreset, Density, ForestCharacter, MapType } from '../engine/model';
 import type { IconName } from '../icon';
 
 export const MAP_TYPE_LABELS: Readonly<Record<MapType, string>> = {
+  tower: 'Tower',
   dungeon: 'Dungeon',
   forest: 'Forest',
   courtyard: 'Courtyard',
 };
 export const MAP_TYPE_ICONS: Readonly<Record<MapType, IconName>> = {
+  tower: 'layers',
   dungeon: 'layers',
   forest: 'tree',
   courtyard: 'ruin',
 };
 export const MAP_HEADINGS: Readonly<Record<MapType, string>> = {
+  tower: 'Raise your tower',
   dungeon: 'Shape your dungeon',
   forest: 'Shape your clearing',
   courtyard: 'Shape your courtyard',

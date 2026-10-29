@@ -13,10 +13,10 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { HEIGHT, WIDTH } from '../engine/model';
+import { mapDimensions } from '../engine/model';
 import type { GeneratedMap } from '../engine/model';
 import { renderMap } from '../rendering/render-map';
-import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from '../rendering/resolution';
+import { PIXELS_PER_TILE } from '../rendering/resolution';
 import { Icon } from '../icon';
 
 @Component({
@@ -30,11 +30,14 @@ import { Icon } from '../icon';
 export class Preview {
   readonly map = input.required<GeneratedMap>();
   readonly grid = input(true);
+  readonly showSecrets = input(false);
   readonly focused = input(false);
   protected readonly zoom = signal(1);
   protected readonly dragging = signal(false);
   protected readonly ariaLabel = computed(() => {
     const m = this.map();
+    if (m.type === 'tower')
+      return `Tower map for seed ${m.seed}. ${m.layout.floors.length} numbered floors. Matching stair letters connect floors.${m.layout.portalFloor !== null ? (this.showSecrets() ? ' One portal pair leads to a secret floor.' : ' Secret chamber and portal omitted from the image.') : ''} Use arrow keys to pan, plus and minus to zoom, Home to fit.`;
     if (m.type === 'courtyard')
       return `Ruined courtyard map for seed ${m.seed}. Four broad openings connect walkable grass to a paved interior. Standing walls and columns block movement; flat rubble is passable. A six-by-six gathering space stays clear.${m.decoration.fountain ? ' A dry fountain blocks three by three tiles, with a clear tile around it.' : ''} Use arrow keys to pan, plus and minus to zoom, Home to fit.`;
     if (m.type === 'dungeon') {
@@ -90,11 +93,13 @@ export class Preview {
     effect(() => {
       const map = this.map();
       const grid = this.grid();
+      const showSecrets = this.showSecrets();
+      const { width, height } = mapDimensions(map);
       this.image = document.createElement('canvas');
-      this.image.width = EXPORT_WIDTH;
-      this.image.height = EXPORT_HEIGHT;
+      this.image.width = width * PIXELS_PER_TILE;
+      this.image.height = height * PIXELS_PER_TILE;
       const context = this.image.getContext('2d');
-      if (context) renderMap(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
+      if (context) renderMap(context, map, { grid, pixelsPerTile: PIXELS_PER_TILE, showSecrets });
       untracked(() => this.paint());
     });
     afterNextRender({
@@ -181,9 +186,10 @@ export class Preview {
   }
 
   private panBy(x: number, y: number): void {
-    const scale = Math.min(this.width / WIDTH, this.height / HEIGHT) * 0.94 * this.zoom();
-    const limitX = (WIDTH * scale) / 2;
-    const limitY = (HEIGHT * scale) / 2;
+    const { width: columns, height: rows } = mapDimensions(this.map());
+    const scale = Math.min(this.width / columns, this.height / rows) * 0.94 * this.zoom();
+    const limitX = (columns * scale) / 2;
+    const limitY = (rows * scale) / 2;
     const clamp = (offset: number, limit: number) => Math.max(-limit, Math.min(limit, offset));
     this.pan = {
       x: clamp(clamp(this.pan.x, limitX) + x, limitX),
@@ -203,9 +209,10 @@ export class Preview {
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.fillStyle = '#15232a';
     context.fillRect(0, 0, this.width, this.height);
-    const scale = Math.min(this.width / WIDTH, this.height / HEIGHT) * 0.94 * this.zoom();
-    const w = WIDTH * scale;
-    const h = HEIGHT * scale;
+    const { width: columns, height: rows } = mapDimensions(this.map());
+    const scale = Math.min(this.width / columns, this.height / rows) * 0.94 * this.zoom();
+    const w = columns * scale;
+    const h = rows * scale;
     // Resizing can temporarily narrow the visible pan range. Retain the user's
     // offset so returning from focus view restores the original viewport.
     const panX = Math.max(-w / 2, Math.min(w / 2, this.pan.x));

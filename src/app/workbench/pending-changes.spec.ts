@@ -1,12 +1,18 @@
 import '@angular/compiler';
 import { describe, expect, test } from 'vitest';
 import { pendingSettingChanges } from './pending-changes';
-import { courtyardDraftForMap, dungeonDraftForMap, forestDraftForMap } from './settings-draft';
+import {
+  towerDraftForMap,
+  courtyardDraftForMap,
+  dungeonDraftForMap,
+  forestDraftForMap,
+} from './settings-draft';
 import type { SettingsDraft } from './settings-draft';
 import { WorkbenchSession } from './workbench-session';
 import type { GeneratedMap } from '../engine/model';
 
 function draftFor(map: GeneratedMap): SettingsDraft {
+  if (map.type === 'tower') return towerDraftForMap(map);
   return map.type === 'dungeon'
     ? dungeonDraftForMap(map)
     : map.type === 'forest'

@@ -1,3 +1,11 @@
+import type { Tower } from '../engine/tower';
+import {
+  generateTower,
+  changeTowerDensity,
+  shuffleTowerDetails,
+  towerStairStyle,
+  DEFAULT_TOWER_STAIR_STYLE,
+} from '../engine/tower';
 import { Injectable, computed, signal } from '@angular/core';
 import {
   changeDensity,
@@ -27,6 +35,7 @@ import type {
   RuinedCourtyard,
 } from '../engine/model';
 import {
+  towerDraftForMap,
   dungeonDraftForMap,
   forestDraftForMap,
   courtyardDraftForMap,
@@ -68,12 +77,14 @@ interface SessionState {
     readonly dungeon: Dungeon;
     readonly forest: ForestClearing;
     readonly courtyard: RuinedCourtyard;
+    readonly tower: Tower;
   };
   readonly drafts: SettingsDrafts;
   readonly histories: {
     readonly dungeon: ShuffleHistory<Dungeon>;
     readonly forest: ShuffleHistory<ForestClearing>;
     readonly courtyard: ShuffleHistory<RuinedCourtyard>;
+    readonly tower: ShuffleHistory<Tower>;
   };
 }
 
@@ -82,6 +93,7 @@ export type ApplySettingsResult =
   | { readonly ok: false; readonly error: string };
 
 function draftsForMap(drafts: SettingsDrafts, map: GeneratedMap): SettingsDrafts {
+  if (map.type === 'tower') return { ...drafts, tower: towerDraftForMap(map) };
   if (map.type === 'courtyard') return { ...drafts, courtyard: courtyardDraftForMap(map) };
   return map.type === 'dungeon'
     ? { ...drafts, dungeon: dungeonDraftForMap(map) }
@@ -128,23 +140,33 @@ function initialState(): SessionState {
   if (!forest.ok) throw new Error(forest.error);
   const courtyard = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: false });
   if (!courtyard.ok) throw new Error(courtyard.error);
+  const tower = generateTower({
+    seed: 'astral-watch',
+    floorCount: 4,
+    portalFloor: null,
+    density: 'Balanced',
+  });
+  if (!tower.ok) throw new Error(tower.error);
   return {
     type: 'dungeon',
     comparisons: {
       dungeon: { selected: 'current' },
       forest: { selected: 'current' },
       courtyard: { selected: 'current' },
+      tower: { selected: 'current' },
     },
-    maps: { dungeon: dungeon.map, forest: forest.map, courtyard: courtyard.map },
+    maps: { dungeon: dungeon.map, forest: forest.map, courtyard: courtyard.map, tower: tower.map },
     drafts: {
       dungeon: dungeonDraftForMap(dungeon.map),
       forest: forestDraftForMap(forest.map),
       courtyard: courtyardDraftForMap(courtyard.map),
+      tower: towerDraftForMap(tower.map),
     },
     histories: {
       dungeon: { past: [], future: [] },
       forest: { past: [], future: [] },
       courtyard: { past: [], future: [] },
+      tower: { past: [], future: [] },
     },
   };
 }
@@ -179,6 +201,17 @@ export class WorkbenchSession {
   });
   private readonly layoutPending = computed(() => {
     const state = this.state();
+    if (state.type === 'tower') {
+      const draft = state.drafts.tower,
+        map = state.maps.tower;
+      return (
+        (draft.stairStyle ?? DEFAULT_TOWER_STAIR_STYLE) !== towerStairStyle(map) ||
+        draft.seed.trim() !== map.seed ||
+        !/^\d+$/.test(draft.floors) ||
+        Number(draft.floors) !== map.layout.floors.length ||
+        (draft.portalFloor === 'none' ? null : Number(draft.portalFloor)) !== map.layout.portalFloor
+      );
+    }
     if (state.type === 'courtyard')
       return state.drafts.courtyard.seed.trim() !== state.maps.courtyard.seed;
     if (state.type === 'forest') return state.drafts.forest.seed.trim() !== state.maps.forest.seed;
@@ -192,6 +225,10 @@ export class WorkbenchSession {
   });
   readonly pending = computed(() => {
     const state = this.state();
+    if (state.type === 'tower')
+      return (
+        this.layoutPending() || state.drafts.tower.density !== state.maps.tower.decoration.density
+      );
     if (state.type === 'courtyard') {
       const draft = state.drafts.courtyard;
       const decoration = state.maps.courtyard.decoration;
@@ -274,11 +311,13 @@ export class WorkbenchSession {
     this.state.update((state) => {
       if (change.type !== state.type) return state;
       const drafts =
-        change.type === 'courtyard'
-          ? { ...state.drafts, courtyard: { ...state.drafts.courtyard, ...change.changes } }
-          : change.type === 'dungeon'
-            ? { ...state.drafts, dungeon: { ...state.drafts.dungeon, ...change.changes } }
-            : { ...state.drafts, forest: { ...state.drafts.forest, ...change.changes } };
+        change.type === 'tower'
+          ? { ...state.drafts, tower: { ...state.drafts.tower, ...change.changes } }
+          : change.type === 'courtyard'
+            ? { ...state.drafts, courtyard: { ...state.drafts.courtyard, ...change.changes } }
+            : change.type === 'dungeon'
+              ? { ...state.drafts, dungeon: { ...state.drafts.dungeon, ...change.changes } }
+              : { ...state.drafts, forest: { ...state.drafts.forest, ...change.changes } };
       return { ...state, drafts };
     });
   }
@@ -296,11 +335,13 @@ export class WorkbenchSession {
       type: map.type,
       comparisons: showCurrent(state.comparisons, map.type),
       maps:
-        map.type === 'courtyard'
-          ? { ...state.maps, courtyard: map }
-          : map.type === 'dungeon'
-            ? { ...state.maps, dungeon: map }
-            : { ...state.maps, forest: map },
+        map.type === 'tower'
+          ? { ...state.maps, tower: map }
+          : map.type === 'courtyard'
+            ? { ...state.maps, courtyard: map }
+            : map.type === 'dungeon'
+              ? { ...state.maps, dungeon: map }
+              : { ...state.maps, forest: map },
       drafts: draftsForMap(state.drafts, map),
       histories: { ...state.histories, [map.type]: { past: [], future: [] } },
     }));
@@ -309,11 +350,13 @@ export class WorkbenchSession {
   shuffle(): boolean {
     const current = this.currentMap();
     const next =
-      current.type === 'courtyard'
-        ? shuffleCourtyardDetails(current)
-        : current.type === 'dungeon'
-          ? shuffleDetails(current)
-          : shuffleForestDetails(current);
+      current.type === 'tower'
+        ? shuffleTowerDetails(current)
+        : current.type === 'courtyard'
+          ? shuffleCourtyardDetails(current)
+          : current.type === 'dungeon'
+            ? shuffleDetails(current)
+            : shuffleForestDetails(current);
     if (next === current) return false;
     this.accept(next, false);
     return true;
@@ -329,6 +372,17 @@ export class WorkbenchSession {
 
   private restoreShuffle(direction: 'undo' | 'redo'): void {
     this.state.update((state) => {
+      if (state.type === 'tower') {
+        const next = moveShuffle(state.maps.tower, state.histories.tower, direction);
+        return next
+          ? {
+              ...state,
+              maps: { ...state.maps, tower: next.map },
+              comparisons: showCurrent(state.comparisons, state.type),
+              histories: { ...state.histories, tower: next.history },
+            }
+          : state;
+      }
       if (state.type === 'courtyard') {
         const next = moveShuffle(state.maps.courtyard, state.histories.courtyard, direction);
         return next
@@ -370,7 +424,13 @@ export class WorkbenchSession {
     const state = this.state();
     const layoutChanged = this.layoutPending();
     let next: GeneratedMap;
-    if (parsed.type === 'courtyard') {
+    if (parsed.type === 'tower') {
+      if (layoutChanged) {
+        const result = generateTower(parsed.settings);
+        if (!result.ok) return result;
+        next = result.map;
+      } else next = changeTowerDensity(state.maps.tower, parsed.settings.density);
+    } else if (parsed.type === 'courtyard') {
       if (layoutChanged) {
         const result = generateCourtyard(parsed.settings);
         if (!result.ok) return result;
@@ -519,33 +579,42 @@ export class WorkbenchSession {
       ...state,
       comparisons: showCurrent(state.comparisons, map.type),
       maps:
-        map.type === 'courtyard'
-          ? { ...state.maps, courtyard: map }
-          : map.type === 'dungeon'
-            ? { ...state.maps, dungeon: map }
-            : { ...state.maps, forest: map },
+        map.type === 'tower'
+          ? { ...state.maps, tower: map }
+          : map.type === 'courtyard'
+            ? { ...state.maps, courtyard: map }
+            : map.type === 'dungeon'
+              ? { ...state.maps, dungeon: map }
+              : { ...state.maps, forest: map },
       drafts: resetDraft ? draftsForMap(state.drafts, map) : state.drafts,
       histories:
-        map.type === 'courtyard'
+        map.type === 'tower'
           ? {
               ...state.histories,
-              courtyard: resetDraft
+              tower: resetDraft
                 ? { past: [], future: [] }
-                : recordShuffle(state.histories.courtyard, state.maps.courtyard),
+                : recordShuffle(state.histories.tower, state.maps.tower),
             }
-          : map.type === 'dungeon'
+          : map.type === 'courtyard'
             ? {
                 ...state.histories,
-                dungeon: resetDraft
+                courtyard: resetDraft
                   ? { past: [], future: [] }
-                  : recordShuffle(state.histories.dungeon, state.maps.dungeon),
+                  : recordShuffle(state.histories.courtyard, state.maps.courtyard),
               }
-            : {
-                ...state.histories,
-                forest: resetDraft
-                  ? { past: [], future: [] }
-                  : recordShuffle(state.histories.forest, state.maps.forest),
-              },
+            : map.type === 'dungeon'
+              ? {
+                  ...state.histories,
+                  dungeon: resetDraft
+                    ? { past: [], future: [] }
+                    : recordShuffle(state.histories.dungeon, state.maps.dungeon),
+                }
+              : {
+                  ...state.histories,
+                  forest: resetDraft
+                    ? { past: [], future: [] }
+                    : recordShuffle(state.histories.forest, state.maps.forest),
+                },
     }));
   }
 }

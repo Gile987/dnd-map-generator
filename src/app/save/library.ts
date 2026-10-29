@@ -59,7 +59,7 @@ export class Library {
   });
   protected readonly view = signal<LibraryView>(DEFAULT_LIBRARY_VIEW);
   protected readonly visibleMaps = computed(() => viewSavedMaps(this.saved(), this.view()));
-  protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest', 'courtyard'];
+  protected readonly mapTypes: readonly MapType[] = ['dungeon', 'forest', 'courtyard', 'tower'];
   protected readonly sortOptions = LIBRARY_SORT_OPTIONS;
   protected readonly hasFilters = computed(() => {
     const view = this.view();

@@ -12,8 +12,8 @@ import {
 import type { GeneratedMap } from '../../engine/model';
 import { downloadBlob } from '../../browser/download';
 import { configuredExportFilename, createPng } from '../../rendering/export';
-import { HEIGHT, WIDTH } from '../../engine/model';
-import { EXPORT_PRESETS, exportDimensions } from '../../rendering/export-presets';
+import { mapDimensions } from '../../engine/model';
+import { EXPORT_PRESETS, exportDimensions, exportGuidance } from '../../rendering/export-presets';
 import type { ExportPreset } from '../../rendering/export-presets';
 import { Icon } from '../../icon';
 import { MAP_TYPE_LABELS } from '../presentation';
@@ -25,6 +25,7 @@ type PreviewState =
       readonly kind: 'ready';
       readonly map: GeneratedMap;
       readonly grid: boolean;
+      readonly secrets: boolean;
       readonly opacity: number;
       readonly preset: ExportPreset;
       readonly blob: Blob;
@@ -41,15 +42,29 @@ type PreviewState =
 export class ExportOptions {
   readonly map = input.required<GeneratedMap>();
   readonly disabled = input(false);
+  readonly showSecrets = input(false);
+  protected readonly secrets = signal(false);
   readonly downloaded = output<void>();
   protected readonly snapshot = signal<GeneratedMap | null>(null);
   protected readonly grid = signal(true);
   protected readonly opacity = signal(15);
   protected readonly presets = EXPORT_PRESETS;
   protected readonly preset = signal<ExportPreset>(EXPORT_PRESETS[0]);
-  protected readonly columns = WIDTH;
-  protected readonly rows = HEIGHT;
-  protected readonly size = computed(() => exportDimensions(this.preset().pixelsPerTile));
+  protected readonly columns = computed(() => {
+    const map = this.snapshot();
+    return map ? mapDimensions(map).width : 40;
+  });
+  protected readonly rows = computed(() => {
+    const map = this.snapshot();
+    return map ? mapDimensions(map).height : 30;
+  });
+  protected readonly guidance = computed(() => {
+    const map = this.snapshot();
+    return map ? exportGuidance(this.preset(), map) : this.preset().guidance;
+  });
+  protected readonly size = computed(() =>
+    exportDimensions(this.preset().pixelsPerTile, this.snapshot() ?? undefined),
+  );
   protected readonly preview = signal<PreviewState>({ kind: 'loading' });
   protected readonly notice = signal('');
   protected readonly downloadError = signal('');
@@ -63,6 +78,7 @@ export class ExportOptions {
     return preview.kind === 'ready' &&
       preview.map === this.snapshot() &&
       preview.grid === this.grid() &&
+      preview.secrets === this.secrets() &&
       preview.opacity === this.opacity() &&
       preview.preset === this.preset()
       ? preview
@@ -73,6 +89,7 @@ export class ExportOptions {
     effect((onCleanup) => {
       const map = this.snapshot();
       const grid = this.grid();
+      const secrets = this.secrets();
       const opacity = this.opacity();
       const preset = this.preset();
       this.retry();
@@ -87,10 +104,10 @@ export class ExportOptions {
       const firstFrame = requestAnimationFrame(() => {
         secondFrame = requestAnimationFrame(async () => {
           try {
-            const blob = await createPng(map, grid, opacity / 100, preset.pixelsPerTile);
+            const blob = await createPng(map, grid, opacity / 100, preset.pixelsPerTile, secrets);
             if (!active) return;
             url = URL.createObjectURL(blob);
-            this.preview.set({ kind: 'ready', map, grid, opacity, preset, blob, url });
+            this.preview.set({ kind: 'ready', map, grid, opacity, preset, blob, url, secrets });
           } catch (error: unknown) {
             if (active)
               this.preview.set({
@@ -114,6 +131,7 @@ export class ExportOptions {
 
   show(): void {
     if (this.disabled() || this.dialog().nativeElement.open) return;
+    this.secrets.set(this.showSecrets());
     this.snapshot.set(this.map());
     this.dialog().nativeElement.showModal();
   }
@@ -123,9 +141,13 @@ export class ExportOptions {
   }
 
   protected closed(): void {
-    this.snapshot.set(null);
+    if (!this.dialog().nativeElement.open) this.snapshot.set(null);
   }
 
+  protected changeSecrets(event: Event): void {
+    if (!this.disabled() && event.target instanceof HTMLInputElement)
+      this.secrets.set(event.target.checked);
+  }
   protected changeGrid(event: Event): void {
     if (!this.disabled() && event.target instanceof HTMLInputElement)
       this.grid.set(event.target.checked);
@@ -160,7 +182,13 @@ export class ExportOptions {
     try {
       downloadBlob(
         preview.blob,
-        configuredExportFilename(preview.map, preview.grid, preview.opacity, preview.preset),
+        configuredExportFilename(
+          preview.map,
+          preview.grid,
+          preview.opacity,
+          preview.preset,
+          preview.secrets,
+        ),
       );
       this.notice.set('PNG ready. Check your downloads.');
       this.downloaded.emit();

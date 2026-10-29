@@ -1,3 +1,4 @@
+import { generateTower, shuffleTowerDetails } from './tower';
 import { generateCourtyard, shuffleCourtyardDetails } from './courtyard-generate';
 import { describe, expect, test } from 'vitest';
 import { shuffleDetails } from './decoration';
@@ -27,6 +28,7 @@ const courtyard = generateCourtyard({
 if (!courtyard.ok) throw new Error(courtyard.error);
 
 function withRevision(map: GeneratedMap, revision: number): GeneratedMap {
+  if (map.type === 'tower') return { ...map, decoration: { ...map.decoration, revision } };
   if (map.type === 'courtyard') return { ...map, decoration: { ...map.decoration, revision } };
   return map.type === 'dungeon'
     ? { ...map, decoration: { ...map.decoration, revision } }
@@ -34,11 +36,19 @@ function withRevision(map: GeneratedMap, revision: number): GeneratedMap {
 }
 
 function shuffle(map: GeneratedMap): GeneratedMap {
+  if (map.type === 'tower') return shuffleTowerDetails(map);
   if (map.type === 'courtyard') return shuffleCourtyardDetails(map);
   return map.type === 'dungeon' ? shuffleDetails(map) : shuffleForestDetails(map);
 }
 
-describe.each([dungeon.map, forest.map, courtyard.map])(
+const tower = generateTower({
+  seed: 'revision-limit',
+  floorCount: 8,
+  portalFloor: 2,
+  density: 'Balanced',
+});
+if (!tower.ok) throw new Error(tower.error);
+describe.each([dungeon.map, forest.map, courtyard.map, tower.map])(
   '$type detail revision limits',
   (original) => {
     test('advances to the last safe revision, then rejects without changing the accepted map', () => {

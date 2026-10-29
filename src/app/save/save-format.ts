@@ -1,9 +1,10 @@
+import { towerStairStyle, TOWER_STAIR_LABELS } from '../engine/tower';
 import { LANDMARK_CATALOG } from '../engine/landmark-catalog';
 import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '12.0.0';
+export const SAVE_FORMAT_VERSION = '14.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -149,8 +150,22 @@ const FORMAT_12_VOCABULARY: SaveVocabulary = {
   forestSurfaces: [1],
 };
 
+const FORMAT_13_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_12_VOCABULARY,
+  mapTypes: [...FORMAT_12_VOCABULARY.mapTypes, 'tower'],
+};
+
+const FORMAT_14_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_13_VOCABULARY,
+  towerStairStyles: ['separate', 'spiral'],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '14.0.0':
+      return FORMAT_14_VOCABULARY;
+    case '13.0.0':
+      return FORMAT_13_VOCABULARY;
     case '12.0.0':
       return FORMAT_12_VOCABULARY;
     case '11.0.0':
@@ -277,7 +292,13 @@ export function duplicateName(name: string): string {
 
 export function defaultMapName(map: GeneratedMap): string {
   const suffix =
-    map.type === 'courtyard' ? ' courtyard' : map.type === 'dungeon' ? ' dungeon' : ' clearing';
+    map.type === 'tower'
+      ? ' tower'
+      : map.type === 'courtyard'
+        ? ' courtyard'
+        : map.type === 'dungeon'
+          ? ' dungeon'
+          : ' clearing';
   return `${map.seed.slice(0, NAME_MAX - suffix.length)}${suffix}`;
 }
 
@@ -301,6 +322,8 @@ export function makeSavedMap(
 }
 
 export function mapSummary(map: GeneratedMap): string {
+  if (map.type === 'tower')
+    return `${map.layout.floors.length} floors · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · Wizard’s tower · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'courtyard')
     return `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'dungeon') {
