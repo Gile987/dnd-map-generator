@@ -10,8 +10,11 @@ function campRecord() {
     scene: 'Abandoned camp',
   });
   if (!result.ok) throw new Error(result.error);
+  // Historical vocabulary cases retain an unmarked snapshot.
+  const { forestSurface, ...decoration } = result.map.decoration;
+  expect(forestSurface).toBe(1);
   return makeSavedMap(
-    result.map,
+    { ...result.map, decoration },
     'Camp',
     'data:image/png;base64,AAAA',
     'camp',
@@ -21,7 +24,7 @@ function campRecord() {
 
 test('a camp round-trips through current format without changing its saved model', () => {
   const record = campRecord();
-  expect(record.saveFormatVersion).toBe('11.0.0');
+  expect(record.saveFormatVersion).toBe('12.0.0');
   expect(parseSavedMap(record)).toEqual(record);
   expect(parseSavedMap({ ...record, saveFormatVersion: '3.0.0' })).toEqual(record);
   expect(parseSavedMap({ ...record, saveFormatVersion: '4.0.0' })).toEqual(record);

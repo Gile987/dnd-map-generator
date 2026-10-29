@@ -73,6 +73,8 @@ function routeIsValid(layout: ForestLayout): boolean {
 }
 
 export function validateForest(map: ForestClearing): string | undefined {
+  if (map.decoration.forestSurface !== undefined && map.decoration.forestSurface !== 1)
+    return 'Choose supported forest surface artwork.';
   const layoutError = forestLayoutError(map.layout);
   if (layoutError) return layoutError;
   if (!ALL_FOREST_SCENES.includes(map.decoration.scene ?? 'None'))

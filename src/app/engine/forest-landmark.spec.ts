@@ -132,7 +132,8 @@ test('catalog and reservation changes preserve existing placements and RNG consu
           landmark: 'standing-stone-circle',
         });
         const maps = [map, shuffleForestDetails(map)].map((current) => {
-          const { landmark, ...decoration } = current.decoration;
+          const { landmark, forestSurface, ...decoration } = current.decoration;
+          expect(forestSurface).toBe(1); // Additive artwork metadata; retain the original model hashes.
           return { ...current, decoration };
         });
         expect(createHash('sha256').update(JSON.stringify(maps)).digest('hex')).toBe(

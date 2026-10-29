@@ -12,6 +12,7 @@ import type { DrawingContext } from './drawing-context';
 import type { RenderOptions } from './render-options';
 import { boundaryLoops, traceBoundaries } from './boundaries';
 import { drawGrid } from './drawing-primitives';
+import { drawForestSurface } from './forest-surface';
 
 const PROP_LAYERS: Readonly<Record<ForestPropKind, 'ground' | 'object'>> = {
   tree: 'object',
@@ -250,6 +251,7 @@ export function renderForest(
   }
 
   forestFloor(ctx, map, atmo);
+  drawForestSurface(ctx, map);
   clearingEdges(ctx, map.layout, atmo.contour);
 
   const underProps = map.decoration.props.filter(

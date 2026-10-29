@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
 import { parseSavedMapBody } from './map-schema';
-import { saveVocabulary } from './save-format';
+import { SAVE_FORMAT_VERSION, saveVocabulary } from './save-format';
 
 const dungeon = generateDungeon({
   seed: 'mosslit-sanctum',
@@ -21,6 +21,8 @@ if (!forest.ok) throw new Error(forest.error);
 
 const vocabulary = saveVocabulary('2.0.0');
 if (!vocabulary) throw new Error('Expected format-2 vocabulary');
+const currentVocabulary = saveVocabulary(SAVE_FORMAT_VERSION);
+if (!currentVocabulary) throw new Error('Expected current save vocabulary');
 
 function legacyMap(): Record<string, unknown> {
   const fixture: unknown = JSON.parse(
@@ -44,14 +46,14 @@ function legacyMap(): Record<string, unknown> {
 describe('saved map bodies', () => {
   test.each([dungeon.map, forest.map])('retains an accepted $type body by reference', (map) => {
     const before = structuredClone(map);
-    expect(parseSavedMapBody(map, vocabulary)).toBe(map);
+    expect(parseSavedMapBody(map, currentVocabulary)).toBe(map);
     expect(map).toEqual(before);
   });
 
   test.each([dungeon.map, forest.map])(
     'rejects a valid $type body when the record vocabulary excludes that map type',
     (map) => {
-      expect(parseSavedMapBody(map, { ...vocabulary, mapTypes: [] })).toBeUndefined();
+      expect(parseSavedMapBody(map, { ...currentVocabulary, mapTypes: [] })).toBeUndefined();
     },
   );
 

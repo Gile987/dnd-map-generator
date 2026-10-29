@@ -93,7 +93,10 @@ export function decorateForest(
   scene: ForestScene = 'None',
   landmark: ForestLandmark = 'None',
 ): ForestDecoration {
-  const base = decorateBaseForest(layout, seed, character, density, revision, scene);
+  const base: ForestDecoration = {
+    ...decorateBaseForest(layout, seed, character, density, revision, scene),
+    forestSurface: 1,
+  };
   if (landmark === 'None') return base;
   return {
     ...base,
