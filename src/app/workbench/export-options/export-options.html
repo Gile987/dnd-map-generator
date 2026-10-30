@@ -13,6 +13,27 @@
   <div class="content">
     <fieldset [disabled]="disabled()" aria-describedby="export-grid-hint">
       <legend>PNG appearance</legend>
+      @if (map.type === 'tower') {
+      <div class="preset-field">
+        <label for="export-floor">Tower floors</label>
+        <select
+          id="export-floor"
+          (change)="changeFloor($event)"
+          aria-describedby="export-floor-hint"
+        >
+          <option value="whole" [selected]="floor() === undefined">Whole tower</option>
+          @for (option of floors(); track option.number) {
+          <option [value]="option.number" [selected]="option.number === floor()">
+            Floor {{ option.number }}{{ option.secret ? ' — Secret floor' : '' }}
+          </option>
+          }
+        </select>
+        <p id="export-floor-hint">
+          One floor keeps its heading and connection labels at the same grid scale. @if
+          (map.layout.portalFloor !== null) { Enable Show secrets to include the secret floor. }
+        </p>
+      </div>
+      }
       <div class="preset-field">
         <label for="export-preset">Export preset</label>
         <select
@@ -50,8 +71,10 @@
         secrets</label
       >
       <p>
-        {{ secrets() ? 'GM image: includes the secret floor and both portal markers.' : 'Player
-        image: omits the secret floor and both portal markers. Other floors stay in place.' }}
+        @if (floor() === undefined) { {{ secrets() ? 'GM image: includes the secret floor and both
+        portal markers.' : 'Player image: omits the secret floor and both portal markers. Other
+        floors stay in place.' }} } @else { {{ secrets() ? 'GM image: shows portal markers on this
+        floor.' : 'Player image: omits portal markers.' }} }
       </p>
       }
       <label class="grid-option"
@@ -82,13 +105,13 @@
     </fieldset>
     @let previewState = preview();
     <figure [attr.aria-busy]="!ready() && previewState.kind === 'loading'">
-      <div class="image-frame">
+      <div class="image-frame" [style.aspect-ratio]="columns() + ' / ' + rows()">
         @if (ready(); as image) {
         <img
           [src]="image.url"
           [width]="size().width"
           [height]="size().height"
-          alt="Full map PNG preview"
+          [alt]="floor() === undefined ? 'Full map PNG preview' : scopeLabel() + ' PNG preview'"
         />
         } @else if (previewState.kind === 'error') {
         <div class="preview-message">
@@ -99,7 +122,7 @@
         <p class="preview-message" role="status">Preparing preview…</p>
         }
       </div>
-      <figcaption>Full map · {{ dimensions() }}</figcaption>
+      <figcaption>{{ scopeLabel() }} · {{ dimensions() }}</figcaption>
     </figure>
   </div>
   }
