@@ -59,6 +59,10 @@ describe('production option constants', () => {
       'low_rubble',
       'dry_fountain',
       'cauldron',
+      'telescope',
+      'star_chart_table',
+      'instrument_cabinet',
+      'star_charts',
     ]);
   });
 });

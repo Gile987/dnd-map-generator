@@ -61,6 +61,7 @@ export interface TowerDraft extends CommonDraft {
   readonly floors: string;
   readonly portalFloor: string;
   readonly laboratoryFloor: string;
+  readonly observatoryFloor: string;
 }
 export function towerDraftForMap(map: Tower): TowerDraft {
   return {
@@ -70,6 +71,10 @@ export function towerDraftForMap(map: Tower): TowerDraft {
     density: map.decoration.density,
     floors: String(map.layout.floors.length),
     portalFloor: map.layout.portalFloor === null ? 'none' : String(map.layout.portalFloor),
+    observatoryFloor:
+      map.decoration.observatoryFloor === undefined
+        ? 'none'
+        : String(map.decoration.observatoryFloor),
     laboratoryFloor:
       map.decoration.laboratoryFloor === undefined
         ? 'none'
@@ -128,6 +133,12 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
           ? null
           : /^\d+$/.test(draft.portalFloor)
             ? Number(draft.portalFloor)
+            : NaN,
+      observatoryFloor:
+        draft.observatoryFloor === 'none'
+          ? null
+          : /^\d+$/.test(draft.observatoryFloor)
+            ? Number(draft.observatoryFloor)
             : NaN,
       laboratoryFloor:
         draft.laboratoryFloor === 'none'

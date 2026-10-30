@@ -4,7 +4,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '15.0.0';
+export const SAVE_FORMAT_VERSION = '16.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -166,8 +166,22 @@ const FORMAT_15_VOCABULARY: SaveVocabulary = {
   propKinds: [...FORMAT_14_VOCABULARY.propKinds, 'cauldron'],
 };
 
+const FORMAT_16_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_15_VOCABULARY,
+  towerObservatoryFloors: [1, 2, 3, 4, 5, 6, 7, 8],
+  propKinds: [
+    ...FORMAT_15_VOCABULARY.propKinds,
+    'telescope',
+    'star_chart_table',
+    'instrument_cabinet',
+    'star_charts',
+  ],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '16.0.0':
+      return FORMAT_16_VOCABULARY;
     case '15.0.0':
       return FORMAT_15_VOCABULARY;
     case '14.0.0':
@@ -331,7 +345,7 @@ export function makeSavedMap(
 
 export function mapSummary(map: GeneratedMap): string {
   if (map.type === 'tower')
-    return `${map.layout.floors.length} floors · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · Wizard’s tower${map.decoration.laboratoryFloor !== undefined ? ' · Laboratory on floor ' + map.decoration.laboratoryFloor : ''} · ${map.decoration.density} r${map.decoration.revision}`;
+    return `${map.layout.floors.length} floors · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · Wizard’s tower${map.decoration.laboratoryFloor !== undefined ? ' · Laboratory on floor ' + map.decoration.laboratoryFloor : ''}${map.decoration.observatoryFloor !== undefined ? ' · Observatory on floor ' + map.decoration.observatoryFloor : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'courtyard')
     return `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'dungeon') {

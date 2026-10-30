@@ -1,8 +1,70 @@
 import '@angular/compiler';
 import { expect, test, vi } from 'vitest';
 import * as laboratory from '../engine/tower-laboratory';
+import * as observatory from '../engine/tower-observatory';
 import { WorkbenchSession } from './workbench-session';
 import { pendingSettingChanges } from './pending-changes';
+
+test('observatory drafts, conflicts, refusal and retry preserve accepted maps, pins and history', () => {
+  const session = new WorkbenchSession();
+  session.selectMapType('tower');
+  session.updateDraft({ type: 'tower', changes: { laboratoryFloor: '2' } });
+  expect(session.generate().ok).toBe(true);
+  session.pinCurrent();
+  session.shuffle();
+  const original = session.map();
+  session.updateDraft({ type: 'tower', changes: { observatoryFloor: '4', density: 'Sparse' } });
+  expect(session.generationEffect()).toBe('appearance');
+  expect(pendingSettingChanges(original, session.draft())).toContainEqual({
+    label: 'Observatory floor',
+    before: 'None',
+    after: 'Floor 4',
+  });
+  session.selectMapType('forest');
+  session.selectMapType('tower');
+  const draft = session.draft(),
+    comparison = session.comparison(),
+    history = session.shuffleHistory();
+  const placement = vi.spyOn(observatory, 'towerObservatoryProps').mockReturnValue(undefined);
+  try {
+    expect(session.generate()).toEqual({
+      ok: false,
+      error: 'Those tower additions could not fit. Try another floor or seed.',
+    });
+    expect(session.map()).toBe(original);
+    expect(session.draft()).toBe(draft);
+    expect(session.comparison()).toBe(comparison);
+    expect(session.shuffleHistory()).toEqual(history);
+  } finally {
+    placement.mockRestore();
+  }
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const accepted = session.map();
+  expect(accepted.layout).toBe(original.layout);
+  expect(accepted.decoration).toMatchObject({
+    observatoryFloor: 4,
+    laboratoryFloor: 2,
+    density: 'Sparse',
+    revision: original.decoration.revision,
+  });
+  session.updateDraft({ type: 'tower', changes: { observatoryFloor: '2' } });
+  expect(session.validationError()).toContain('different floors');
+  expect(session.generate().ok).toBe(false);
+  expect(session.map()).toBe(accepted);
+  session.resetChanges();
+  expect(session.pending()).toBe(false);
+  session.updateDraft({ type: 'tower', changes: { observatoryFloor: 'none' } });
+  session.shuffle();
+  session.undoShuffle();
+  expect(session.map()).toBe(accepted);
+  expect(session.draft()).toMatchObject({ observatoryFloor: 'none' });
+  session.openSaved(accepted);
+  expect(session.draft()).toMatchObject({ observatoryFloor: '4' });
+  session.updateDraft({ type: 'tower', changes: { observatoryFloor: 'none' } });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  expect(session.map().decoration).not.toHaveProperty('observatoryFloor');
+  expect(session.map().decoration).toMatchObject({ laboratoryFloor: 2 });
+});
 
 test('refused laboratory and density changes report the laboratory failure and recover without losing state', () => {
   const session = new WorkbenchSession();

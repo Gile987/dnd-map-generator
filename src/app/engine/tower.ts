@@ -2,7 +2,9 @@ import type { Density, Point, Prop, TileArea } from './model';
 import { ALL_DENSITIES, DENSITY_BUDGETS, isBlockingProp } from './model';
 import { isDetailRevision, nextDetailRevision } from './decoration-revision';
 import { Random, hashSeed } from './random';
-import { towerLaboratoryProps, laboratoryFloorUsable } from './tower-laboratory';
+import { towerLaboratoryProps } from './tower-laboratory';
+import { towerObservatoryProps } from './tower-observatory';
+import { towerPackFloorUsable } from './tower-prop-pack';
 
 // Tower has its own stream version: existing generators and artwork stay unchanged.
 export const TOWER_GENERATOR_VERSION = '3.0.0';
@@ -21,6 +23,7 @@ export interface TowerSettings {
   readonly floorCount: number;
   readonly portalFloor: number | null;
   readonly laboratoryFloor?: number | null;
+  readonly observatoryFloor?: number | null;
   readonly density: Density;
 }
 export interface TowerFloor extends TileArea {
@@ -54,6 +57,7 @@ export interface Tower {
     readonly density: Density;
     readonly revision: number;
     readonly laboratoryFloor?: number;
+    readonly observatoryFloor?: number;
     readonly props: readonly Prop[];
   };
 }
@@ -102,6 +106,15 @@ export function validateTowerSettings(settings: TowerSettings): string | undefin
       settings.laboratoryFloor > settings.floorCount)
   )
     return 'Choose a floor for the laboratory.';
+  if (
+    settings.observatoryFloor != null &&
+    (!Number.isInteger(settings.observatoryFloor) ||
+      settings.observatoryFloor < 1 ||
+      settings.observatoryFloor > settings.floorCount)
+  )
+    return 'Choose a floor for the observatory.';
+  if (settings.observatoryFloor != null && settings.observatoryFloor === settings.laboratoryFloor)
+    return 'Choose different floors for the observatory and laboratory.';
   if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a supported decoration density.';
   return undefined;
 }
@@ -280,6 +293,7 @@ function decorate(
   revision: number,
   version: string,
   laboratoryFloor?: number | null,
+  observatoryFloor?: number | null,
 ): Tower['decoration'] | undefined {
   const random = new Random(hashSeed(`tower:${version}:${seed}:details:${revision}`));
   // The laboratory draws from its own deterministic placement, never from the
@@ -291,7 +305,16 @@ function decorate(
           towerConnectionReserved(layout, p, version),
         );
   if (laboratoryFloor != null && !laboratory) return undefined;
-  const laboratoryTiles = new Set(laboratory?.map((p) => `${p.x},${p.y}`) ?? []);
+  const observatory =
+    observatoryFloor == null
+      ? undefined
+      : towerObservatoryProps(layout, observatoryFloor, (p) =>
+          towerConnectionReserved(layout, p, version),
+        );
+  if (observatoryFloor != null && (!observatory || observatoryFloor === laboratoryFloor))
+    return undefined;
+  const fixedProps = [...(laboratory ?? []), ...(observatory ?? [])];
+  const additionTiles = new Set(fixedProps.map((p) => `${p.x},${p.y}`));
   const props: Prop[] = [];
   const furnishings = [
     ['crate', 'barrel', 'crate', 'moss'],
@@ -327,58 +350,64 @@ function decorate(
       });
     }
   }
-  // Consume the original details stream before removing occupied laboratory cells.
-  // This preserves every unrelated floor, even when a laboratory replaces props.
-  let ordinary = props.filter((p) => !laboratoryTiles.has(`${p.x},${p.y}`));
-  const floor = layout.floors.find((f) => f.number === laboratoryFloor);
-  if (floor && laboratory) {
-    const area = layout.tiles.filter(
-      (tile, i) =>
-        tile &&
-        i % layout.width >= floor.x &&
-        i % layout.width < floor.x + floor.width &&
-        Math.floor(i / layout.width) >= floor.y &&
-        Math.floor(i / layout.width) < floor.y + floor.height,
-    ).length;
-    let remaining =
-      Math.floor(area * DENSITY_BUDGETS[density]) - laboratory.filter((p) => p.blocking).length;
-    ordinary = ordinary.filter((p) => {
-      if (
-        !p.blocking ||
-        p.x < floor.x ||
-        p.x >= floor.x + floor.width ||
-        p.y < floor.y ||
-        p.y >= floor.y + floor.height
-      )
-        return true;
-      return remaining-- > 0;
-    });
-  }
-  if (laboratory && laboratoryFloor != null && floor) {
-    while (!laboratoryFloorUsable(layout, laboratoryFloor, [...laboratory, ...ordinary], density)) {
-      let index = -1;
-      for (let i = ordinary.length - 1; i >= 0; i--) {
-        const p = ordinary[i];
+  // Consume the original details stream before removing occupied addition cells.
+  // This preserves every unrelated floor, even when an addition replaces props.
+  let ordinary = props.filter((p) => !additionTiles.has(`${p.x},${p.y}`));
+  for (const [floorNumber, pack] of [
+    [laboratoryFloor, laboratory],
+    [observatoryFloor, observatory],
+  ] as const) {
+    const floor = layout.floors.find((f) => f.number === floorNumber);
+    if (floor && pack) {
+      const area = layout.tiles.filter(
+        (tile, i) =>
+          tile &&
+          i % layout.width >= floor.x &&
+          i % layout.width < floor.x + floor.width &&
+          Math.floor(i / layout.width) >= floor.y &&
+          Math.floor(i / layout.width) < floor.y + floor.height,
+      ).length;
+      let remaining =
+        Math.floor(area * DENSITY_BUDGETS[density]) - pack.filter((p) => p.blocking).length;
+      ordinary = ordinary.filter((p) => {
         if (
-          p?.blocking &&
-          p.x >= floor.x &&
-          p.x < floor.x + floor.width &&
-          p.y >= floor.y &&
-          p.y < floor.y + floor.height
-        ) {
-          index = i;
-          break;
+          !p.blocking ||
+          p.x < floor.x ||
+          p.x >= floor.x + floor.width ||
+          p.y < floor.y ||
+          p.y >= floor.y + floor.height
+        )
+          return true;
+        return remaining-- > 0;
+      });
+    }
+    if (pack && floorNumber != null && floor) {
+      while (!towerPackFloorUsable(layout, floorNumber, [...fixedProps, ...ordinary], density)) {
+        let index = -1;
+        for (let i = ordinary.length - 1; i >= 0; i--) {
+          const p = ordinary[i];
+          if (
+            p?.blocking &&
+            p.x >= floor.x &&
+            p.x < floor.x + floor.width &&
+            p.y >= floor.y &&
+            p.y < floor.y + floor.height
+          ) {
+            index = i;
+            break;
+          }
         }
+        if (index < 0) return undefined;
+        ordinary = ordinary.filter((_, i) => i !== index);
       }
-      if (index < 0) return undefined;
-      ordinary = ordinary.filter((_, i) => i !== index);
     }
   }
   return {
     density,
     revision,
     ...(laboratory && laboratoryFloor != null ? { laboratoryFloor } : {}),
-    props: laboratory ? [...laboratory, ...ordinary] : props,
+    ...(observatory && observatoryFloor != null ? { observatoryFloor } : {}),
+    props: fixedProps.length ? [...fixedProps, ...ordinary] : props,
   };
 }
 export function generateTower(
@@ -401,11 +430,15 @@ export function generateTower(
     0,
     TOWER_GENERATOR_VERSION,
     settings.laboratoryFloor,
+    settings.observatoryFloor,
   );
   if (!decoration)
     return {
       ok: false,
-      error: 'That laboratory could not fit on that floor. Try another floor or seed.',
+      error:
+        settings.observatoryFloor != null
+          ? 'Those tower additions could not fit. Try another floor or seed.'
+          : 'That laboratory could not fit on that floor. Try another floor or seed.',
     };
   return {
     ok: true,
@@ -428,6 +461,7 @@ export function changeTowerDensity(map: Tower, density: Density): Tower {
     map.decoration.revision,
     map.version,
     map.decoration.laboratoryFloor,
+    map.decoration.observatoryFloor,
   );
   return decoration ? { ...map, decoration } : map;
 }
@@ -440,6 +474,7 @@ export function changeTowerAppearance(map: Tower, settings: TowerSettings): Towe
     map.decoration.revision,
     map.version,
     settings.laboratoryFloor,
+    settings.observatoryFloor,
   );
   return decoration ? { ...map, decoration } : map;
 }
@@ -452,6 +487,7 @@ export function shuffleTowerDetails(map: Tower): Tower {
     revision,
     map.version,
     map.decoration.laboratoryFloor,
+    map.decoration.observatoryFloor,
   );
   return decoration ? { ...map, decoration } : map;
 }
@@ -494,8 +530,14 @@ export function isUsableTower(value: unknown): value is Tower {
         !Number.isInteger(d['laboratoryFloor']) ||
         d['laboratoryFloor'] < 1 ||
         d['laboratoryFloor'] > l['floors'].length)) ||
+    (d['observatoryFloor'] !== undefined &&
+      (typeof d['observatoryFloor'] !== 'number' ||
+        !Number.isInteger(d['observatoryFloor']) ||
+        d['observatoryFloor'] < 1 ||
+        d['observatoryFloor'] > l['floors'].length ||
+        d['observatoryFloor'] === d['laboratoryFloor'])) ||
     !Array.isArray(d['props']) ||
-    d['props'].length > 77 ||
+    d['props'].length > 81 ||
     !isDetailRevision(d['revision']) ||
     typeof d['density'] !== 'string' ||
     !ALL_DENSITIES.some((x) => x === d['density'])
@@ -571,8 +613,15 @@ export function isUsableTower(value: unknown): value is Tower {
         );
   // A stored laboratory must be exactly the placement the layout produces.
   if (d['laboratoryFloor'] !== undefined && !laboratory) return false;
-  const laboratoryTiles = new Map<string, Prop>(
-    laboratory?.map((p) => [`${p.x},${p.y}`, p] as const) ?? [],
+  const observatory =
+    d['observatoryFloor'] === undefined
+      ? undefined
+      : towerObservatoryProps(expected, d['observatoryFloor'], (p) =>
+          towerConnectionReserved(expected, p, version),
+        );
+  if (d['observatoryFloor'] !== undefined && !observatory) return false;
+  const additionTiles = new Map<string, Prop>(
+    [...(laboratory ?? []), ...(observatory ?? [])].map((p) => [`${p.x},${p.y}`, p]),
   );
   for (const p of d['props']) {
     if (
@@ -594,12 +643,12 @@ export function isUsableTower(value: unknown): value is Tower {
     )
       return false;
     const key = `${p['x']},${p['y']}`;
-    const expectedLaboratory = laboratoryTiles.get(key);
-    if (expectedLaboratory) {
+    const expectedAddition = additionTiles.get(key);
+    if (expectedAddition) {
       if (
-        p['kind'] !== expectedLaboratory.kind ||
-        p['blocking'] !== expectedLaboratory.blocking ||
-        p['variation'] !== expectedLaboratory.variation ||
+        p['kind'] !== expectedAddition.kind ||
+        p['blocking'] !== expectedAddition.blocking ||
+        p['variation'] !== expectedAddition.variation ||
         p['footprint'] !== undefined ||
         p['rotation'] !== undefined
       )
@@ -635,7 +684,7 @@ export function isUsableTower(value: unknown): value is Tower {
     );
     if (
       !f ||
-      (!expectedLaboratory &&
+      (!expectedAddition &&
         (Math.hypot(p['x'] + 0.5 - (f.x + 7), p['y'] + 0.5 - (f.y + 6.5)) < 3.8 ||
           Math.hypot(p['x'] + 0.5 - (f.x + 7), p['y'] + 0.5 - (f.y + 6.5)) > 4.7))
     )
@@ -646,14 +695,19 @@ export function isUsableTower(value: unknown): value is Tower {
   }
   if (
     d['laboratoryFloor'] !== undefined &&
-    !laboratoryFloorUsable(expected, d['laboratoryFloor'], checkedCells, d['density'] as Density)
+    !towerPackFloorUsable(expected, d['laboratoryFloor'], checkedCells, d['density'] as Density)
+  )
+    return false;
+  if (
+    d['observatoryFloor'] !== undefined &&
+    !towerPackFloorUsable(expected, d['observatoryFloor'], checkedCells, d['density'] as Density)
   )
     return false;
   const props = d['props'];
   if (
-    laboratoryTiles.size > 0 &&
-    props.filter((p) => object(p) && laboratoryTiles.has(`${p['x']},${p['y']}`)).length !==
-      laboratoryTiles.size
+    additionTiles.size > 0 &&
+    props.filter((p) => object(p) && additionTiles.has(`${p['x']},${p['y']}`)).length !==
+      additionTiles.size
   )
     return false;
   return expected.floors.every(
@@ -661,7 +715,7 @@ export function isUsableTower(value: unknown): value is Tower {
       props.filter(
         (p) =>
           object(p) &&
-          !laboratoryTiles.has(`${p['x']},${p['y']}`) &&
+          !additionTiles.has(`${p['x']},${p['y']}`) &&
           Number(p['x']) >= f.x &&
           Number(p['x']) < f.x + f.width &&
           Number(p['y']) >= f.y &&

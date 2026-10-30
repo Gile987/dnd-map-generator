@@ -41,6 +41,12 @@ function laboratoryFloorOf(draft: SettingsDraft): number | null {
     : null;
 }
 
+function observatoryFloorOf(draft: SettingsDraft): number | null {
+  return draft.type === 'tower' && /^\d+$/.test(draft.observatoryFloor)
+    ? Number(draft.observatoryFloor)
+    : null;
+}
+
 @Component({
   selector: 'aside[forge-settings-panel]',
   imports: [Icon, AdditionPicker, CharacterPicker, CharacterPreview],
@@ -94,7 +100,29 @@ export class SettingsPanel {
           checked: enabled,
           change: {
             type: 'tower',
-            changes: { laboratoryFloor: enabled ? 'none' : '2' },
+            changes: {
+              laboratoryFloor: enabled ? 'none' : observatoryFloorOf(draft) === 2 ? '1' : '2',
+            },
+          },
+        },
+        {
+          id: 'tower-observatory',
+          label: 'Tower observatory',
+          description:
+            'A brass telescope, star-chart table, instrument cabinet, and scattered charts on one floor.',
+          checked: observatoryFloorOf(draft) !== null,
+          change: {
+            type: 'tower',
+            changes: {
+              observatoryFloor:
+                observatoryFloorOf(draft) !== null
+                  ? 'none'
+                  : String(
+                      laboratoryFloorOf(draft) === Number(draft.floors)
+                        ? Number(draft.floors) - 1
+                        : Number(draft.floors),
+                    ),
+            },
           },
         },
       ];
@@ -308,8 +336,9 @@ export class SettingsPanel {
     if (style) this.draftChanged.emit({ type: 'tower', changes: { stairStyle: style } });
   }
   protected readonly floorCounts = [3, 4, 5, 6, 7, 8];
+  protected readonly observatoryEnabled = computed(() => observatoryFloorOf(this.draft()) !== null);
   protected readonly laboratoryEnabled = computed(() => laboratoryFloorOf(this.draft()) !== null);
-  protected readonly laboratoryFloors = computed(() => {
+  protected readonly additionFloors = computed(() => {
     const draft = this.draft();
     const count = draft.type === 'tower' ? Number(draft.floors) : 0;
     return Number.isInteger(count) && count >= 3 && count <= 8
@@ -336,6 +365,10 @@ export class SettingsPanel {
           draft.portalFloor !== 'none' && Number(draft.portalFloor) > Number(floors)
             ? 'none'
             : draft.portalFloor,
+        observatoryFloor:
+          observatoryFloorOf(draft) !== null && Number(draft.observatoryFloor) > Number(floors)
+            ? 'none'
+            : draft.observatoryFloor,
         laboratoryFloor:
           laboratoryFloorOf(draft) !== null && Number(draft.laboratoryFloor) > Number(floors)
             ? 'none'
@@ -350,6 +383,14 @@ export class SettingsPanel {
       event.target instanceof HTMLSelectElement
     )
       this.draftChanged.emit({ type: 'tower', changes: { portalFloor: event.target.value } });
+  }
+  protected editObservatory(event: Event): void {
+    if (
+      !this.disabled() &&
+      this.draft().type === 'tower' &&
+      event.target instanceof HTMLSelectElement
+    )
+      this.draftChanged.emit({ type: 'tower', changes: { observatoryFloor: event.target.value } });
   }
   protected editLaboratory(event: Event): void {
     if (
