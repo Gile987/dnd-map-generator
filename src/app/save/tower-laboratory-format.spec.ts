@@ -34,10 +34,10 @@ function saved() {
     '2026-10-29T12:00:00Z',
   );
 }
-test('format 15 preserves the full laboratory while older vocabularies stay frozen', () => {
+test('the current format preserves laboratories while pre-laboratory vocabularies stay frozen', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('15.0.0');
+  expect(record.saveFormatVersion).toBe('16.0.0');
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 14; v++) {

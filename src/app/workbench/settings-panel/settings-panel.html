@@ -155,8 +155,12 @@
         (change)="editLaboratory($event)"
         aria-describedby="tower-laboratory-hint"
       >
-        @for(source of laboratoryFloors();track source){
-        <option [value]="source" [selected]="activeDraft.laboratoryFloor === source.toString()">
+        @for(source of additionFloors();track source){
+        <option
+          [value]="source"
+          [selected]="activeDraft.laboratoryFloor === source.toString()"
+          [disabled]="activeDraft.observatoryFloor === source.toString()"
+        >
           Floor {{ source }}
         </option>
         }
@@ -164,6 +168,30 @@
       <p class="field-hint" id="tower-laboratory-hint">
         Cauldron, workbench, and bookshelf each block one square. The arrangement stays fixed when
         you shuffle. Generate to apply.
+      </p>
+    </div>
+    } @if (observatoryEnabled()) {
+    <div class="field tower-field">
+      <label for="tower-observatory">Observatory floor</label>
+      <select
+        id="tower-observatory"
+        [value]="activeDraft.observatoryFloor"
+        (change)="editObservatory($event)"
+        aria-describedby="tower-observatory-hint"
+      >
+        @for (source of additionFloors(); track source) {
+        <option
+          [value]="source"
+          [selected]="activeDraft.observatoryFloor === source.toString()"
+          [disabled]="activeDraft.laboratoryFloor === source.toString()"
+        >
+          Floor {{ source }}
+        </option>
+        }
+      </select>
+      <p class="field-hint" id="tower-observatory-hint">
+        Telescope, chart table, and cabinet each block one square. Choose a different floor from the
+        laboratory. The instruments stay fixed when you shuffle. Generate to apply.
       </p>
     </div>
     } } @if (selectedCharacter(); as choice) {

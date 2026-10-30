@@ -12,7 +12,8 @@ export type AdditionId =
   | 'abandoned-camp'
   | 'dining-table'
   | 'dry-fountain'
-  | 'alchemist-laboratory';
+  | 'alchemist-laboratory'
+  | 'tower-observatory';
 
 function prop(kind: PropKind, x: number, y: number, variation = 0.3): Prop {
   return { kind, x, y, variation, blocking: isBlockingProp(kind) };
@@ -65,6 +66,16 @@ const illustrations: Readonly<
       prop('bedroll', 5, 3),
       prop('fire_ring', 3, 2),
       prop('supply_bundle', 4, 1),
+    ],
+  },
+  'tower-observatory': {
+    width: 5,
+    height: 5,
+    props: [
+      prop('telescope', 2, 0, 0.25),
+      prop('star_chart_table', 0, 2, 0.25),
+      prop('instrument_cabinet', 4, 2, 0.25),
+      prop('star_charts', 2, 4, 0.25),
     ],
   },
   'alchemist-laboratory': {

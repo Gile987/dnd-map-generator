@@ -27,8 +27,15 @@ export function exportFilename(
       laboratoryFloor !== undefined &&
       (towerFloor === undefined || towerFloor === laboratoryFloor) &&
       (showSecrets || !map.layout.floors.find((floor) => floor.number === laboratoryFloor)?.secret);
+    const observatoryFloor = map.decoration.observatoryFloor;
+    const observatoryVisible =
+      observatoryFloor !== undefined &&
+      (towerFloor === undefined || towerFloor === observatoryFloor) &&
+      (showSecrets ||
+        !map.layout.floors.find((floor) => floor.number === observatoryFloor)?.secret);
+    const observatory = observatoryVisible ? `-observatory-floor-${observatoryFloor}` : '';
     const laboratory = laboratoryVisible ? `-laboratory-floor-${laboratoryFloor}` : '';
-    return `encounter-${seed}-tower-${scope}${map.layout.stairStyle ? '-' + map.layout.stairStyle : ''}${laboratory}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}${map.layout.portalFloor !== null ? (showSecrets ? '-gm-secrets' : '-player') : ''}.png`;
+    return `encounter-${seed}-tower-${scope}${map.layout.stairStyle ? '-' + map.layout.stairStyle : ''}${laboratory}${observatory}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}${map.layout.portalFloor !== null ? (showSecrets ? '-gm-secrets' : '-player') : ''}.png`;
   }
   if (type === 'courtyard')
     return `encounter-${seed}-courtyard${map.decoration.fountain ? '-dry-fountain' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;

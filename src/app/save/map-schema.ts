@@ -24,6 +24,7 @@ import { isDetailRevision } from '../engine/decoration-revision';
 
 export interface SaveVocabulary {
   readonly towerStairStyles?: readonly string[];
+  readonly towerObservatoryFloors?: readonly number[];
   readonly towerLaboratoryFloors?: readonly number[];
   readonly forestSurfaces?: readonly number[];
   readonly mapTypes: readonly string[];
@@ -59,6 +60,13 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
     (type !== 'tower' ||
       typeof layout['stairStyle'] !== 'string' ||
       !vocabulary.towerStairStyles?.includes(layout['stairStyle']))
+  )
+    return false;
+  if (
+    decoration['observatoryFloor'] !== undefined &&
+    (type !== 'tower' ||
+      typeof decoration['observatoryFloor'] !== 'number' ||
+      !vocabulary.towerObservatoryFloors?.includes(decoration['observatoryFloor']))
   )
     return false;
   if (
@@ -377,7 +385,8 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
   if (typeof seed !== 'string' || !seed || seed !== seed.trim() || seed.length > 64) return false;
   if (!isFiniteNumber(surfaceSeed)) return false;
   if (!isObject(layout) || !isObject(decoration)) return false;
-  if (decoration['laboratoryFloor'] !== undefined) return false;
+  if (decoration['laboratoryFloor'] !== undefined || decoration['observatoryFloor'] !== undefined)
+    return false;
   if (type !== 'forest' && decoration['forestSurface'] !== undefined) return false;
   if (
     type !== 'dungeon' &&

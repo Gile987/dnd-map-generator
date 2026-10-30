@@ -236,7 +236,12 @@ export class WorkbenchSession {
           ? null
           : /^\d+$/.test(draft.laboratoryFloor)
             ? Number(draft.laboratoryFloor)
-            : NaN) !== (decoration.laboratoryFloor ?? null)
+            : NaN) !== (decoration.laboratoryFloor ?? null) ||
+        (draft.observatoryFloor === 'none'
+          ? null
+          : /^\d+$/.test(draft.observatoryFloor)
+            ? Number(draft.observatoryFloor)
+            : NaN) !== (decoration.observatoryFloor ?? null)
       );
     }
     if (state.type === 'courtyard') {
@@ -504,6 +509,15 @@ export class WorkbenchSession {
       }
       next = dungeon;
     }
+    if (
+      next.type === 'tower' &&
+      parsed.type === 'tower' &&
+      next.decoration.observatoryFloor !== (parsed.settings.observatoryFloor ?? undefined)
+    )
+      return {
+        ok: false,
+        error: 'Those tower additions could not fit. Try another floor or seed.',
+      };
     if (
       next.type === 'tower' &&
       parsed.type === 'tower' &&

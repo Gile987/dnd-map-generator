@@ -143,7 +143,11 @@ export function renderTower(ctx: DrawingContext, map: Tower, options: RenderOpti
     );
     text(
       ctx,
-      map.decoration.laboratoryFloor === f.number ? 'Alchemist’s laboratory' : f.purpose,
+      map.decoration.observatoryFloor === f.number
+        ? 'Observatory'
+        : map.decoration.laboratoryFloor === f.number
+          ? 'Alchemist’s laboratory'
+          : f.purpose,
       f.x + 7,
       f.y - 1.2,
       0.48,

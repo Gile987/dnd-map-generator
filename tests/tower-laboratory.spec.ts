@@ -58,7 +58,7 @@ test('laboratory drafts apply without rebuilding floors and survive shuffling, b
   const saved = await snapshot(page, 'Laboratory');
   expect(saved.map.layout).toEqual(before.map.layout);
   expect(saved.map.surfaceSeed).toBe(before.map.surfaceSeed);
-  expect(saved.saveFormatVersion).toBe('15.0.0');
+  expect(saved.saveFormatVersion).toBe('16.0.0');
   const cauldron = saved.map.decoration.props.find((p) => p.kind === 'cauldron');
   expect(cauldron).toBeDefined();
   const accepted = await png(page);
@@ -87,7 +87,7 @@ test('laboratory drafts apply without rebuilding floors and survive shuffling, b
   const backup = await backupPending,
     backupBytes = await readFile(await backup.path());
   expect(JSON.parse(backupBytes.toString())).toMatchObject({
-    saveFormatVersion: '15.0.0',
+    saveFormatVersion: '16.0.0',
     maps: expect.arrayContaining([expect.objectContaining({ name: 'Laboratory', map: saved.map })]),
   });
   await page.evaluate(() => localStorage.clear());
@@ -153,7 +153,12 @@ test('laboratory controls retain floor choices, support mobile keyboard use and 
   await checkbox.focus();
   await page.keyboard.press('Space');
   await expect(checkbox).toBeChecked();
-  await expect(picker.locator('img')).toHaveJSProperty('naturalWidth', 480);
+  await expect(
+    picker
+      .locator('.addition-option')
+      .filter({ has: page.getByRole('checkbox', { name: LAB, exact: true }) })
+      .locator('img'),
+  ).toHaveJSProperty('naturalWidth', 480);
   await page.screenshot({ path: 'artifacts/laboratory/picker-mobile.png' });
   await picker.getByRole('button', { name: 'Done', exact: true }).click();
   const floor = page.getByLabel('Laboratory floor', { exact: true });

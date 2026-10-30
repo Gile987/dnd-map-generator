@@ -17,9 +17,14 @@ export interface PendingChange {
 
 function additionNames(draft: SettingsDraft): string {
   if (draft.type === 'tower')
-    return /^\d+$/.test(draft.laboratoryFloor) && draft.laboratoryFloor !== 'none'
-      ? 'Alchemist’s laboratory'
-      : 'None';
+    return (
+      [
+        /^\d+$/.test(draft.laboratoryFloor) ? 'Alchemist’s laboratory' : '',
+        /^\d+$/.test(draft.observatoryFloor) ? 'Tower observatory' : '',
+      ]
+        .filter(Boolean)
+        .join(', ') || 'None'
+    );
   if (draft.type === 'courtyard') return draft.fountain ? 'Dry fountain' : 'None';
   const names: string[] = [];
   if (draft.scene && draft.scene !== 'None') names.push(draft.scene);
@@ -63,6 +68,11 @@ export function pendingSettingChanges(
       'Secret portal',
       accepted.portalFloor === 'none' ? 'None' : `Floor ${accepted.portalFloor} → Secret floor`,
       draft.portalFloor === 'none' ? 'None' : `Floor ${draft.portalFloor} → Secret floor`,
+    );
+    add(
+      'Observatory floor',
+      accepted.observatoryFloor === 'none' ? 'None' : `Floor ${accepted.observatoryFloor}`,
+      draft.observatoryFloor === 'none' ? 'None' : `Floor ${draft.observatoryFloor}`,
     );
     add(
       'Laboratory floor',

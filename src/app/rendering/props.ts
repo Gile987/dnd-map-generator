@@ -7,6 +7,12 @@ import type { Prop, PropKind } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import { drawTent, drawBedroll, drawFireRing, drawSupplyBundle } from './camp-props';
 import { drawDesk, drawBookshelf, drawScrollCase } from './study-props';
+import {
+  drawTelescope,
+  drawStarChartTable,
+  drawInstrumentCabinet,
+  drawStarCharts,
+} from './observatory-props';
 import { drawCauldron } from './laboratory-props';
 import {
   drawBarrel,
@@ -68,6 +74,10 @@ const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   dry_fountain: drawDryFountain,
   low_rubble: drawLowRubble,
   cauldron: drawCauldron,
+  telescope: drawTelescope,
+  star_chart_table: drawStarChartTable,
+  instrument_cabinet: drawInstrumentCabinet,
+  star_charts: drawStarCharts,
 };
 
 export function drawProp(

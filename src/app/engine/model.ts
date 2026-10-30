@@ -203,7 +203,15 @@ export const COURTYARD_PROP_KINDS = [
   'dry_fountain',
 ] as const;
 export type PropKind =
-  DungeonPropKind | ForestPropKind | 'low_rubble' | 'dry_fountain' | 'cauldron';
+  | DungeonPropKind
+  | ForestPropKind
+  | 'low_rubble'
+  | 'dry_fountain'
+  | 'cauldron'
+  | 'telescope'
+  | 'star_chart_table'
+  | 'instrument_cabinet'
+  | 'star_charts';
 
 export const ALL_PROP_KINDS: readonly PropKind[] = [
   ...DUNGEON_PROP_KINDS,
@@ -211,6 +219,10 @@ export const ALL_PROP_KINDS: readonly PropKind[] = [
   'low_rubble',
   'dry_fountain',
   'cauldron',
+  'telescope',
+  'star_chart_table',
+  'instrument_cabinet',
+  'star_charts',
 ];
 
 export function isDungeonPropKind(kind: PropKind): kind is DungeonPropKind {
@@ -329,6 +341,9 @@ export function isBlockingProp(kind: PropKind): boolean {
     kind === 'weathered_statue' ||
     kind === 'standing_stone' ||
     kind === 'dry_fountain' ||
+    kind === 'telescope' ||
+    kind === 'star_chart_table' ||
+    kind === 'instrument_cabinet' ||
     kind === 'cauldron'
   );
 }
