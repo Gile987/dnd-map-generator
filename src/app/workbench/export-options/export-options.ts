@@ -12,7 +12,7 @@ import {
 import type { GeneratedMap } from '../../engine/model';
 import { downloadBlob } from '../../browser/download';
 import { configuredExportFilename, createPng } from '../../rendering/export';
-import { mapDimensions } from '../../engine/model';
+import { exportBounds } from '../../rendering/export-bounds';
 import { EXPORT_PRESETS, exportDimensions, exportGuidance } from '../../rendering/export-presets';
 import type { ExportPreset } from '../../rendering/export-presets';
 import { Icon } from '../../icon';
@@ -26,6 +26,7 @@ type PreviewState =
       readonly map: GeneratedMap;
       readonly grid: boolean;
       readonly secrets: boolean;
+      readonly floor: number | undefined;
       readonly opacity: number;
       readonly preset: ExportPreset;
       readonly blob: Blob;
@@ -44,26 +45,45 @@ export class ExportOptions {
   readonly disabled = input(false);
   readonly showSecrets = input(false);
   protected readonly secrets = signal(false);
+  protected readonly floor = signal<number | undefined>(undefined);
+  protected readonly floors = computed(() => {
+    const map = this.snapshot();
+    return map?.type === 'tower'
+      ? map.layout.floors.filter((floor) => !floor.secret || this.secrets())
+      : [];
+  });
+  protected readonly bounds = computed(() => {
+    const map = this.snapshot();
+    return map ? exportBounds(map, this.floor(), this.secrets()) : { width: 40, height: 30 };
+  });
+  protected readonly scopeLabel = computed(() =>
+    this.floor() === undefined
+      ? this.snapshot()?.type === 'tower'
+        ? 'Whole tower'
+        : 'Full map'
+      : `Floor ${this.floor()}`,
+  );
   readonly downloaded = output<void>();
   protected readonly snapshot = signal<GeneratedMap | null>(null);
   protected readonly grid = signal(true);
   protected readonly opacity = signal(15);
   protected readonly presets = EXPORT_PRESETS;
   protected readonly preset = signal<ExportPreset>(EXPORT_PRESETS[0]);
-  protected readonly columns = computed(() => {
-    const map = this.snapshot();
-    return map ? mapDimensions(map).width : 40;
-  });
-  protected readonly rows = computed(() => {
-    const map = this.snapshot();
-    return map ? mapDimensions(map).height : 30;
-  });
+  protected readonly columns = computed(() => this.bounds().width);
+  protected readonly rows = computed(() => this.bounds().height);
   protected readonly guidance = computed(() => {
     const map = this.snapshot();
-    return map ? exportGuidance(this.preset(), map) : this.preset().guidance;
+    return map
+      ? exportGuidance(this.preset(), map, this.floor(), this.secrets())
+      : this.preset().guidance;
   });
   protected readonly size = computed(() =>
-    exportDimensions(this.preset().pixelsPerTile, this.snapshot() ?? undefined),
+    exportDimensions(
+      this.preset().pixelsPerTile,
+      this.snapshot() ?? undefined,
+      this.floor(),
+      this.secrets(),
+    ),
   );
   protected readonly preview = signal<PreviewState>({ kind: 'loading' });
   protected readonly notice = signal('');
@@ -79,6 +99,7 @@ export class ExportOptions {
       preview.map === this.snapshot() &&
       preview.grid === this.grid() &&
       preview.secrets === this.secrets() &&
+      preview.floor === this.floor() &&
       preview.opacity === this.opacity() &&
       preview.preset === this.preset()
       ? preview
@@ -90,6 +111,7 @@ export class ExportOptions {
       const map = this.snapshot();
       const grid = this.grid();
       const secrets = this.secrets();
+      const floor = this.floor();
       const opacity = this.opacity();
       const preset = this.preset();
       this.retry();
@@ -104,10 +126,27 @@ export class ExportOptions {
       const firstFrame = requestAnimationFrame(() => {
         secondFrame = requestAnimationFrame(async () => {
           try {
-            const blob = await createPng(map, grid, opacity / 100, preset.pixelsPerTile, secrets);
+            const blob = await createPng(
+              map,
+              grid,
+              opacity / 100,
+              preset.pixelsPerTile,
+              secrets,
+              floor,
+            );
             if (!active) return;
             url = URL.createObjectURL(blob);
-            this.preview.set({ kind: 'ready', map, grid, opacity, preset, blob, url, secrets });
+            this.preview.set({
+              kind: 'ready',
+              map,
+              grid,
+              opacity,
+              preset,
+              blob,
+              url,
+              secrets,
+              floor,
+            });
           } catch (error: unknown) {
             if (active)
               this.preview.set({
@@ -131,6 +170,7 @@ export class ExportOptions {
 
   show(): void {
     if (this.disabled() || this.dialog().nativeElement.open) return;
+    this.floor.set(undefined);
     this.secrets.set(this.showSecrets());
     this.snapshot.set(this.map());
     this.dialog().nativeElement.showModal();
@@ -145,8 +185,23 @@ export class ExportOptions {
   }
 
   protected changeSecrets(event: Event): void {
-    if (!this.disabled() && event.target instanceof HTMLInputElement)
-      this.secrets.set(event.target.checked);
+    if (this.disabled() || !(event.target instanceof HTMLInputElement)) return;
+    if (
+      !event.target.checked &&
+      this.floors().find((floor) => floor.number === this.floor())?.secret
+    )
+      this.floor.set(undefined);
+    this.secrets.set(event.target.checked);
+  }
+
+  protected changeFloor(event: Event): void {
+    if (this.disabled() || !(event.target instanceof HTMLSelectElement)) return;
+    const value = event.target.value;
+    if (value === 'whole') this.floor.set(undefined);
+    else {
+      const floor = this.floors().find((floor) => String(floor.number) === value);
+      if (floor) this.floor.set(floor.number);
+    }
   }
   protected changeGrid(event: Event): void {
     if (!this.disabled() && event.target instanceof HTMLInputElement)
@@ -188,6 +243,7 @@ export class ExportOptions {
           preview.opacity,
           preview.preset,
           preview.secrets,
+          preview.floor,
         ),
       );
       this.notice.set('PNG ready. Check your downloads.');
