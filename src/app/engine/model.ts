@@ -109,6 +109,7 @@ export interface DungeonSettings {
 }
 
 export interface ForestSettings {
+  readonly fallenTree?: boolean;
   readonly seed: string;
   readonly density: Density;
   readonly character: ForestCharacter;
@@ -178,6 +179,13 @@ export const DUNGEON_PROP_KINDS = [
   'dining_table',
 ] as const;
 
+export const FALLEN_TREE_PROP_KINDS = [
+  'fallen_trunk',
+  'fallen_roots',
+  'fallen_branch',
+  'fallen_fungi',
+] as const;
+
 export const FOREST_PROP_KINDS = [
   'tree',
   'boulder',
@@ -192,6 +200,7 @@ export const FOREST_PROP_KINDS = [
   'fire_ring',
   'supply_bundle',
   'standing_stone',
+  ...FALLEN_TREE_PROP_KINDS,
 ] as const;
 
 export type DungeonPropKind = (typeof DUNGEON_PROP_KINDS)[number];
@@ -267,6 +276,7 @@ export interface Decoration {
 }
 
 export interface ForestDecoration {
+  readonly fallenTree?: true;
   /** Missing on historical maps, whose original floor artwork is retained. */
   readonly forestSurface?: 1;
   readonly props: readonly Prop[];
@@ -356,6 +366,8 @@ export function isBlockingProp(kind: PropKind): boolean {
     kind === 'telescope' ||
     kind === 'star_chart_table' ||
     kind === 'instrument_cabinet' ||
+    kind === 'fallen_trunk' ||
+    kind === 'fallen_roots' ||
     kind === 'collapsed_wagon' ||
     kind === 'spilled_crate' ||
     kind === 'cauldron'

@@ -16,6 +16,7 @@ export type SeedStream =
   | 'forest-decoration'
   | 'forest-landmark'
   | 'forest-camp'
+  | 'forest-fallen-tree'
   | 'dungeon-study'
   | 'dungeon-ritual'
   | 'dungeon-landmark'

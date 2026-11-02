@@ -1,6 +1,7 @@
 import { HEIGHT, WIDTH, indexOf, isWalkable } from '../engine/model';
 import type { ForestCharacter, ForestClearing, Point } from '../engine/model';
 import { campReservations } from '../engine/forest-camp';
+import { propCells } from '../engine/prop-footprint';
 import { circleReserve } from '../engine/forest-landmark';
 import { areaContains } from '../engine/feature-reservation';
 import { Random, deriveSeed } from '../engine/random';
@@ -15,7 +16,9 @@ interface SurfacePatch extends Point {
 export function forestSurfacePatches(map: ForestClearing): readonly SurfacePatch[] {
   if (map.decoration.forestSurface !== 1) return [];
   const route = new Set(map.layout.route);
-  const occupied = new Set(map.decoration.props.map((p) => indexOf(p.x, p.y)));
+  const occupied = new Set(
+    map.decoration.props.flatMap((p) => propCells(p).map((cell) => indexOf(cell.x, cell.y))),
+  );
   const camp = campReservations(map.decoration.props);
   const stones = map.decoration.props.filter((p) => p.kind === 'standing_stone');
   const circle =

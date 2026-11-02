@@ -1,6 +1,9 @@
-import { propFootprintError } from './prop-footprint';
+import { fallenTreeSite } from './forest-fallen-tree';
+import { areaContains } from './feature-reservation';
+import { propFootprintError, propCells } from './prop-footprint';
 import {
   ALL_DENSITIES,
+  FALLEN_TREE_PROP_KINDS,
   ALL_FOREST_CHARACTERS,
   ALL_FOREST_SCENES,
   ALL_FOREST_LANDMARKS,
@@ -73,6 +76,8 @@ function routeIsValid(layout: ForestLayout): boolean {
 }
 
 export function validateForest(map: ForestClearing): string | undefined {
+  if (map.decoration.fallenTree !== undefined && map.decoration.fallenTree !== true)
+    return 'Invalid fallen ancient tree selection.';
   if (map.decoration.forestSurface !== undefined && map.decoration.forestSurface !== 1)
     return 'Choose supported forest surface artwork.';
   const layoutError = forestLayoutError(map.layout);
@@ -114,6 +119,19 @@ export function validateForest(map: ForestClearing): string | undefined {
   } else if (camp.length) return 'Camp objects require an abandoned camp scene.';
   if (!isDetailRevision(map.decoration.revision))
     return 'The detail revision must be a nonnegative safe integer.';
+  const treeSite = map.decoration.fallenTree
+    ? fallenTreeSite(
+        map.layout,
+        map.decoration.props,
+        map.seed,
+        map.decoration.density,
+        map.decoration.revision,
+      )
+    : undefined;
+  if (map.decoration.fallenTree && !treeSite)
+    return 'The fallen ancient tree could not fit beside the path and other additions.';
+  const expectedTree = new Map(treeSite?.props.map((p) => [p.kind, p]) ?? []),
+    seenTree = new Set<string>();
   const route = new Set(map.layout.route);
   const blocked = new Set<number>();
   for (const prop of map.decoration.props) {
@@ -125,15 +143,39 @@ export function validateForest(map: ForestClearing): string | undefined {
       return 'A tree is on walkable ground.';
     if (prop.blocking !== isBlockingProp(prop.kind))
       return 'A prop has an invalid movement classification.';
+    const treeProp = FALLEN_TREE_PROP_KINDS.some((kind) => kind === prop.kind);
+    if (treeProp) {
+      const expected = expectedTree.get(prop.kind);
+      if (
+        !expected ||
+        seenTree.has(prop.kind) ||
+        prop.x !== expected.x ||
+        prop.y !== expected.y ||
+        prop.blocking !== expected.blocking ||
+        prop.variation !== expected.variation ||
+        prop.rotation !== expected.rotation ||
+        prop.footprint?.width !== expected.footprint?.width ||
+        prop.footprint?.height !== expected.footprint?.height
+      )
+        return 'The fallen ancient tree must retain its complete canonical arrangement.';
+      seenTree.add(prop.kind);
+    } else if (treeSite && areaContains(treeSite.area, prop))
+      return 'The fallen ancient tree needs separate space from ordinary decoration.';
     if (!prop.blocking) continue;
-    const tile = indexOf(prop.x, prop.y);
-    if (route.has(tile)) return 'A blocking prop overlaps the forest path.';
-    if (blocked.has(tile)) return 'A blocking prop overlaps another prop.';
-    if (!isWalkable(map.layout, prop.x, prop.y))
-      return 'A blocking prop is outside walkable ground.';
-    blocked.add(tile);
+
+    for (const cell of propCells(prop)) {
+      if (!isTilePosition(cell.x, cell.y)) return 'A prop footprint leaves the tile grid.';
+      const tile = indexOf(cell.x, cell.y);
+      if (route.has(tile)) return 'A blocking prop overlaps the forest path.';
+      if (blocked.has(tile)) return 'A blocking prop overlaps another prop.';
+      if (!isWalkable(map.layout, cell.x, cell.y))
+        return 'A blocking prop is outside walkable ground.';
+      blocked.add(tile);
+    }
   }
 
+  if (seenTree.size !== expectedTree.size)
+    return 'The selected fallen ancient tree must be complete.';
   if (
     blocked.size >
     Math.floor(map.layout.tiles.filter(Boolean).length * DENSITY_BUDGETS[map.decoration.density])
@@ -149,6 +191,8 @@ export function validateForest(map: ForestClearing): string | undefined {
 }
 
 export function validateForestSettings(settings: ForestSettings): string | undefined {
+  if (settings.fallenTree !== undefined && typeof settings.fallenTree !== 'boolean')
+    return 'Choose whether to add a fallen ancient tree.';
   if (!settings.seed.trim() || settings.seed.trim().length > 64)
     return 'Enter a seed between 1 and 64 characters.';
   if (!ALL_FOREST_LANDMARKS.includes(settings.landmark ?? 'None'))

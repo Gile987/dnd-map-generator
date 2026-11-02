@@ -66,6 +66,7 @@ export function generateForestClearing(
         0,
         settings.scene,
         settings.landmark,
+        settings.fallenTree,
       ),
     };
 
@@ -75,8 +76,9 @@ export function generateForestClearing(
 
   return {
     ok: false,
-    error:
-      'Could not generate a connected forest clearing within the generation limit. Try another seed or different density.',
+    error: settings.fallenTree
+      ? 'The fallen ancient tree could not fit with the selected additions. Try another seed or remove an addition.'
+      : 'Could not generate a connected forest clearing within the generation limit. Try another seed or different density.',
   };
 }
 
@@ -90,6 +92,7 @@ export function shuffleForestDetails(map: ForestClearing): ForestClearing {
     revision,
     map.decoration.scene,
     map.decoration.landmark,
+    map.decoration.fallenTree,
   );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
@@ -106,6 +109,7 @@ export function changeForestDensity(map: ForestClearing, density: Density): Fore
     map.decoration.revision,
     map.decoration.scene,
     map.decoration.landmark,
+    map.decoration.fallenTree,
   );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
@@ -125,6 +129,7 @@ export function changeForestCharacter(
     map.decoration.revision,
     map.decoration.scene,
     map.decoration.landmark,
+    map.decoration.fallenTree,
   );
   const updated: ForestClearing = { ...map, decoration };
   const error = validateForest(updated);
@@ -138,8 +143,9 @@ export function changeForestScene(map: ForestClearing, scene: ForestScene): Fore
 
 export function changeForestAppearance(
   map: ForestClearing,
-  settings: Pick<ForestSettings, 'density' | 'character' | 'scene' | 'landmark'>,
+  settings: Pick<ForestSettings, 'density' | 'character' | 'scene' | 'landmark' | 'fallenTree'>,
 ): ForestClearing {
+  if (settings.fallenTree !== undefined && typeof settings.fallenTree !== 'boolean') return map;
   const decoration = decorateForest(
     map.layout,
     map.seed,
@@ -148,6 +154,7 @@ export function changeForestAppearance(
     map.decoration.revision,
     settings.scene,
     settings.landmark,
+    settings.fallenTree,
   );
   const updated: ForestClearing = { ...map, decoration };
   return validateForest(updated) ? map : updated;

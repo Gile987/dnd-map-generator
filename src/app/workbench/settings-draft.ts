@@ -37,6 +37,7 @@ export interface DungeonDraft extends CommonDraft {
 }
 
 export interface ForestDraft extends CommonDraft {
+  readonly fallenTree?: boolean;
   readonly type: 'forest';
   readonly character: ForestCharacter;
   readonly scene?: ForestScene;
@@ -114,6 +115,7 @@ export function dungeonDraftForMap(map: Dungeon): DungeonDraft {
 export function forestDraftForMap(map: ForestClearing): ForestDraft {
   return {
     type: 'forest',
+    ...(map.decoration.fallenTree ? { fallenTree: true } : {}),
     seed: map.seed,
     density: map.decoration.density,
     character: map.decoration.character,
@@ -163,6 +165,7 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
   }
   if (draft.type === 'forest') {
     const settings: ForestSettings = {
+      fallenTree: draft.fallenTree,
       seed: draft.seed,
       density: draft.density,
       character: draft.character,

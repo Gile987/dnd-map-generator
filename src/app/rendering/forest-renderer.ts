@@ -28,6 +28,10 @@ const PROP_LAYERS: Readonly<Record<ForestPropKind, 'ground' | 'object'>> = {
   fire_ring: 'ground',
   supply_bundle: 'object',
   standing_stone: 'object',
+  fallen_trunk: 'object',
+  fallen_roots: 'object',
+  fallen_branch: 'ground',
+  fallen_fungi: 'ground',
 };
 
 interface ForestAtmosphere {

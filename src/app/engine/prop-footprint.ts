@@ -3,6 +3,7 @@ import type { ReservedArea } from './feature-reservation';
 
 // Local, unrotated dimensions. Stored dimensions must match this definition.
 export const MULTI_TILE_PROPS = {
+  fallen_trunk: { width: 4, height: 1 },
   collapsed_wagon: { width: 3, height: 2 },
   dining_table: { width: 2, height: 1 },
   dry_fountain: { width: 3, height: 3 },

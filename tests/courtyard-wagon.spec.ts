@@ -67,7 +67,7 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   await apply(page);
   const accepted = await snapshot(page, 'Wagon courtyard'),
     acceptedPng = await png(page);
-  expect(accepted.saveFormatVersion).toBe('17.0.0');
+  expect(accepted.saveFormatVersion).toBe('18.0.0');
   expect(accepted.map.layout).toEqual(before.map.layout);
   expect(accepted.map.surfaceSeed).toBe(before.map.surfaceSeed);
   expect(accepted.map.decoration).toMatchObject({ wagon: true, fountain: true, revision: 0 });
@@ -114,7 +114,7 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   const file = await pending,
     backup = await readFile(await file.path());
   expect(JSON.parse(backup.toString())).toMatchObject({
-    saveFormatVersion: '17.0.0',
+    saveFormatVersion: '18.0.0',
     maps: expect.arrayContaining([
       expect.objectContaining({ name: 'Wagon courtyard', map: accepted.map }),
     ]),

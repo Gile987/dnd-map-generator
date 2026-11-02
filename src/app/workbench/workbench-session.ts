@@ -262,7 +262,8 @@ export class WorkbenchSession {
         draft.density !== decoration.density ||
         draft.character !== decoration.character ||
         (draft.landmark ?? 'None') !== (decoration.landmark ?? 'None') ||
-        (draft.scene ?? 'None') !== (decoration.scene ?? 'None')
+        (draft.scene ?? 'None') !== (decoration.scene ?? 'None') ||
+        Boolean(draft.fallenTree) !== Boolean(decoration.fallenTree)
       );
     }
     const draft = state.drafts.dungeon;
@@ -473,6 +474,8 @@ export class WorkbenchSession {
       } else if (
         (settings.landmark ?? 'None') !== 'None' ||
         (forest.decoration.landmark ?? 'None') !== 'None' ||
+        settings.fallenTree ||
+        forest.decoration.fallenTree ||
         settings.scene === 'Abandoned camp' ||
         forest.decoration.scene === 'Abandoned camp'
       ) {
@@ -527,6 +530,15 @@ export class WorkbenchSession {
       return {
         ok: false,
         error: 'That laboratory could not fit on that floor. Try another floor or seed.',
+      };
+    if (
+      next.type === 'forest' &&
+      parsed.type === 'forest' &&
+      Boolean(next.decoration.fallenTree) !== Boolean(parsed.settings.fallenTree)
+    )
+      return {
+        ok: false,
+        error: 'That fallen ancient tree could not fit. Try another seed or remove an addition.',
       };
     if (next.decoration.density !== parsed.settings.density) {
       return {

@@ -14,7 +14,8 @@ export type AdditionId =
   | 'dry-fountain'
   | 'alchemist-laboratory'
   | 'tower-observatory'
-  | 'collapsed-wagon';
+  | 'collapsed-wagon'
+  | 'fallen-ancient-tree';
 
 function prop(kind: PropKind, x: number, y: number, variation = 0.3): Prop {
   return { kind, x, y, variation, blocking: isBlockingProp(kind) };
@@ -65,6 +66,17 @@ const illustrations: Readonly<
     width: 4,
     height: 3,
     props: [{ ...prop('dining_table', 1, 1), footprint: { width: 2, height: 1 }, rotation: 0 }],
+  },
+  'fallen-ancient-tree': {
+    width: 6,
+    height: 3,
+    forest: true,
+    props: [
+      { ...prop('fallen_trunk', 1, 1, 0.4), footprint: { width: 4, height: 1 }, rotation: 0 },
+      prop('fallen_roots', 0, 1, 0.4),
+      prop('fallen_branch', 5, 0, 0.4),
+      prop('fallen_fungi', 4, 2, 0.4),
+    ],
   },
   'abandoned-camp': {
     width: 7,
