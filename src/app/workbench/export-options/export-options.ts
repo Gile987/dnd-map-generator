@@ -9,7 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import type { GeneratedMap } from '../../engine/model';
+import type { MapDocument } from '../../engine/model';
 import { downloadBlob } from '../../browser/download';
 import { configuredExportFilename, createPng } from '../../rendering/export';
 import { exportBounds } from '../../rendering/export-bounds';
@@ -23,7 +23,7 @@ type PreviewState =
   | { readonly kind: 'error'; readonly message: string }
   | {
       readonly kind: 'ready';
-      readonly map: GeneratedMap;
+      readonly map: MapDocument;
       readonly grid: boolean;
       readonly secrets: boolean;
       readonly floor: number | undefined;
@@ -41,7 +41,7 @@ type PreviewState =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExportOptions {
-  readonly map = input.required<GeneratedMap>();
+  readonly map = input.required<MapDocument>();
   readonly disabled = input(false);
   readonly showSecrets = input(false);
   protected readonly secrets = signal(false);
@@ -64,7 +64,7 @@ export class ExportOptions {
       : `Floor ${this.floor()}`,
   );
   readonly downloaded = output<void>();
-  protected readonly snapshot = signal<GeneratedMap | null>(null);
+  protected readonly snapshot = signal<MapDocument | null>(null);
   protected readonly grid = signal(true);
   protected readonly opacity = signal(15);
   protected readonly presets = EXPORT_PRESETS;

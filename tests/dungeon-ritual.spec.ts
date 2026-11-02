@@ -86,10 +86,10 @@ test('ritual picker is illustrated and searchable, drafts stay pending, and hist
   const shuffled = await snapshot(page, 'Shuffled ritual');
   expect(shuffled.decoration.ritual).toBe(true);
   await expect(selectedAddition(page, 'Ritual site')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('r0');
   expect(await snapshot(page, 'Undone ritual')).toEqual(ritual);
-  await page.getByRole('button', { name: 'Redo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Redo (shuffle|change)$/, exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   expect(await snapshot(page, 'Redone ritual')).toEqual(shuffled);
   await page.getByRole('button', { name: 'Reset changes', exact: true }).click();
@@ -134,7 +134,7 @@ test('ritual snapshots survive refresh and single-map sharing with exact PNGs an
     .getByRole('button', { name: 'Export this map', exact: true })
     .click();
   const path = await (await pending).path();
-  expect(JSON.parse(await readFile(path, 'utf8'))).toMatchObject({ saveFormatVersion: '18.0.0' });
+  expect(JSON.parse(await readFile(path, 'utf8'))).toMatchObject({ saveFormatVersion: '20.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://127.0.0.1:4200/');

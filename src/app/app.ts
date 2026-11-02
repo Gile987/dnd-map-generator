@@ -1,3 +1,4 @@
+import type { ObjectEditRequest } from './workbench/object-editor/object-editor';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,7 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import type { GeneratedMap, MapType } from './engine/model';
+import type { MapDocument, MapType } from './engine/model';
 import { downloadPng } from './rendering/export';
 import { mapDimensions } from './engine/model';
 import { PIXELS_PER_TILE } from './rendering/resolution';
@@ -38,13 +39,15 @@ function yieldForUi(): Promise<void> {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.map-focused]': 'focused()',
+    '[class.object-editing]': 'objectEditing()',
     '(keydown.escape)': 'escapeFocus($event)',
   },
 })
 export class App {
   private readonly session = inject(WorkbenchSession);
   private readonly injector = inject(Injector);
-  private readonly mapPanel = viewChild.required(MapPanel);
+  private readonly mapPanel = viewChild(MapPanel);
+  protected readonly objectEditing = computed(() => this.mapPanel()?.objectEditing() ?? false);
   private workbenchScroll = { x: 0, y: 0 };
   private readonly mapType = this.session.mapType;
   protected readonly map = this.session.map;
@@ -86,7 +89,7 @@ export class App {
     if (this.busy()) return;
     this.session.clearPin();
     this.status.set('Pin cleared. Showing Current. Your library is unchanged.');
-    afterNextRender(() => this.mapPanel().focusPinControl(), { injector: this.injector });
+    afterNextRender(() => this.mapPanel()?.focusPinControl(), { injector: this.injector });
   }
 
   protected setFocused(focused: boolean): void {
@@ -96,7 +99,7 @@ export class App {
     afterNextRender(
       {
         write: () => {
-          this.mapPanel().focusViewControl();
+          this.mapPanel()?.focusViewControl();
           window.scrollTo({
             left: focused ? 0 : this.workbenchScroll.x,
             top: focused ? 0 : this.workbenchScroll.y,
@@ -155,6 +158,16 @@ export class App {
     this.status.set('Pending settings reset. Your displayed map is unchanged.');
   }
 
+  protected editObjects(request: ObjectEditRequest): void {
+    if (this.busy()) return;
+    const result = this.session.editObjects(request.source, request.command);
+    this.error.set(result.ok ? '' : result.error);
+    if (result.ok)
+      this.status.set(
+        'Dungeon objects updated. Undo restores the previous arrangement. Save to keep your changes.',
+      );
+  }
+
   protected async shuffle(): Promise<void> {
     await this.run('details', () => {
       if (!this.session.shuffle())
@@ -177,12 +190,12 @@ export class App {
       if (direction === 'undo') this.session.undoShuffle();
       else this.session.redoShuffle();
       this.status.set(
-        `Shuffle ${direction === 'undo' ? 'undone' : 'redone'}. Showing detail revision ${this.map().decoration.revision}.`,
+        `Change ${direction === 'undo' ? 'undone' : 'redone'}. Showing detail revision ${this.map().decoration.revision}.`,
       );
     });
   }
 
-  protected openSaved(map: GeneratedMap): void {
+  protected openSaved(map: MapDocument): void {
     if (this.busy()) return;
     this.session.openSaved(map);
     this.attempted.set(false);
@@ -229,7 +242,7 @@ export class App {
     }
 
     await this.run('generation', () => {
-      const result = this.session.generate();
+      const result = this.session.generate(true);
       if (!result.ok) throw new Error(result.error);
       this.attempted.set(false);
       this.status.set(

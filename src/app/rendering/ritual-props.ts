@@ -1,4 +1,5 @@
-import type { DecorationPreset, Dungeon, Prop } from '../engine/model';
+import type { DungeonDrawing } from '../engine/object-editor/document';
+import type { DecorationPreset, Prop } from '../engine/model';
 import { ritualCenter } from '../engine/dungeon-ritual';
 import type { DrawingContext } from './drawing-context';
 import { path } from './drawing-primitives';
@@ -229,6 +230,6 @@ export function drawRitualFloor(
   }
 }
 
-export function drawDungeonRitualFloor(ctx: DrawingContext, map: Dungeon): void {
+export function drawDungeonRitualFloor(ctx: DrawingContext, map: DungeonDrawing): void {
   if (map.decoration.ritual) drawRitualFloor(ctx, map.decoration.props, map.decoration.preset);
 }

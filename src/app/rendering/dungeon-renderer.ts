@@ -1,14 +1,14 @@
+import { drawDungeonProp, isDungeonGroundProp } from './dungeon-prop-layer';
+import type { DungeonDrawing } from '../engine/object-editor/document';
 import { HEIGHT, WIDTH, isFloor } from '../engine/model';
-import type { DecorationPreset, Dungeon, Layout } from '../engine/model';
+import type { DecorationPreset, Layout } from '../engine/model';
 import { Random, deriveSeed } from '../engine/random';
-import { drawProp } from './props';
 import { drawGrid, path } from './drawing-primitives';
 import type { DrawingContext } from './drawing-context';
 import type { RenderOptions } from './render-options';
 import { boundaryLoops, traceBoundaries } from './boundaries';
 import { drawStudySurface } from './study-surface';
 import { drawDungeonRitualFloor } from './ritual-props';
-import { drawFittedStudyProp } from './study-props';
 
 interface Atmosphere {
   readonly background: string;
@@ -54,7 +54,7 @@ const atmospheres: Readonly<Record<DecorationPreset, Atmosphere>> = {
   },
 };
 
-function floors(ctx: DrawingContext, map: Dungeon): void {
+function floors(ctx: DrawingContext, map: DungeonDrawing): void {
   const atmo = atmospheres[map.decoration.preset];
   const [baseR, baseG, baseB] = atmo.floorBase;
   const [slabR, slabG, slabB] = atmo.floorSlab;
@@ -165,7 +165,7 @@ function walls(ctx: DrawingContext, layout: Layout): void {
   }
 }
 
-function architecture(ctx: DrawingContext, map: Dungeon): void {
+function architecture(ctx: DrawingContext, map: DungeonDrawing): void {
   for (const door of map.layout.thresholds) {
     ctx.save();
     ctx.translate(door.x, door.y);
@@ -258,7 +258,11 @@ function architecture(ctx: DrawingContext, map: Dungeon): void {
   ctx.restore();
 }
 
-export function renderDungeon(ctx: DrawingContext, map: Dungeon, options: RenderOptions): void {
+export function renderDungeon(
+  ctx: DrawingContext,
+  map: DungeonDrawing,
+  options: RenderOptions,
+): void {
   const atmo = atmospheres[map.decoration.preset];
   ctx.save();
   ctx.setTransform(options.pixelsPerTile, 0, 0, options.pixelsPerTile, 0, 0);
@@ -278,16 +282,12 @@ export function renderDungeon(ctx: DrawingContext, map: Dungeon, options: Render
   drawDungeonRitualFloor(ctx, map);
   drawStudySurface(ctx, map);
   walls(ctx, map.layout);
-  for (const prop of map.decoration.props.filter(
-    (prop) => prop.kind === 'rug' || prop.kind === 'moss',
-  ))
-    drawProp(ctx, prop);
+  for (const prop of map.decoration.props.filter(isDungeonGroundProp)) {
+    drawDungeonProp(ctx, prop, map);
+  }
   architecture(ctx, map);
-  for (const prop of map.decoration.props.filter(
-    (prop) => prop.kind !== 'rug' && prop.kind !== 'moss',
-  )) {
-    if (map.decoration.studySurface === 1 && drawFittedStudyProp(ctx, prop, map.layout)) continue;
-    drawProp(ctx, prop);
+  for (const prop of map.decoration.props.filter((prop) => !isDungeonGroundProp(prop))) {
+    drawDungeonProp(ctx, prop, map);
   }
   for (const prop of map.decoration.props.filter((prop) => prop.kind === 'sconce')) {
     const x = prop.x + 0.5;

@@ -1,3 +1,4 @@
+import type { MapDocument } from './object-editor/document';
 import type { Tower, TowerSettings } from './tower';
 import { landmarkIdsFor } from './landmark-catalog';
 import type { LandmarkIdFor } from './landmark-catalog';
@@ -295,6 +296,8 @@ export interface ForestLayout {
 }
 
 export interface Dungeon {
+  /** Authored documents are deliberately excluded from generator inputs. */
+  readonly objectEdits?: never;
   readonly type: 'dungeon';
   readonly version: string;
   readonly seed: string;
@@ -313,6 +316,8 @@ export interface ForestClearing {
 }
 
 export type GeneratedMap = Dungeon | ForestClearing | RuinedCourtyard | Tower;
+
+export type { MapDocument, DungeonDocument } from './object-editor/document';
 
 export type GenerationResult =
   { readonly ok: true; readonly map: Dungeon } | { readonly ok: false; readonly error: string };
@@ -378,7 +383,7 @@ export function center(room: Room): Point {
   return { x: room.x + Math.floor(room.width / 2), y: room.y + Math.floor(room.height / 2) };
 }
 
-export function mapDimensions(map: GeneratedMap): { width: number; height: number } {
+export function mapDimensions(map: MapDocument): { width: number; height: number } {
   return map.type === 'tower'
     ? { width: map.layout.width, height: map.layout.height }
     : { width: WIDTH, height: HEIGHT };

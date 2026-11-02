@@ -1,10 +1,10 @@
 import { mapDimensions } from '../engine/model';
-import type { GeneratedMap } from '../engine/model';
+import type { MapDocument } from '../engine/model';
 import { renderMap } from './render-map';
 
 const THUMBNAIL_PIXELS_PER_TILE = 8;
 
-export function createThumbnail(map: GeneratedMap): string {
+export function createThumbnail(map: MapDocument): string {
   const canvas = document.createElement('canvas');
   const { width, height } = mapDimensions(map);
   canvas.width = width * THUMBNAIL_PIXELS_PER_TILE;

@@ -9,9 +9,9 @@ import {
 } from './settings-draft';
 import type { SettingsDraft } from './settings-draft';
 import { WorkbenchSession } from './workbench-session';
-import type { GeneratedMap } from '../engine/model';
+import type { MapDocument } from '../engine/model';
 
-function draftFor(map: GeneratedMap): SettingsDraft {
+function draftFor(map: MapDocument): SettingsDraft {
   if (map.type === 'tower') return towerDraftForMap(map);
   return map.type === 'dungeon'
     ? dungeonDraftForMap(map)

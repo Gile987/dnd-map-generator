@@ -63,12 +63,12 @@ test('courtyard additions, drafts, shuffle history and type switching preserve a
   expect(shuffled.map.layout).toEqual(accepted.map.layout);
   await page.getByLabel('World seed').fill('pending-ruin');
   await page.getByRole('radio', { name: 'Cluttered', exact: true }).check();
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('r0');
   await settled(page);
   expect((await snapshot(page, 'Undone courtyard')).map).toEqual(accepted.map);
   expect(await png(page)).toEqual(original);
-  await page.getByRole('button', { name: 'Redo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Redo (shuffle|change)$/, exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   await settled(page);
   expect((await snapshot(page, 'Redone courtyard')).map).toEqual(shuffled.map);
@@ -95,7 +95,9 @@ test('courtyard additions, drafts, shuffle history and type switching preserve a
   await page.getByRole('button', { name: 'Generate courtyard', exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('fallen-crown');
   await settled(page);
-  await expect(page.getByRole('button', { name: 'Undo shuffle', exact: true })).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }),
+  ).toBeDisabled();
   const regenerated = await snapshot(page, 'New ruin');
   expect(regenerated.map.layout).not.toEqual(initial.map.layout);
   expect(regenerated.map.decoration).toMatchObject({
@@ -121,7 +123,7 @@ test('courtyard saves and backups reopen exact artwork and PNGs after a refresh'
   const backup = await backupPending;
   const backupBytes = await readFile(await backup.path());
   expect(JSON.parse(backupBytes.toString())).toMatchObject({
-    saveFormatVersion: '18.0.0',
+    saveFormatVersion: '20.0.0',
     maps: [{ map: saved.map }],
   });
   await page.reload();
@@ -129,7 +131,9 @@ test('courtyard saves and backups reopen exact artwork and PNGs after a refresh'
   await expect(page.getByRole('heading', { name: 'Ruined Courtyard', exact: true })).toBeVisible();
   await settled(page);
   expect(await png(page)).toEqual(original);
-  await expect(page.getByRole('button', { name: 'Undo shuffle', exact: true })).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }),
+  ).toBeDisabled();
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await page
@@ -177,7 +181,7 @@ test('courtyard controls recover from an export failure without accepting drafts
   await expect(page.locator('html')).toHaveAttribute('data-courtyard-export-held', 'true');
   await expect(page.getByRole('radio', { name: 'Courtyard', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Choose additions', exact: true })).toBeDisabled();
-  const undo = page.getByRole('button', { name: 'Undo shuffle', exact: true });
+  const undo = page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true });
   await expect(undo).toBeDisabled();
   await undo.focus();
   await page.keyboard.press('Enter');

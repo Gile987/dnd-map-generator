@@ -69,7 +69,7 @@ test('observatory and laboratory coexist as appearance drafts, survive history a
   expect((await png(page)).bytes).toEqual(beforePng.bytes);
   await apply(page, 4);
   const accepted = await snapshot(page, 'Observatory');
-  expect(accepted.saveFormatVersion).toBe('18.0.0');
+  expect(accepted.saveFormatVersion).toBe('20.0.0');
   expect(accepted.map.layout).toEqual(before.map.layout);
   expect(accepted.map.surfaceSeed).toBe(before.map.surfaceSeed);
   expect(accepted.map.decoration).toMatchObject({
@@ -90,7 +90,7 @@ test('observatory and laboratory coexist as appearance drafts, survive history a
   const shuffled = await snapshot(page, 'Shuffled observatory');
   for (const prop of fixed) expect(shuffled.map.decoration.props).toContainEqual(prop);
   await floor.selectOption('3');
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
   expect((await png(page)).bytes).toEqual(image.bytes);
   await expect(floor).toHaveValue('3');
@@ -122,7 +122,7 @@ test('observatory and laboratory coexist as appearance drafts, survive history a
   const backup = await pending,
     bytes = await readFile(await backup.path());
   expect(JSON.parse(bytes.toString())).toMatchObject({
-    saveFormatVersion: '18.0.0',
+    saveFormatVersion: '20.0.0',
     maps: expect.arrayContaining([
       expect.objectContaining({ name: 'Observatory', map: accepted.map }),
     ]),

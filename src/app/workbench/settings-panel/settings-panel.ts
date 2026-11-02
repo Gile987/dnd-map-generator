@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { ALL_DENSITIES, ROOM_MAX, ROOM_MIN } from '../../engine/model';
-import type { GeneratedMap, MapType } from '../../engine/model';
+import type { MapDocument, MapType } from '../../engine/model';
 import { Icon } from '../../icon';
 import {
   CHARACTER_DESCRIPTIONS,
@@ -56,7 +56,11 @@ function observatoryFloorOf(draft: SettingsDraft): number | null {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsPanel {
-  readonly map = input.required<GeneratedMap>();
+  readonly map = input.required<MapDocument>();
+  protected readonly customized = computed(() => {
+    const map = this.map();
+    return map.type === 'dungeon' && !!map.objectEdits;
+  });
   readonly draft = input.required<SettingsDraft>();
   readonly pending = input.required<boolean>();
   readonly generationEffect = input.required<GenerationEffect>();
@@ -235,7 +239,9 @@ export class SettingsPanel {
           forest: 'Growing your clearing…',
           courtyard: 'Revealing your courtyard…',
         }[this.map().type]
-      : `Generate ${this.map().type}`,
+      : this.customized()
+        ? 'Replace customizations and generate'
+        : `Generate ${this.map().type}`,
   );
   protected readonly roomMin = ROOM_MIN;
   protected readonly roomMax = ROOM_MAX;

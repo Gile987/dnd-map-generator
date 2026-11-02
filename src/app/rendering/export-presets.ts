@@ -1,4 +1,4 @@
-import type { GeneratedMap } from '../engine/model';
+import type { MapDocument } from '../engine/model';
 import { HEIGHT, WIDTH } from '../engine/model';
 import { exportBounds } from './export-bounds';
 import { PIXELS_PER_TILE } from './resolution';
@@ -43,7 +43,7 @@ export type ExportPreset = (typeof EXPORT_PRESETS)[number];
 
 export function exportDimensions(
   pixelsPerTile: number = PIXELS_PER_TILE,
-  map?: GeneratedMap,
+  map?: MapDocument,
   towerFloor?: number,
   showSecrets = false,
 ) {
@@ -57,7 +57,7 @@ export function exportDimensions(
 
 export function exportGuidance(
   preset: ExportPreset,
-  map: GeneratedMap,
+  map: MapDocument,
   towerFloor?: number,
   showSecrets = false,
 ): string {

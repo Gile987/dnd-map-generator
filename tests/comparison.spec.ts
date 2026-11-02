@@ -58,7 +58,7 @@ for (const type of ['Dungeon', 'Forest', 'Courtyard'] as const) {
     await expect(pinned(page)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#map-summary')).toContainText('r0');
     await expect(page.locator('.comparison-settings-note')).toContainText(
-      'Settings and shuffle history belong to Current',
+      'Settings and history belong to Current',
     );
     await expect(page.getByLabel('World seed')).toHaveValue('unapplied-comparison-draft');
     await expect(page.locator('#save-name')).toHaveValue('Unfinished name');
@@ -210,7 +210,7 @@ test('a historical study pin keeps original model and PNG artwork through genera
   await expect(page.locator('#map-summary')).toContainText('r1');
   await pinned(page).click();
   expect(await png(page)).toEqual(before);
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await expect(current(page)).toHaveAttribute('aria-pressed', 'true');
   expect(await save(page, 'Undone current')).toEqual(original);
   await page.getByLabel('World seed').fill('historical-comparison');

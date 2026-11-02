@@ -76,11 +76,11 @@ test('tower floors, portal, drafts, exact saves, shuffle, comparison and player/
   await settled(page);
   const shuffled = await snapshot(page, 'Shuffled tower');
   expect(shuffled.map.layout).toEqual(accepted.map.layout);
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
   expect((await snapshot(page, 'Undone tower')).map).toEqual(accepted.map);
   expect((await png(page)).bytes).toEqual(gm.bytes);
-  await page.getByRole('button', { name: 'Redo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Redo (shuffle|change)$/, exact: true }).click();
   await settled(page);
   await page.getByRole('button', { name: 'Pinned', exact: true }).click();
   expect((await png(page)).bytes).toEqual(gm.bytes);
@@ -307,7 +307,7 @@ test('original Tower-v1 saves retain their old connections, artwork and undo beh
   const shuffled = await snapshot(page, 'Legacy shuffled');
   expect(shuffled.map.version).toBe('1.0.0');
   expect(shuffled.map.layout).toEqual(original.map.layout);
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
   expect((await png(page)).bytes).toEqual(before.bytes);
   await page.getByLabel('World seed').fill('updated-tower');
@@ -369,7 +369,7 @@ test('staircase style is a pending choice and both drawings survive saves, histo
   await settled(page);
   expect((await snapshot(page, 'Separate shuffled')).map.layout).toEqual(separate.map.layout);
   await style.selectOption('spiral');
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
   expect((await png(page)).bytes).toEqual(straight.bytes);
   await expect(style).toHaveValue('spiral');

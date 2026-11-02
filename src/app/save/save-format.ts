@@ -1,10 +1,10 @@
 import { towerStairStyle, TOWER_STAIR_LABELS } from '../engine/tower';
 import { LANDMARK_CATALOG } from '../engine/landmark-catalog';
-import type { GeneratedMap } from '../engine/model';
+import type { MapDocument } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '18.0.0';
+export const SAVE_FORMAT_VERSION = '20.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -16,7 +16,7 @@ export interface SavedMap {
   readonly savedAt: string;
   readonly saveFormatVersion: string;
   readonly thumbnail: string;
-  readonly map: GeneratedMap;
+  readonly map: MapDocument;
 }
 
 export interface SaveBundle {
@@ -210,8 +210,19 @@ const FORMAT_18_VOCABULARY: SaveVocabulary = {
   },
 };
 
+const FORMAT_19_VOCABULARY: SaveVocabulary = { ...FORMAT_18_VOCABULARY, objectEditVersions: [1] };
+
+const FORMAT_20_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_19_VOCABULARY,
+  objectEditVersions: [1, 2],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '20.0.0':
+      return FORMAT_20_VOCABULARY;
+    case '19.0.0':
+      return FORMAT_19_VOCABULARY;
     case '18.0.0':
       return FORMAT_18_VOCABULARY;
     case '17.0.0':
@@ -348,7 +359,7 @@ export function duplicateName(name: string): string {
   return `${name.slice(0, NAME_MAX - suffix.length)}${suffix}`;
 }
 
-export function defaultMapName(map: GeneratedMap): string {
+export function defaultMapName(map: MapDocument): string {
   const suffix =
     map.type === 'tower'
       ? ' tower'
@@ -361,7 +372,7 @@ export function defaultMapName(map: GeneratedMap): string {
 }
 
 export function makeSavedMap(
-  map: GeneratedMap,
+  map: MapDocument,
   name: string,
   thumbnail: string,
   id: string,
@@ -379,14 +390,14 @@ export function makeSavedMap(
   };
 }
 
-export function mapSummary(map: GeneratedMap): string {
+export function mapSummary(map: MapDocument): string {
   if (map.type === 'tower')
     return `${map.layout.floors.length} floors · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · Wizard’s tower${map.decoration.laboratoryFloor !== undefined ? ' · Laboratory on floor ' + map.decoration.laboratoryFloor : ''}${map.decoration.observatoryFloor !== undefined ? ' · Observatory on floor ' + map.decoration.observatoryFloor : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'courtyard')
     return `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'dungeon') {
     const scene = map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : '';
-    return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
+    return `${map.objectEdits ? 'Customized · ' : ''}${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? ' · Abandoned camp' : '';
   return `${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene}${map.decoration.fallenTree ? ' · Fallen ancient tree' : ''} · ${map.decoration.density} r${map.decoration.revision}`;

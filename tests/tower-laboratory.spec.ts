@@ -58,7 +58,7 @@ test('laboratory drafts apply without rebuilding floors and survive shuffling, b
   const saved = await snapshot(page, 'Laboratory');
   expect(saved.map.layout).toEqual(before.map.layout);
   expect(saved.map.surfaceSeed).toBe(before.map.surfaceSeed);
-  expect(saved.saveFormatVersion).toBe('18.0.0');
+  expect(saved.saveFormatVersion).toBe('20.0.0');
   const cauldron = saved.map.decoration.props.find((p) => p.kind === 'cauldron');
   expect(cauldron).toBeDefined();
   const accepted = await png(page);
@@ -72,7 +72,7 @@ test('laboratory drafts apply without rebuilding floors and survive shuffling, b
   expect(shuffled.map.layout).toEqual(saved.map.layout);
   expect(shuffled.map.decoration.props.find((p) => p.kind === 'cauldron')).toEqual(cauldron);
   await page.getByLabel('Laboratory floor', { exact: true }).selectOption('3');
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
   expect((await png(page)).bytes.equals(accepted.bytes)).toBe(true);
   await expect(page.getByLabel('Laboratory floor', { exact: true })).toHaveValue('3');
@@ -87,7 +87,7 @@ test('laboratory drafts apply without rebuilding floors and survive shuffling, b
   const backup = await backupPending,
     backupBytes = await readFile(await backup.path());
   expect(JSON.parse(backupBytes.toString())).toMatchObject({
-    saveFormatVersion: '18.0.0',
+    saveFormatVersion: '20.0.0',
     maps: expect.arrayContaining([expect.objectContaining({ name: 'Laboratory', map: saved.map })]),
   });
   await page.evaluate(() => localStorage.clear());

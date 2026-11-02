@@ -6,8 +6,8 @@
 
 @if (viewingPinned()) {
 <p class="comparison-settings-note">
-  Viewing Pinned. Settings and shuffle history belong to Current. Generate or Shuffle brings Current
-  back into view.
+  Viewing Pinned. Settings and history belong to Current. Generate or Shuffle brings Current back
+  into view.
 </p>
 }
 
@@ -275,7 +275,8 @@
         }
       </dl>
       <p id="pending-impact" class="pending-impact" aria-live="polite">
-        {{ generationMessages[generationEffect()] }}
+        {{ generationMessages[generationEffect()] }} {{ customized() ? 'This replaces your object
+        customizations. Undo can restore the customized map.' : '' }}
       </p>
       <p class="pending-hint">Save and Export still use the displayed map.</p>
       <button class="text-button" type="button" (click)="resetRequested.emit()">
@@ -315,6 +316,12 @@
   (changed)="draftChanged.emit($event)"
 />
 <div class="details-section">
+  @if (customized()) {
+  <p class="field-hint">
+    Shuffle is unavailable while this dungeon has customizations. Reset customizations in Edit
+    objects, or Undo them, to shuffle.
+  </p>
+  }
   <div class="panel-heading">
     <span class="section-number">02</span>
     <h2>Make it feel lived in</h2>
@@ -329,16 +336,16 @@
     <button
       class="shuffle-button"
       type="button"
-      (click)="shuffleRequested.emit()"
-      [disabled]="disabled()"
+      (click)="!customized() && shuffleRequested.emit()"
+      [disabled]="disabled() || customized()"
     >
       <forge-icon name="shuffle" />Shuffle details
     </button>
     <button
       class="history-button"
       type="button"
-      aria-label="Undo shuffle"
-      [title]="'Undo shuffle (' + shuffleHistory().undo + ' available)'"
+      [attr.aria-label]="map().type === 'dungeon' ? 'Undo change' : 'Undo shuffle'"
+      [title]="'Undo change (' + shuffleHistory().undo + ' available)'"
       aria-describedby="shuffle-history-hint"
       [attr.aria-disabled]="disabled() || shuffleHistory().undo === 0"
       (click)="restoreShuffle('undo')"
@@ -348,8 +355,8 @@
     <button
       class="history-button"
       type="button"
-      aria-label="Redo shuffle"
-      [title]="'Redo shuffle (' + shuffleHistory().redo + ' available)'"
+      [attr.aria-label]="map().type === 'dungeon' ? 'Redo change' : 'Redo shuffle'"
+      [title]="'Redo change (' + shuffleHistory().redo + ' available)'"
       aria-describedby="shuffle-history-hint"
       [attr.aria-disabled]="disabled() || shuffleHistory().redo === 0"
       (click)="restoreShuffle('redo')"
@@ -358,7 +365,8 @@
     </button>
   </div>
   <p class="history-hint" id="shuffle-history-hint">
-    Up to {{ shuffleHistory().limit }} shuffles. Generate or Open starts over.
+    Up to {{ shuffleHistory().limit }} changes. Generate or Open starts over, except replacing
+    customizations stays undoable.
   </p>
   <span class="preserve-note"
     ><forge-icon name="lock" />{{ map().type === 'tower' ? 'Your floors and connections stay put.' :

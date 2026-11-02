@@ -1,10 +1,10 @@
 import { selectCharacter, characterLabel } from './characters';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import type { GeneratedMap } from '../src/app/engine/model';
+import type { MapDocument } from '../src/app/engine/model';
 import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
 
-async function saveSnapshot(page: Page, name: string): Promise<GeneratedMap> {
+async function saveSnapshot(page: Page, name: string): Promise<MapDocument> {
   await page.locator('#save-name').fill(name);
   await page.getByRole('button', { name: 'Save map', exact: true }).click();
   await expect(page.locator('.saved-name').filter({ hasText: name })).toBeVisible();
