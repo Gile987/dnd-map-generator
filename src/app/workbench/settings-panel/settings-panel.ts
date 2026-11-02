@@ -209,6 +209,14 @@ export class SettingsPanel {
           changes: { landmark: draft.landmark === id ? 'None' : id },
         },
       })),
+      {
+        id: 'fallen-ancient-tree',
+        label: 'Fallen ancient tree',
+        description:
+          'A four-square fallen trunk and one blocking root mass, with passable branches and mushrooms. Keeps the path open.',
+        checked: Boolean(draft.fallenTree),
+        change: { type: 'forest', changes: { fallenTree: !draft.fallenTree } },
+      },
     ];
   });
   protected readonly selectedAdditions = computed(() =>

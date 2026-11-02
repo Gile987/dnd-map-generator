@@ -4,7 +4,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '17.0.0';
+export const SAVE_FORMAT_VERSION = '18.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -194,8 +194,26 @@ const FORMAT_17_VOCABULARY: SaveVocabulary = {
   },
 };
 
+const FORMAT_18_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_17_VOCABULARY,
+  forestFallenTrees: [true],
+  propKinds: [
+    ...FORMAT_17_VOCABULARY.propKinds,
+    'fallen_trunk',
+    'fallen_roots',
+    'fallen_branch',
+    'fallen_fungi',
+  ],
+  propFootprints: {
+    ...FORMAT_17_VOCABULARY.propFootprints,
+    fallen_trunk: { width: 4, height: 1, rotations: [0, 1] },
+  },
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '18.0.0':
+      return FORMAT_18_VOCABULARY;
     case '17.0.0':
       return FORMAT_17_VOCABULARY;
     case '16.0.0':
@@ -371,7 +389,7 @@ export function mapSummary(map: GeneratedMap): string {
     return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? ' · Abandoned camp' : '';
-  return `${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
+  return `${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene}${map.decoration.fallenTree ? ' · Fallen ancient tree' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
 }
 
 export function uniqueById(

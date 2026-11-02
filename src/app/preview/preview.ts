@@ -77,6 +77,9 @@ export class Preview {
           '. ' +
           LANDMARK_CATALOG[m.decoration.landmark].description
         : '') +
+      (m.decoration.fallenTree
+        ? ' A fallen ancient tree has a four-square blocking trunk and one blocking root mass; branches and mushrooms are passable.'
+        : '') +
       ' A path connects two map edges through the clearing. Use arrow keys to pan, plus and minus to zoom, Home to fit.'
     );
   });

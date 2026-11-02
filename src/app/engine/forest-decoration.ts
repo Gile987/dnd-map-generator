@@ -1,3 +1,4 @@
+import { placeFallenTree } from './forest-fallen-tree';
 import { DENSITY_BUDGETS, HEIGHT, WIDTH, indexOf, isBlockingProp, isWalkable } from './model';
 import type {
   Density,
@@ -92,24 +93,33 @@ export function decorateForest(
   revision: number,
   scene: ForestScene = 'None',
   landmark: ForestLandmark = 'None',
+  fallenTree = false,
 ): ForestDecoration {
   const base: ForestDecoration = {
     ...decorateBaseForest(layout, seed, character, density, revision, scene),
     forestSurface: 1,
   };
-  if (landmark === 'None') return base;
+  const decorated =
+    landmark === 'None'
+      ? base
+      : {
+          ...base,
+          landmark,
+          props:
+            FOREST_LANDMARK_RULES[landmark].place(
+              layout,
+              base.props,
+              seed,
+              density,
+              revision,
+              campReservations(base.props),
+            ) ?? base.props,
+        };
+  if (!fallenTree) return decorated;
   return {
-    ...base,
-    landmark,
-    props:
-      FOREST_LANDMARK_RULES[landmark].place(
-        layout,
-        base.props,
-        seed,
-        density,
-        revision,
-        campReservations(base.props),
-      ) ?? base.props,
+    ...decorated,
+    fallenTree: true,
+    props: placeFallenTree(layout, decorated.props, seed, density, revision) ?? decorated.props,
   };
 }
 

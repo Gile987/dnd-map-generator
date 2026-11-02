@@ -1,4 +1,10 @@
 import {
+  drawFallenTrunk,
+  drawFallenRoots,
+  drawFallenBranch,
+  drawFallenFungi,
+} from './fallen-tree-props';
+import {
   drawCollapsedWagon,
   drawWagonWheel,
   drawSpilledCrate,
@@ -79,6 +85,10 @@ const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   scroll_case: drawScrollCase,
   dry_fountain: drawDryFountain,
   low_rubble: drawLowRubble,
+  fallen_trunk: drawFallenTrunk,
+  fallen_roots: drawFallenRoots,
+  fallen_branch: drawFallenBranch,
+  fallen_fungi: drawFallenFungi,
   collapsed_wagon: drawCollapsedWagon,
   wagon_wheel: drawWagonWheel,
   spilled_crate: drawSpilledCrate,

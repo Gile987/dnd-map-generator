@@ -25,6 +25,22 @@ const forestBase: GeneratedMap = generatedForest.map;
 
 const withSeed = (seed: string): GeneratedMap => ({ ...base, seed });
 
+test('Forest filenames identify the accepted fallen ancient tree', () => {
+  const r = generateForestClearing({
+    seed: 'woodland-glade',
+    character: 'Fey',
+    density: 'Balanced',
+    fallenTree: true,
+  });
+  if (!r.ok) throw new Error(r.error);
+  expect(exportFilename(r.map)).toBe(
+    'encounter-woodland-glade-forest-fey-fallen-ancient-tree-balanced-r0-v4.0.0.png',
+  );
+  expect(configuredExportFilename(r.map, false, 15, EXPORT_PRESETS[1])).toContain(
+    '-fallen-ancient-tree-balanced-r0-v4.0.0-owlbear-40x30-64px-grid-off.png',
+  );
+});
+
 test('courtyard filenames identify only the accepted wagon addition', () => {
   const r = generateCourtyard({
     seed: 'ivy-court',

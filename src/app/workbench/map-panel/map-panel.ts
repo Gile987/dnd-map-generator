@@ -108,7 +108,7 @@ export class MapPanel {
     return {
       seed: map.seed,
       rooms: map.decoration.scene === 'Abandoned camp' ? 'Abandoned camp' : 'Open clearing',
-      details: `${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''} · ${map.decoration.density} r${map.decoration.revision}`,
+      details: `${map.decoration.character}${map.decoration.fallenTree ? ' · Fallen ancient tree' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''} · ${map.decoration.density} r${map.decoration.revision}`,
       type: 'FOREST CLEARING',
     };
   });

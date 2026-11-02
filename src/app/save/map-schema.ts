@@ -26,6 +26,7 @@ export interface SaveVocabulary {
   readonly towerStairStyles?: readonly string[];
   readonly towerObservatoryFloors?: readonly number[];
   readonly towerLaboratoryFloors?: readonly number[];
+  readonly forestFallenTrees?: readonly boolean[];
   readonly forestSurfaces?: readonly number[];
   readonly mapTypes: readonly string[];
   readonly densities: readonly string[];
@@ -59,6 +60,13 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
     (type !== 'courtyard' ||
       typeof decoration['wagon'] !== 'boolean' ||
       !vocabulary.courtyardWagons?.includes(decoration['wagon']))
+  )
+    return false;
+  if (
+    decoration['fallenTree'] !== undefined &&
+    (type !== 'forest' ||
+      typeof decoration['fallenTree'] !== 'boolean' ||
+      !vocabulary.forestFallenTrees?.includes(decoration['fallenTree']))
   )
     return false;
   const layout = map['layout'];
@@ -395,7 +403,11 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
   if (!isObject(layout) || !isObject(decoration)) return false;
   if (decoration['laboratoryFloor'] !== undefined || decoration['observatoryFloor'] !== undefined)
     return false;
-  if (type !== 'forest' && decoration['forestSurface'] !== undefined) return false;
+  if (
+    type !== 'forest' &&
+    (decoration['forestSurface'] !== undefined || decoration['fallenTree'] !== undefined)
+  )
+    return false;
   if (
     type !== 'dungeon' &&
     (decoration['studySurface'] !== undefined || decoration['ritual'] !== undefined)
