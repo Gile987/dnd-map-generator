@@ -2,6 +2,8 @@ import { GENERATOR_VERSION, HEIGHT, WIDTH, indexOf } from './model';
 import type { CourtyardLayout, CourtyardSettings, Prop, RuinedCourtyard } from './model';
 import { Random, shuffleInPlace, streamSeed } from './random';
 import { nextDetailRevision } from './decoration-revision';
+import { propCells } from './prop-footprint';
+import { placeCollapsedWagon } from './courtyard-wagon';
 import { gridDistances } from './grid-traversal';
 import {
   areaCells,
@@ -60,7 +62,7 @@ function createLayout(random: Random): CourtyardLayout {
   return { ...layout, tiles };
 }
 
-function decorate(
+function decorateBase(
   layout: CourtyardLayout,
   seed: string,
   settings: Pick<CourtyardSettings, 'density' | 'fountain'>,
@@ -135,6 +137,48 @@ function decorate(
   return { density: settings.density, fountain: settings.fountain, props, revision };
 }
 
+function decorate(
+  layout: CourtyardLayout,
+  seed: string,
+  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'wagon'>,
+  revision: number,
+): RuinedCourtyard['decoration'] | undefined {
+  const base = decorateBase(layout, seed, settings, revision);
+  if (!settings.wagon) return base;
+  const reserve = courtyardProtectedCells(layout),
+    site = fountainSite(layout);
+  for (const p of areaCells({ x: site.x - 1, y: site.y - 1, width: 5, height: 5 }))
+    reserve.add(indexOf(p.x, p.y));
+  const wagon = placeCollapsedWagon(layout, seed, reserve);
+  if (!wagon) return undefined;
+  let ordinary = base.props.filter(
+    (p) => !propCells(p).some((cell) => wagon.reserve.has(indexOf(cell.x, cell.y))),
+  );
+  // A new blocking pack can expose a pinch point formed by ordinary columns.
+  // Remove only ordinary blocking props, without consuming another random draw.
+  while (true) {
+    const props = [...ordinary, ...wagon.props];
+    const blocked = new Set(
+      props
+        .filter((p) => p.blocking)
+        .flatMap((p) => propCells(p).map((cell) => indexOf(cell.x, cell.y))),
+    );
+    if (
+      gridDistances(layout.tiles, { x: 0, y: 0 }, blocked).size ===
+      layout.tiles.filter(Boolean).length - blocked.size
+    )
+      return { ...base, wagon: true, props };
+    let last = -1;
+    for (let i = ordinary.length - 1; i >= 0; i--)
+      if (ordinary[i]?.kind === 'broken_column') {
+        last = i;
+        break;
+      }
+    if (last < 0) return undefined;
+    ordinary = ordinary.filter((_, i) => i !== last);
+  }
+}
+
 export function generateCourtyard(
   settings: CourtyardSettings,
 ):
@@ -151,40 +195,49 @@ export function generateCourtyard(
     surfaceSeed: streamSeed(seed, 'courtyard-surface'),
     decoration: { density: settings.density, fountain: settings.fountain, revision: 0, props: [] },
   };
-  const next = {
-    ...map,
-    decoration: decorate(
-      map.layout,
-      seed,
-      { density: settings.density, fountain: settings.fountain },
-      0,
-    ),
-  };
+  const decoration = decorate(map.layout, seed, settings, 0);
+  if (!decoration)
+    return {
+      ok: false,
+      error: 'The collapsed wagon could not fit. Try another seed or remove the wagon.',
+    };
+  const next = { ...map, decoration };
   const invalid = validateCourtyard(next);
   return invalid ? { ok: false, error: invalid } : { ok: true, map: next };
 }
 
 export function changeCourtyardAppearance(
   map: RuinedCourtyard,
-  settings: Pick<CourtyardSettings, 'density' | 'fountain'>,
+  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'wagon'>,
 ): RuinedCourtyard {
-  const next = {
-    ...map,
-    decoration: decorate(map.layout, map.seed, settings, map.decoration.revision),
-  };
+  if (
+    validateCourtyardSettings({
+      seed: map.seed,
+      density: settings.density,
+      fountain: settings.fountain,
+      wagon: settings.wagon,
+    })
+  )
+    return map;
+  const decoration = decorate(map.layout, map.seed, settings, map.decoration.revision);
+  if (!decoration) return map;
+  const next = { ...map, decoration };
   return validateCourtyard(next) ? map : next;
 }
 
 export function shuffleCourtyardDetails(map: RuinedCourtyard): RuinedCourtyard {
   const revision = nextDetailRevision(map.decoration.revision);
-  const next = {
-    ...map,
-    decoration: decorate(
-      map.layout,
-      map.seed,
-      { density: map.decoration.density, fountain: map.decoration.fountain },
-      revision,
-    ),
-  };
+  const decoration = decorate(
+    map.layout,
+    map.seed,
+    {
+      density: map.decoration.density,
+      fountain: map.decoration.fountain,
+      wagon: map.decoration.wagon,
+    },
+    revision,
+  );
+  if (!decoration) return map;
+  const next = { ...map, decoration };
   return validateCourtyard(next) ? map : next;
 }

@@ -1,5 +1,7 @@
+import { placeCollapsedWagon } from './courtyard-wagon';
 import {
   ALL_DENSITIES,
+  WAGON_PROP_KINDS,
   COURTYARD_PROP_KINDS,
   DENSITY_BUDGETS,
   HEIGHT,
@@ -59,6 +61,8 @@ export function validateCourtyardSettings(settings: CourtyardSettings): string |
   if (!settings.seed.trim() || settings.seed.trim().length > 64)
     return 'Enter a seed between 1 and 64 characters.';
   if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a valid decoration density.';
+  if (settings.wagon !== undefined && typeof settings.wagon !== 'boolean')
+    return 'Choose whether to add a collapsed wagon.';
   if (typeof settings.fountain !== 'boolean') return 'Choose whether to add a dry fountain.';
   return undefined;
 }
@@ -124,8 +128,11 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
     seed: map.seed,
     density: map.decoration.density,
     fountain: map.decoration.fountain,
+    wagon: map.decoration.wagon,
   });
   if (settingsError) return settingsError;
+  if (map.decoration.wagon !== undefined && map.decoration.wagon !== true)
+    return 'Invalid collapsed wagon selection.';
   const layoutError = validateCourtyardLayout(map.layout);
   if (layoutError) return layoutError;
   if (!isDetailRevision(map.decoration.revision))
@@ -142,7 +149,32 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
   );
   if (map.decoration.fountain && [...fountainReserve].some((tile) => !map.layout.tiles[tile]))
     return 'The fountain needs clear ground and circulation on every side.';
+  const wagon = map.decoration.wagon
+    ? placeCollapsedWagon(map.layout, map.seed, new Set([...protectedCells, ...fountainReserve]))
+    : undefined;
+  if (map.decoration.wagon && !wagon)
+    return 'The collapsed wagon could not fit outside protected areas.';
+  const expectedWagon = new Map(wagon?.props.map((p) => [p.kind, p]) ?? []);
+  const seenWagon = new Set<string>();
   for (const prop of map.decoration.props) {
+    const isWagonProp = WAGON_PROP_KINDS.some((kind) => kind === prop.kind);
+    if (isWagonProp) {
+      const expected = expectedWagon.get(prop.kind);
+      if (
+        !expected ||
+        seenWagon.has(prop.kind) ||
+        prop.x !== expected.x ||
+        prop.y !== expected.y ||
+        prop.blocking !== expected.blocking ||
+        prop.variation !== expected.variation ||
+        prop.rotation !== expected.rotation ||
+        prop.footprint?.width !== expected.footprint?.width ||
+        prop.footprint?.height !== expected.footprint?.height
+      )
+        return 'The collapsed wagon must retain its complete canonical arrangement.';
+      seenWagon.add(prop.kind);
+    }
+
     const footprintError = propFootprintError(prop);
     if (footprintError) return footprintError;
     if (!COURTYARD_PROP_KINDS.some((kind) => kind === prop.kind))
@@ -165,10 +197,14 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
         return 'Courtyard objects need clear ground outside approaches and the encounter space.';
       if (map.decoration.fountain && prop.kind !== 'dry_fountain' && fountainReserve.has(tile))
         return 'The fountain needs a clear tile on every side.';
+      if (wagon && !isWagonProp && wagon.reserve.has(tile))
+        return 'The collapsed wagon needs clear circulation and space for its scattered objects.';
       occupied.add(tile);
       if (prop.blocking) blocked.add(tile);
     }
   }
+  if (seenWagon.size !== expectedWagon.size)
+    return 'The selected collapsed wagon must be complete.';
   if (
     blocked.size >
     Math.floor(map.layout.tiles.filter(Boolean).length * DENSITY_BUDGETS[map.decoration.density])

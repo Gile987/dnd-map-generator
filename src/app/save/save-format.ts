@@ -4,7 +4,7 @@ import type { GeneratedMap } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '16.0.0';
+export const SAVE_FORMAT_VERSION = '17.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -178,8 +178,26 @@ const FORMAT_16_VOCABULARY: SaveVocabulary = {
   ],
 };
 
+const FORMAT_17_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_16_VOCABULARY,
+  courtyardWagons: [true],
+  propKinds: [
+    ...FORMAT_16_VOCABULARY.propKinds,
+    'collapsed_wagon',
+    'wagon_wheel',
+    'spilled_crate',
+    'spilled_goods',
+  ],
+  propFootprints: {
+    ...FORMAT_16_VOCABULARY.propFootprints,
+    collapsed_wagon: { width: 3, height: 2, rotations: [0, 1] },
+  },
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '17.0.0':
+      return FORMAT_17_VOCABULARY;
     case '16.0.0':
       return FORMAT_16_VOCABULARY;
     case '15.0.0':
@@ -347,7 +365,7 @@ export function mapSummary(map: GeneratedMap): string {
   if (map.type === 'tower')
     return `${map.layout.floors.length} floors · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · Wizard’s tower${map.decoration.laboratoryFloor !== undefined ? ' · Laboratory on floor ' + map.decoration.laboratoryFloor : ''}${map.decoration.observatoryFloor !== undefined ? ' · Observatory on floor ' + map.decoration.observatoryFloor : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'courtyard')
-    return `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
+    return `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'dungeon') {
     const scene = map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : '';
     return `${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;

@@ -13,7 +13,8 @@ export type AdditionId =
   | 'dining-table'
   | 'dry-fountain'
   | 'alchemist-laboratory'
-  | 'tower-observatory';
+  | 'tower-observatory'
+  | 'collapsed-wagon';
 
 function prop(kind: PropKind, x: number, y: number, variation = 0.3): Prop {
   return { kind, x, y, variation, blocking: isBlockingProp(kind) };
@@ -32,6 +33,16 @@ const illustrations: Readonly<
       prop('ritual_candles', 3, 1, 0),
       prop('ritual_offering', 1, 3, 0),
       prop('ritual_offering', 3, 3, 0),
+    ],
+  },
+  'collapsed-wagon': {
+    width: 6,
+    height: 4,
+    props: [
+      { ...prop('collapsed_wagon', 1, 1, 0.35), footprint: { width: 3, height: 2 }, rotation: 0 },
+      prop('spilled_crate', 5, 0, 0.35),
+      prop('wagon_wheel', 5, 3, 0.35),
+      prop('spilled_goods', 0, 0, 0.35),
     ],
   },
   'dry-fountain': {
