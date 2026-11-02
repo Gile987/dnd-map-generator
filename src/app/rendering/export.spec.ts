@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
+import { generateCourtyard } from '../engine/courtyard-generate';
 import type { GeneratedMap } from '../engine/model';
 import { configuredExportFilename, createPng, exportFilename } from './export';
 import { EXPORT_PRESETS, exportDimensions } from './export-presets';
@@ -23,6 +24,27 @@ if (!generatedForest.ok) throw new Error(generatedForest.error);
 const forestBase: GeneratedMap = generatedForest.map;
 
 const withSeed = (seed: string): GeneratedMap => ({ ...base, seed });
+
+test('courtyard filenames identify only the accepted wagon addition', () => {
+  const r = generateCourtyard({
+    seed: 'ivy-court',
+    density: 'Balanced',
+    fountain: true,
+    wagon: true,
+  });
+  if (!r.ok) throw new Error(r.error);
+  expect(exportFilename(r.map)).toBe(
+    'encounter-ivy-court-courtyard-dry-fountain-collapsed-wagon-balanced-r0-v4.0.0.png',
+  );
+  expect(configuredExportFilename(r.map, false, 15, EXPORT_PRESETS[1])).toContain(
+    '-collapsed-wagon-balanced-r0-v4.0.0-owlbear-40x30-64px-grid-off.png',
+  );
+  const old = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: true });
+  if (!old.ok) throw new Error(old.error);
+  expect(exportFilename(old.map)).toBe(
+    'encounter-ivy-court-courtyard-dry-fountain-balanced-r0-v4.0.0.png',
+  );
+});
 
 describe('export filename sanitation', () => {
   test.each(EXPORT_PRESETS)(

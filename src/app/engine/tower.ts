@@ -525,6 +525,7 @@ export function isUsableTower(value: unknown): value is Tower {
     d['forestSurface'] !== undefined ||
     d['studySurface'] !== undefined ||
     d['ritual'] !== undefined ||
+    d['wagon'] !== undefined ||
     (d['laboratoryFloor'] !== undefined &&
       (typeof d['laboratoryFloor'] !== 'number' ||
         !Number.isInteger(d['laboratoryFloor']) ||

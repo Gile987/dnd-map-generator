@@ -117,6 +117,7 @@ export interface ForestSettings {
 }
 
 export interface CourtyardSettings {
+  readonly wagon?: boolean;
   readonly seed: string;
   readonly density: Density;
   readonly fountain: boolean;
@@ -146,6 +147,7 @@ export interface RuinedCourtyard {
     readonly props: readonly Prop[];
     readonly density: Density;
     readonly fountain: boolean;
+    readonly wagon?: true;
     readonly revision: number;
   };
 }
@@ -194,7 +196,15 @@ export const FOREST_PROP_KINDS = [
 
 export type DungeonPropKind = (typeof DUNGEON_PROP_KINDS)[number];
 export type ForestPropKind = (typeof FOREST_PROP_KINDS)[number];
+export const WAGON_PROP_KINDS = [
+  'collapsed_wagon',
+  'wagon_wheel',
+  'spilled_crate',
+  'spilled_goods',
+] as const;
+
 export const COURTYARD_PROP_KINDS = [
+  ...WAGON_PROP_KINDS,
   'broken_column',
   'moss',
   'fern',
@@ -211,7 +221,8 @@ export type PropKind =
   | 'telescope'
   | 'star_chart_table'
   | 'instrument_cabinet'
-  | 'star_charts';
+  | 'star_charts'
+  | (typeof WAGON_PROP_KINDS)[number];
 
 export const ALL_PROP_KINDS: readonly PropKind[] = [
   ...DUNGEON_PROP_KINDS,
@@ -223,6 +234,7 @@ export const ALL_PROP_KINDS: readonly PropKind[] = [
   'star_chart_table',
   'instrument_cabinet',
   'star_charts',
+  ...WAGON_PROP_KINDS,
 ];
 
 export function isDungeonPropKind(kind: PropKind): kind is DungeonPropKind {
@@ -344,6 +356,8 @@ export function isBlockingProp(kind: PropKind): boolean {
     kind === 'telescope' ||
     kind === 'star_chart_table' ||
     kind === 'instrument_cabinet' ||
+    kind === 'collapsed_wagon' ||
+    kind === 'spilled_crate' ||
     kind === 'cauldron'
   );
 }

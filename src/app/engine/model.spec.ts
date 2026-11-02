@@ -63,6 +63,10 @@ describe('production option constants', () => {
       'star_chart_table',
       'instrument_cabinet',
       'star_charts',
+      'collapsed_wagon',
+      'wagon_wheel',
+      'spilled_crate',
+      'spilled_goods',
     ]);
   });
 });

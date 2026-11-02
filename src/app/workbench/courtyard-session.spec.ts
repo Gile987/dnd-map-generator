@@ -1,8 +1,60 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import * as engine from '../engine/courtyard-generate';
+import * as wagon from '../engine/courtyard-wagon';
 import { WorkbenchSession } from './workbench-session';
 
 afterEach(() => vi.restoreAllMocks());
+
+test('wagon appearance drafts reject and recover without losing accepted maps, pins or shuffle history', () => {
+  const session = new WorkbenchSession();
+  session.selectMapType('courtyard');
+  session.updateDraft({ type: 'courtyard', changes: { fountain: true } });
+  expect(session.generate().ok).toBe(true);
+  session.pinCurrent();
+  session.shuffle();
+  const original = session.map();
+  session.updateDraft({ type: 'courtyard', changes: { wagon: true, density: 'Sparse' } });
+  expect(session.pending()).toBe(true);
+  expect(session.generationEffect()).toBe('appearance');
+  session.selectMapType('forest');
+  session.selectMapType('courtyard');
+  const draft = session.draft(),
+    comparison = session.comparison(),
+    history = session.shuffleHistory();
+  const placement = vi.spyOn(wagon, 'placeCollapsedWagon').mockReturnValue(undefined);
+  expect(session.generate()).toEqual({
+    ok: false,
+    error: 'Those courtyard additions could not fit. Try another seed or remove an addition.',
+  });
+  expect(session.map()).toBe(original);
+  expect(session.draft()).toBe(draft);
+  expect(session.comparison()).toBe(comparison);
+  expect(session.shuffleHistory()).toEqual(history);
+  placement.mockRestore();
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const accepted = session.map();
+  expect(accepted.layout).toBe(original.layout);
+  expect(accepted.surfaceSeed).toBe(original.surfaceSeed);
+  expect(accepted.decoration).toMatchObject({
+    wagon: true,
+    fountain: true,
+    density: 'Sparse',
+    revision: original.decoration.revision,
+  });
+  session.updateDraft({ type: 'courtyard', changes: { wagon: false } });
+  session.shuffle();
+  session.undoShuffle();
+  expect(session.map()).toBe(accepted);
+  expect(session.draft()).toMatchObject({ wagon: false });
+  session.resetChanges();
+  expect(session.draft()).toMatchObject({ wagon: true });
+  expect(session.pending()).toBe(false);
+  session.openSaved(accepted);
+  expect(session.draft()).toMatchObject({ wagon: true });
+  session.updateDraft({ type: 'courtyard', changes: { wagon: false } });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  expect(session.map().decoration).not.toHaveProperty('wagon');
+});
 
 test('courtyard drafts, accepted maps and history remain independent from both other map types', () => {
   const session = new WorkbenchSession();

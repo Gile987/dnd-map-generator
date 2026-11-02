@@ -1,3 +1,9 @@
+import {
+  drawCollapsedWagon,
+  drawWagonWheel,
+  drawSpilledCrate,
+  drawSpilledGoods,
+} from './wagon-props';
 import { drawDiningTable } from './furniture-props';
 import { drawRitualAltar, drawRitualCandles, drawRitualOffering } from './ritual-props';
 import { drawDryFountain, drawLowRubble } from './courtyard-props';
@@ -73,6 +79,10 @@ const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   scroll_case: drawScrollCase,
   dry_fountain: drawDryFountain,
   low_rubble: drawLowRubble,
+  collapsed_wagon: drawCollapsedWagon,
+  wagon_wheel: drawWagonWheel,
+  spilled_crate: drawSpilledCrate,
+  spilled_goods: drawSpilledGoods,
   cauldron: drawCauldron,
   telescope: drawTelescope,
   star_chart_table: drawStarChartTable,

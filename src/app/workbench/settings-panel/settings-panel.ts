@@ -137,6 +137,14 @@ export class SettingsPanel {
           checked: draft.fountain,
           change: { type: 'courtyard', changes: { fountain: !draft.fountain } },
         },
+        {
+          id: 'collapsed-wagon',
+          label: 'Collapsed wagon',
+          description:
+            'A broken wagon, detached wheel, spilled crate, and scattered goods. The wagon blocks three by two squares; the crate blocks one.',
+          checked: Boolean(draft.wagon),
+          change: { type: 'courtyard', changes: { wagon: !draft.wagon } },
+        },
       ];
     if (draft.type === 'dungeon') {
       return [

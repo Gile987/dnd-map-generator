@@ -38,7 +38,7 @@ export function exportFilename(
     return `encounter-${seed}-tower-${scope}${map.layout.stairStyle ? '-' + map.layout.stairStyle : ''}${laboratory}${observatory}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}${map.layout.portalFloor !== null ? (showSecrets ? '-gm-secrets' : '-player') : ''}.png`;
   }
   if (type === 'courtyard')
-    return `encounter-${seed}-courtyard${map.decoration.fountain ? '-dry-fountain' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+    return `encounter-${seed}-courtyard${map.decoration.fountain ? '-dry-fountain' : ''}${map.decoration.wagon ? '-collapsed-wagon' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   if (type === 'dungeon') {
     const preset = map.decoration.preset.toLowerCase();
     const scene = map.decoration.scene === 'Forgotten study' ? '-forgotten-study' : '';

@@ -250,7 +250,8 @@ export class WorkbenchSession {
       return (
         this.layoutPending() ||
         draft.density !== decoration.density ||
-        draft.fountain !== decoration.fountain
+        draft.fountain !== decoration.fountain ||
+        Boolean(draft.wagon) !== Boolean(decoration.wagon)
       );
     }
     if (state.type === 'forest') {
@@ -455,12 +456,12 @@ export class WorkbenchSession {
       }
       if (
         next.decoration.fountain !== parsed.settings.fountain ||
+        Boolean(next.decoration.wagon) !== Boolean(parsed.settings.wagon) ||
         next.decoration.density !== parsed.settings.density
       )
         return {
           ok: false,
-          error:
-            'Those courtyard additions could not fit. Try another seed or remove the fountain.',
+          error: 'Those courtyard additions could not fit. Try another seed or remove an addition.',
         };
     } else if (parsed.type === 'forest') {
       const settings = parsed.settings;

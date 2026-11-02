@@ -25,7 +25,12 @@ function additionNames(draft: SettingsDraft): string {
         .filter(Boolean)
         .join(', ') || 'None'
     );
-  if (draft.type === 'courtyard') return draft.fountain ? 'Dry fountain' : 'None';
+  if (draft.type === 'courtyard')
+    return (
+      [draft.fountain ? 'Dry fountain' : '', draft.wagon ? 'Collapsed wagon' : '']
+        .filter(Boolean)
+        .join(', ') || 'None'
+    );
   const names: string[] = [];
   if (draft.scene && draft.scene !== 'None') names.push(draft.scene);
   if (draft.landmark && draft.landmark !== 'None')
