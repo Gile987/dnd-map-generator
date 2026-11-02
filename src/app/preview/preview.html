@@ -3,6 +3,7 @@
     #canvas
     tabindex="0"
     [class.dragging]="dragging()"
+    [class.editing]="editMode()"
     (pointerdown)="startPan($event)"
     (pointermove)="movePan($event)"
     (pointerup)="endPan($event)"
@@ -13,6 +14,11 @@
     [attr.aria-label]="ariaLabel()"
     aria-describedby="map-summary"
   ></canvas>
+  @if (editMode() && ghost(); as placement) {
+  <p class="placement-status" [class.invalid]="!placement.valid" role="status">
+    {{ placement.valid ? 'Valid position — release to place' : placement.reason }}
+  </p>
+  }
   <span class="north" aria-hidden="true"
     ><span>N</span
     ><svg viewBox="0 0 32 40">
@@ -23,8 +29,10 @@
 </div>
 <div class="view-controls">
   <span class="pan-hint"
-    ><forge-icon name="hand" />Drag to explore<span class="wheel-hint">
-      · Ctrl + scroll to zoom</span
+    ><forge-icon name="hand" />{{ editMode() ? 'Drag an object' : 'Drag to explore' }}<span
+      class="wheel-hint"
+    >
+      {{ editMode() ? '· Arrows to position · Enter to place' : '· Ctrl + scroll to zoom' }}</span
     ></span
   >
   <div class="zoom-controls" aria-label="Map viewport controls">

@@ -1,3 +1,5 @@
+import { parseDungeonEdits } from '../engine/object-editor/parse-edits';
+import type { MapDocument } from '../engine/model';
 import { isUsableTower } from '../engine/tower';
 import {
   ALL_DENSITIES,
@@ -23,6 +25,7 @@ import { validateCourtyard } from '../engine/courtyard-validation';
 import { isDetailRevision } from '../engine/decoration-revision';
 
 export interface SaveVocabulary {
+  readonly objectEditVersions?: readonly number[];
   readonly towerStairStyles?: readonly string[];
   readonly towerObservatoryFloors?: readonly number[];
   readonly towerLaboratoryFloors?: readonly number[];
@@ -52,6 +55,7 @@ export interface SaveVocabulary {
 
 export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boolean {
   if (!isObject(map) || !isObject(map['decoration'])) return false;
+  if ('objectEdits' in map) return false;
   const decoration = map['decoration'];
   const type = map['type'];
   if (typeof type !== 'string' || !vocabulary.mapTypes.includes(type)) return false;
@@ -431,6 +435,7 @@ function validateMap(map: GeneratedMap): string | undefined {
 }
 
 export function isUsableMap(value: unknown): value is GeneratedMap {
+  if (isObject(value) && 'objectEdits' in value) return false;
   if (isObject(value) && value['type'] === 'tower') return isUsableTower(value);
   if (!isGeneratedMap(value)) return false;
   try {
@@ -443,7 +448,20 @@ export function isUsableMap(value: unknown): value is GeneratedMap {
 export function parseSavedMapBody(
   map: unknown,
   vocabulary: SaveVocabulary,
-): GeneratedMap | undefined {
+): MapDocument | undefined {
+  if (isObject(map) && 'objectEdits' in map) {
+    if (
+      map['type'] !== 'dungeon' ||
+      !isObject(map['objectEdits']) ||
+      typeof map['objectEdits']['version'] !== 'number' ||
+      !vocabulary.objectEditVersions?.includes(map['objectEdits']['version'])
+    )
+      return undefined;
+    const { objectEdits, ...base } = map;
+    const parsedBase = parseSavedMapBody(base, vocabulary);
+    if (!parsedBase || parsedBase.type !== 'dungeon' || parsedBase.objectEdits) return undefined;
+    return parseDungeonEdits(parsedBase, objectEdits);
+  }
   let normalizedMap: unknown = map;
   if (
     isObject(map) &&

@@ -1,3 +1,5 @@
+import { ObjectEditor } from '../object-editor/object-editor';
+import type { ObjectEditRequest } from '../object-editor/object-editor';
 import { towerStairStyle } from '../../engine/tower';
 import { TOWER_STAIR_LABELS } from '../presentation';
 import { mapDimensions } from '../../engine/model';
@@ -7,18 +9,19 @@ import {
   Component,
   ElementRef,
   computed,
+  signal,
   input,
   output,
   viewChild,
 } from '@angular/core';
-import type { GeneratedMap } from '../../engine/model';
+import type { MapDocument } from '../../engine/model';
 import { Icon } from '../../icon';
 import { Preview } from '../../preview/preview';
 import type { Candidate } from '../workbench-session';
 
 @Component({
   selector: 'section[forge-map-panel]',
-  imports: [Icon, Preview],
+  imports: [Icon, Preview, ObjectEditor],
   templateUrl: './map-panel.html',
   styleUrl: './map-panel.scss',
   host: {
@@ -29,7 +32,20 @@ import type { Candidate } from '../workbench-session';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MapPanel {
-  readonly map = input.required<GeneratedMap>();
+  protected readonly editorMode = signal(false);
+  // The parent reads this from a host binding before required inputs are bound.
+  // Check the default mode first; map() is safe once editing can be enabled.
+  readonly objectEditing = computed(
+    () => this.editorMode() && this.map().type === 'dungeon' && this.candidate() === 'current',
+  );
+  readonly history = input({ undo: 0, redo: 0, limit: 20 });
+  readonly historyRequested = output<'undo' | 'redo'>();
+  readonly objectEditRequested = output<ObjectEditRequest>();
+  protected readonly dungeon = computed(() => {
+    const map = this.map();
+    return map.type === 'dungeon' ? map : undefined;
+  });
+  readonly map = input.required<MapDocument>();
   readonly grid = input(true);
   readonly showSecrets = input(false);
   readonly secretsChanged = output<boolean>();
@@ -101,7 +117,7 @@ export class MapPanel {
       return {
         seed: map.seed,
         rooms: `${map.layout.rooms.length} connected`,
-        details: `${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
+        details: `${map.objectEdits ? 'Customized · ' : ''}${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
         type: 'STONE DUNGEON',
       };
     }

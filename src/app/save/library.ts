@@ -11,7 +11,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import type { GeneratedMap, MapType } from '../engine/model';
+import type { MapDocument, MapType } from '../engine/model';
 import { downloadBlob } from '../browser/download';
 import { Icon } from '../icon';
 import { createThumbnail } from '../rendering/thumbnail';
@@ -31,9 +31,9 @@ import type { LibraryView } from './library-view';
 })
 export class Library {
   protected readonly mapTypeLabels = MAP_TYPE_LABELS;
-  readonly map = input.required<GeneratedMap>();
+  readonly map = input.required<MapDocument>();
   readonly disabled = input(false);
-  readonly open = output<GeneratedMap>();
+  readonly open = output<MapDocument>();
 
   private readonly store = inject(SaveStore);
   private readonly injector = inject(Injector);

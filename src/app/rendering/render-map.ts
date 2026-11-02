@@ -1,17 +1,18 @@
+import { resolveDungeon } from '../engine/object-editor/document';
 import { renderTower } from './tower-renderer';
-import type { GeneratedMap } from '../engine/model';
+import type { MapDocument } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import type { RenderOptions } from './render-options';
 import { renderDungeon } from './dungeon-renderer';
 import { renderForest } from './forest-renderer';
 import { renderCourtyard } from './courtyard-renderer';
 
-export function renderMap(ctx: DrawingContext, map: GeneratedMap, options: RenderOptions): void {
+export function renderMap(ctx: DrawingContext, map: MapDocument, options: RenderOptions): void {
   switch (map.type) {
     case 'tower':
       return renderTower(ctx, map, options);
     case 'dungeon':
-      return renderDungeon(ctx, map, options);
+      return renderDungeon(ctx, resolveDungeon(map), options);
     case 'forest':
       return renderForest(ctx, map, options);
     case 'courtyard':

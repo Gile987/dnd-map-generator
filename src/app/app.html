@@ -72,6 +72,9 @@
       (candidateChanged)="selectCandidate($event)"
       (clearPinRequested)="clearPin()"
       (gridChanged)="grid.set($event)"
+      (objectEditRequested)="editObjects($event)"
+      [history]="shuffleHistory()"
+      (historyRequested)="restoreShuffle($event)"
       (focusChanged)="setFocused($event)"
     ></section>
   </div>

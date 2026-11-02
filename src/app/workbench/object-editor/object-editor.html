@@ -1,0 +1,207 @@
+<div class="editor-toolbar" role="group" aria-label="Map interaction">
+  <button
+    type="button"
+    [attr.aria-pressed]="!editing()"
+    (click)="setEditing(false)"
+    [disabled]="disabled() || readOnly()"
+  >
+    Explore
+  </button>
+  <button
+    type="button"
+    [attr.aria-pressed]="editing()"
+    (click)="setEditing(true)"
+    [disabled]="disabled() || readOnly()"
+  >
+    Edit objects
+  </button>
+  @if (editing() && !readOnly()) {
+  <button
+    type="button"
+    aria-label="Undo map change"
+    [attr.aria-disabled]="disabled() || history().undo === 0"
+    (click)="!disabled() && history().undo > 0 && historyRequested.emit('undo')"
+  >
+    Undo
+  </button>
+  <button
+    type="button"
+    aria-label="Redo map change"
+    [attr.aria-disabled]="disabled() || history().redo === 0"
+    (click)="!disabled() && history().redo > 0 && historyRequested.emit('redo')"
+  >
+    Redo
+  </button>
+  }
+  <span
+    >{{ readOnly() ? 'Pinned is read-only. Switch to Current to edit.' : map().objectEdits ?
+    'Customized dungeon · save to keep your changes' : 'Generate a map, then make it yours.'
+    }}</span
+  >
+</div>
+@if (editing() && !readOnly()) {
+<div class="editor-tools" [attr.aria-busy]="disabled()">
+  <div class="editor-actions">
+    <button
+      type="button"
+      [attr.aria-expanded]="paletteOpen()"
+      aria-controls="object-catalog"
+      (click)="paletteOpen.set(!paletteOpen())"
+      [disabled]="disabled()"
+    >
+      Add object
+    </button>
+    <label
+      >Objects on this map
+      <select
+        [attr.aria-describedby]="selection() ? 'object-selection-description' : null"
+        #instancesSelect
+        [value]="selected()"
+        (change)="select(instancesSelect.value)"
+        [disabled]="disabled()"
+      >
+        <option value="">Choose an object</option>
+        @for (item of instances(); track item.id) {
+        <option [value]="item.id">
+          {{item.label}} · column {{item.position.x + 1}}, row {{item.position.y + 1}}{{item.groupId
+          ? ' · whole addition' : item.lock ? ' · protected' : ''}}
+        </option>
+        }
+      </select>
+    </label>
+    <button type="button" [disabled]="disabled() || !map().objectEdits" (click)="reset()">
+      Reset customizations
+    </button>
+  </div>
+  @if (paletteOpen()) {
+  <section id="object-catalog" aria-label="Dungeon object catalog" class="catalog">
+    <label
+      >Find an object<input
+        type="search"
+        #search
+        [value]="query()"
+        (input)="query.set(search.value)"
+        [disabled]="disabled()"
+    /></label>
+    <p>
+      Drag an item onto the map, or choose it and tap a destination. Rugs cover a 3 × 3 area; the
+      other catalog objects occupy one square.
+    </p>
+    <div class="object-cards">
+      @for (item of palette(); track item.kind) {
+      <button
+        type="button"
+        [disabled]="disabled()"
+        (click)="choose(item.kind)"
+        (pointerdown)="paletteStart(item.kind, $event)"
+        (lostpointercapture)="paletteCancel($event)"
+        [attr.aria-label]="'Add ' + item.label"
+      >
+        <img [forgeObjectArtwork]="item.kind" alt="" width="48" height="48" />
+        <span
+          ><strong>{{item.label}}</strong
+          ><small
+            >{{item.category}} · {{item.blocking ? 'Blocks 1 square' : item.kind === 'rug' ?
+            'Passable · 3 × 3 area' : 'Passable'}}</small
+          ></span
+        >
+      </button>
+      } @empty {
+      <p>No matching objects.</p>
+      }
+    </div>
+  </section>
+  }
+</div>
+}
+<forge-preview
+  [map]="map()"
+  [grid]="grid()"
+  [focused]="focused() && !editing()"
+  [editMode]="active()"
+  [selectedBounds]="selection()?.area"
+  [ghost]="ghost()"
+  (editPointer)="pointer($event)"
+  (editNudge)="nudge($event)"
+  (editCommit)="commit()"
+  (editCancel)="cancel()"
+/>
+
+@if (editing() && !readOnly()) {
+<div class="editor-inspector">
+  @if (selection(); as item) {
+  <p id="object-selection-description" class="selection-label">
+    <strong>{{item.label}}</strong> · {{item.lock || (item.groupId ? 'Move the complete addition.
+    Its objects keep their arrangement; the outline includes reserved space.' : 'Drag on the map, or
+    choose a destination below.')}}
+  </p>
+  } @if ((selection() && !selection()?.lock) || placement()) {
+  <div class="position-controls">
+    @if (selection()?.removable && !selection()?.lock) {
+    <button type="button" (click)="remove()" [disabled]="disabled()">Remove object</button> }
+    <label
+      >Column<input
+        type="number"
+        min="1"
+        max="40"
+        step="1"
+        [value]="(target()?.x ?? 0) + 1"
+        (input)="coordinate('x', $event)"
+        aria-describedby="object-placement-hint"
+        [disabled]="disabled()"
+    /></label>
+    <label
+      >Row<input
+        type="number"
+        min="1"
+        max="30"
+        step="1"
+        [value]="(target()?.y ?? 0) + 1"
+        (input)="coordinate('y', $event)"
+        aria-describedby="object-placement-hint"
+        [disabled]="disabled()"
+    /></label>
+    <button
+      type="button"
+      aria-label="Move left"
+      (click)="nudge({x:-1,y:0})"
+      [disabled]="disabled()"
+    >
+      ←
+    </button>
+    <button type="button" aria-label="Move up" (click)="nudge({x:0,y:-1})" [disabled]="disabled()">
+      ↑
+    </button>
+    <button type="button" aria-label="Move down" (click)="nudge({x:0,y:1})" [disabled]="disabled()">
+      ↓
+    </button>
+    <button
+      type="button"
+      aria-label="Move right"
+      (click)="nudge({x:1,y:0})"
+      [disabled]="disabled()"
+    >
+      →
+    </button>
+    <button
+      type="button"
+      (click)="commit()"
+      [disabled]="disabled() || !placement() || !verdict()?.ok"
+    >
+      Place object
+    </button>
+    <button type="button" (click)="cancel()" [disabled]="disabled() || !placement()">
+      Cancel placement
+    </button>
+  </div>
+  }
+  <p
+    id="object-placement-hint"
+    class="placement-hint"
+    [class.invalid]="placement() && !verdict()?.ok"
+  >
+    {{hint()}}
+  </p>
+  <p class="editor-message" role="status" aria-live="polite">{{message()}}</p>
+</div>
+}

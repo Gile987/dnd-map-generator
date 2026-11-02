@@ -109,7 +109,7 @@ test('study artwork survives refresh and portable backup import', async ({ page,
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '18.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '20.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://127.0.0.1:4200/');
@@ -203,11 +203,11 @@ test('historical study pixels survive saving, shuffle undo, and portable sharing
   expect(shuffled.layout).toEqual(original.layout);
   const newPng = await png(page);
   expect(newPng).not.toEqual(oldPng);
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('r0');
   expect(await snapshot(page, 'Restored old study')).toEqual(original);
   expect(await png(page)).toEqual(oldPng);
-  await page.getByRole('button', { name: 'Redo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Redo (shuffle|change)$/, exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   expect(await snapshot(page, 'Restored new study')).toEqual(shuffled);
   expect(await png(page)).toEqual(newPng);
@@ -218,7 +218,7 @@ test('historical study pixels survive saving, shuffle undo, and portable sharing
     .getByRole('button', { name: 'Export this map', exact: true })
     .click();
   const path = await (await pending).path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '18.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '20.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://127.0.0.1:4200/');

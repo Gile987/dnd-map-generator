@@ -67,7 +67,7 @@ test('fallen trees coexist with camps and standing stones, preserve accepted map
   await apply(page);
   const accepted = await snapshot(page, 'Ancient tree'),
     image = await png(page);
-  expect(accepted.saveFormatVersion).toBe('18.0.0');
+  expect(accepted.saveFormatVersion).toBe('20.0.0');
   expect(accepted.map.layout).toEqual(before.map.layout);
   expect(accepted.map.surfaceSeed).toBe(before.map.surfaceSeed);
   expect(accepted.map.decoration).toMatchObject({
@@ -98,7 +98,7 @@ test('fallen trees coexist with camps and standing stones, preserve accepted map
   const shuffled = await snapshot(page, 'Shuffled tree');
   expect(shuffled.map.decoration.fallenTree).toBe(true);
   expect(shuffled.map.layout).toEqual(accepted.map.layout);
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
   expect((await png(page)).bytes).toEqual(image.bytes);
   await expect(page.getByLabel('World seed')).toHaveValue('pending-tree-seed');
@@ -123,7 +123,7 @@ test('fallen trees coexist with camps and standing stones, preserve accepted map
   const file = await pending,
     backup = await readFile(await file.path());
   expect(JSON.parse(backup.toString())).toMatchObject({
-    saveFormatVersion: '18.0.0',
+    saveFormatVersion: '20.0.0',
     maps: expect.arrayContaining([
       expect.objectContaining({ name: 'Ancient tree', map: accepted.map }),
     ]),

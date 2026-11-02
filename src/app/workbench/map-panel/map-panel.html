@@ -114,8 +114,29 @@
     }
   </ul>
 </div>
-}
+} @if (dungeon(); as dungeonMap) { @defer (on immediate) {
+<forge-object-editor
+  (editingChanged)="editorMode.set($event)"
+  [history]="history()"
+  (historyRequested)="historyRequested.emit($event)"
+  [map]="dungeonMap"
+  [grid]="grid()"
+  [focused]="focused()"
+  [disabled]="disabled()"
+  [readOnly]="candidate() === 'pinned'"
+  (changed)="objectEditRequested.emit($event)"
+/>
+} @loading {
+<p role="status">Opening map workspace…</p>
+} @error {
+<forge-preview [map]="map()" [grid]="grid()" [focused]="focused()" />
+<p role="status">
+  The object editor could not load. Your map can still be saved and exported. Refresh to retry
+  editing.
+</p>
+} } @else {
 <forge-preview [map]="map()" [grid]="grid()" [focused]="focused()" [showSecrets]="showSecrets()" />
+}
 <div class="map-meta" id="map-summary">
   <div>
     <span>GENERATED SEED</span><strong class="seed-summary">{{ mapSummary().seed }}</strong>

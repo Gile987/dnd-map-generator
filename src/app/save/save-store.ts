@@ -1,5 +1,5 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
-import type { GeneratedMap } from '../engine/model';
+import type { MapDocument } from '../engine/model';
 import {
   SAVE_STORAGE_KEY,
   duplicateName,
@@ -128,7 +128,7 @@ export class SaveStore {
     this.state.set(readLibrary(this.state()));
   }
 
-  async add(map: GeneratedMap, name: string, thumbnail: string): Promise<SavedMap> {
+  async add(map: MapDocument, name: string, thumbnail: string): Promise<SavedMap> {
     const record = makeSavedMap(
       map,
       name,

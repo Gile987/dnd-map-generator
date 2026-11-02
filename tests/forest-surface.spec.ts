@@ -66,11 +66,11 @@ for (const character of ['Verdant', 'Autumn', 'Pines', 'Fey']) {
     expect(shuffled.surfaceSeed).toBe(original.surfaceSeed);
     const after = await download(page, 'Quick export PNG');
     expect(after.bytes).not.toEqual(before.bytes);
-    await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+    await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
     await expect(page.locator('#map-summary')).toContainText('r0');
     expect(await snapshot(page, 'Restored historical forest')).toEqual(original);
     expect((await download(page, 'Quick export PNG')).bytes).toEqual(before.bytes);
-    await page.getByRole('button', { name: 'Redo shuffle', exact: true }).click();
+    await page.getByRole('button', { name: /^Redo (shuffle|change)$/, exact: true }).click();
     await expect(page.locator('#map-summary')).toContainText('r1');
     expect(await snapshot(page, 'Restored surface forest')).toEqual(shuffled);
     expect((await download(page, 'Quick export PNG')).bytes).toEqual(after.bytes);
@@ -96,7 +96,7 @@ test('new forest surface art survives refresh, backup/share import and VTT expor
   const before = await download(page, 'Quick export PNG');
   const backup = await download(page, 'Download backup');
   expect(JSON.parse(backup.bytes.toString())).toMatchObject({
-    saveFormatVersion: '18.0.0',
+    saveFormatVersion: '20.0.0',
     maps: [{ map: { decoration: { forestSurface: 1 } } }],
   });
   await page.reload();

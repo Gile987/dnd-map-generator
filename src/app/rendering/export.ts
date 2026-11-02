@@ -1,16 +1,12 @@
 import { renderMap } from './render-map';
 import { PIXELS_PER_TILE } from './resolution';
 import { exportBounds } from './export-bounds';
-import type { GeneratedMap } from '../engine/model';
+import type { MapDocument } from '../engine/model';
 import { EXPORT_PRESETS, exportDimensions } from './export-presets';
 import type { ExportPreset } from './export-presets';
 import { downloadBlob } from '../browser/download';
 
-export function exportFilename(
-  map: GeneratedMap,
-  showSecrets = false,
-  towerFloor?: number,
-): string {
+export function exportFilename(map: MapDocument, showSecrets = false, towerFloor?: number): string {
   if (towerFloor !== undefined) exportBounds(map, towerFloor, showSecrets);
   const seed =
     map.seed
@@ -42,14 +38,14 @@ export function exportFilename(
   if (type === 'dungeon') {
     const preset = map.decoration.preset.toLowerCase();
     const scene = map.decoration.scene === 'Forgotten study' ? '-forgotten-study' : '';
-    return `encounter-${seed}-${preset}${map.decoration.ritual ? '-ritual-site' : ''}${map.decoration.furniture === 'dining-table' ? '-dining-table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+    return `encounter-${seed}-${preset}${map.decoration.ritual ? '-ritual-site' : ''}${map.decoration.furniture === 'dining-table' ? '-dining-table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? '-abandoned-camp' : '';
   return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}${map.decoration.fallenTree ? '-fallen-ancient-tree' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
 }
 
 export function configuredExportFilename(
-  map: GeneratedMap,
+  map: MapDocument,
   grid: boolean,
   opacity: number,
   preset: ExportPreset = EXPORT_PRESETS[0],
@@ -68,7 +64,7 @@ export function configuredExportFilename(
 }
 
 export async function createPng(
-  map: GeneratedMap,
+  map: MapDocument,
   grid: boolean,
   gridOpacity?: number,
   pixelsPerTile: number = PIXELS_PER_TILE,
@@ -116,7 +112,7 @@ export async function createPng(
 }
 
 export async function downloadPng(
-  map: GeneratedMap,
+  map: MapDocument,
   grid: boolean,
   showSecrets = false,
 ): Promise<void> {

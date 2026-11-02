@@ -3,7 +3,7 @@ import { validateTowerSettings, towerStairStyle } from '../engine/tower';
 import type {
   DecorationPreset,
   Density,
-  Dungeon,
+  DungeonDocument,
   DungeonSettings,
   DungeonScene,
   DungeonLandmark,
@@ -98,7 +98,7 @@ type ParsedDraft =
   | { readonly ok: true; readonly type: 'courtyard'; readonly settings: CourtyardSettings }
   | { readonly ok: false; readonly error: string };
 
-export function dungeonDraftForMap(map: Dungeon): DungeonDraft {
+export function dungeonDraftForMap(map: DungeonDocument): DungeonDraft {
   return {
     type: 'dungeon',
     seed: map.seed,

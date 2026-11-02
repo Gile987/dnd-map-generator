@@ -1,4 +1,4 @@
-import type { GeneratedMap } from '../engine/model';
+import type { MapDocument } from '../engine/model';
 import { LANDMARK_CATALOG } from '../engine/landmark-catalog';
 import { CHARACTER_LABELS, PRESET_LABELS, TOWER_STAIR_LABELS } from './presentation';
 import {
@@ -42,7 +42,7 @@ function additionNames(draft: SettingsDraft): string {
 }
 
 export function pendingSettingChanges(
-  map: GeneratedMap,
+  map: MapDocument,
   draft: SettingsDraft,
 ): readonly PendingChange[] {
   const accepted =

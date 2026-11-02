@@ -14,7 +14,8 @@ import { studySurfaceMarks } from './study-surface';
 
 function legacyStudy(): Dungeon {
   const parsed = parseBundle(JSON.stringify(fixture));
-  if (!parsed.ok || parsed.maps[0]?.map.type !== 'dungeon') throw new Error('Invalid fixture');
+  if (!parsed.ok || parsed.maps[0]?.map.type !== 'dungeon' || parsed.maps[0].map.objectEdits)
+    throw new Error('Invalid fixture');
   return parsed.maps[0].map;
 }
 

@@ -1,5 +1,6 @@
+import type { DungeonDrawing } from '../engine/object-editor/document';
 import { contains, indexOf } from '../engine/model';
-import type { Dungeon, Point } from '../engine/model';
+import type { Point } from '../engine/model';
 import { propCells } from '../engine/prop-footprint';
 import { reservedTiles } from '../engine/dungeon-space';
 import { Random, deriveSeed } from '../engine/random';
@@ -12,11 +13,16 @@ interface SurfaceMark extends Point {
 }
 
 /** Derived artwork only: never contributes props, blocking tiles, or generator RNG draws. */
-export function studySurfaceMarks(map: Dungeon): readonly SurfaceMark[] {
+export function studySurfaceMarks(map: DungeonDrawing): readonly SurfaceMark[] {
   if (map.decoration.studySurface !== 1 || map.decoration.scene !== 'Forgotten study') return [];
   const desk = map.decoration.props.find((prop) => prop.kind === 'desk');
   const shelf = map.decoration.props.find((prop) => prop.kind === 'bookshelf');
-  const room = desk && map.layout.rooms.find((candidate) => contains(candidate, desk));
+  let room = desk && map.layout.rooms.find((candidate) => contains(candidate, desk));
+  if (map.objectEdits === 'resolved' && map.studyArea) {
+    // Authored studies can cross room boundaries; only their own translated area
+    // determines scattered papers, never unrelated rugs or the old room.
+    room = { id: -1, ...map.studyArea };
+  }
   if (!desk || !shelf || !room) return [];
   const occupied = new Set(map.decoration.props.flatMap(propCells).map((p) => indexOf(p.x, p.y)));
   const reserved = reservedTiles(map.layout);
@@ -81,7 +87,7 @@ export function studySurfaceMarks(map: Dungeon): readonly SurfaceMark[] {
   });
 }
 
-export function drawStudySurface(ctx: DrawingContext, map: Dungeon): void {
+export function drawStudySurface(ctx: DrawingContext, map: DungeonDrawing): void {
   for (const mark of studySurfaceMarks(map)) {
     ctx.save();
     ctx.translate(mark.x, mark.y);

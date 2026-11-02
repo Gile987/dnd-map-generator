@@ -504,3 +504,16 @@ footer {
     }
   }
 }
+
+:host(.map-focused.object-editing) {
+  // Authoring tools need natural page height on short/touch screens. Keep the
+  // canvas size stable while the inspector changes; never overlap its controls.
+  main {
+    height: auto;
+    min-height: 100dvh;
+  }
+  .workbench {
+    flex: 0 0 auto;
+    min-height: auto;
+  }
+}

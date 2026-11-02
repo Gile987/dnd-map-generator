@@ -55,8 +55,8 @@ for (const type of ['Dungeon', 'Forest'] as const) {
   }) => {
     await page.goto('/');
     await selectType(page, type);
-    const undo = page.getByRole('button', { name: 'Undo shuffle', exact: true });
-    const redo = page.getByRole('button', { name: 'Redo shuffle', exact: true });
+    const undo = page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true });
+    const redo = page.getByRole('button', { name: /^Redo (shuffle|change)$/, exact: true });
     await expect(undo).toBeDisabled();
     await expect(redo).toBeDisabled();
     await undo.focus();
@@ -130,8 +130,8 @@ test('histories stay independent and reset only when settings are applied, a sav
   page,
 }) => {
   await page.goto('/');
-  const undo = page.getByRole('button', { name: 'Undo shuffle', exact: true });
-  const redo = page.getByRole('button', { name: 'Redo shuffle', exact: true });
+  const undo = page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true });
+  const redo = page.getByRole('button', { name: /^Redo (shuffle|change)$/, exact: true });
   await shuffle(page, 1);
   const saved = await snapshot(page, 'Dungeon checkpoint');
   await shuffle(page, 2);
@@ -196,7 +196,7 @@ test('undo restores a historical forest snapshot and its original pixels without
   const exported = await png(page);
   const revision = original.decoration.revision;
   await shuffle(page, revision + 1);
-  await page.getByRole('button', { name: 'Undo shuffle', exact: true }).click();
+  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
   expect(await snapshot(page, 'Historical undo')).toEqual(original);
   expect(await png(page)).toEqual(exported);
@@ -208,8 +208,8 @@ test('export disables both history directions and recovers without losing histor
   await page.goto('/');
   await shuffle(page, 1);
   await shuffle(page, 2);
-  const undo = page.getByRole('button', { name: 'Undo shuffle', exact: true });
-  const redo = page.getByRole('button', { name: 'Redo shuffle', exact: true });
+  const undo = page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true });
+  const redo = page.getByRole('button', { name: /^Redo (shuffle|change)$/, exact: true });
   await undo.click();
   await settled(page);
   await page.getByLabel('World seed').fill('keep-history-draft');

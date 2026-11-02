@@ -1,3 +1,5 @@
+import { validCommand } from '../../../scripts/editor-test-support';
+import { applyObjectCommand } from '../engine/object-editor/commands';
 import '@angular/compiler';
 import { Injector } from '@angular/core';
 import type { DestroyableInjector, Signal } from '@angular/core';
@@ -735,4 +737,56 @@ describe('saved-map persistence', () => {
     expect(await stale.toggleFavorite(original.id)).toBe(true);
     expect(createStore().saved()[0]).toMatchObject({ name: 'Latest name', favorite: true });
   });
+});
+
+test('authored documents remain exact through failed writes, retry, cross-store loading and single-map sharing', async () => {
+  if (!dungeon.ok) throw new Error('Missing dungeon');
+  const edited = applyObjectCommand(
+    dungeon.map,
+    validCommand(dungeon.map, (target) => ({ kind: 'add', propKind: 'moss', target })),
+  );
+  if (!edited.ok) throw new Error(edited.error);
+  const storage = stubStorage(),
+    store = createStore(),
+    before = store.saved(),
+    disk = storage.values.get(SAVE_STORAGE_KEY);
+  storage.setItem.mockImplementationOnce(() => {
+    throw new DOMException('Full', 'QuotaExceededError');
+  });
+  await expect(store.add(edited.document, 'Customized', thumbnail)).rejects.toThrow(
+    'could not write',
+  );
+  expect(store.saved()).toBe(before);
+  expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(disk);
+  const saved = await store.add(edited.document, 'Customized', thumbnail);
+  expect(
+    createStore()
+      .saved()
+      .find((r) => r.id === saved.id)?.map,
+  ).toEqual(edited.document);
+  expect(parseBundle(store.exportMap(saved.id).json)).toMatchObject({
+    ok: true,
+    maps: [{ map: edited.document }],
+  });
+});
+
+test('unknown authored versions stay recoverable and block later mutations instead of being rewritten as generated maps', async () => {
+  const future = {
+    ...original,
+    id: 'future-edited',
+    map: {
+      ...original.map,
+      objectEdits: { version: 3, nextId: 2, moves: [], removed: [], added: [] },
+    },
+  };
+  const raw = JSON.stringify([original, future]);
+  const storage = stubStorage(raw),
+    store = createStore();
+  expect(store.saved()).toEqual([original]);
+  expect(store.canWrite()).toBe(false);
+  expect(store.recoveryData()).toBe(raw);
+  await expect(store.add(original.map, 'Do not overwrite', thumbnail)).rejects.toThrow();
+  expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
+  expect(storage.setItem).not.toHaveBeenCalled();
+  expect(store.saved()).toEqual([original]);
 });

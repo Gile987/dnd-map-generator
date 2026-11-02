@@ -1,3 +1,6 @@
+import { applyObjectCommand } from '../engine/object-editor/commands';
+import type { ObjectCommand, EditResult } from '../engine/object-editor/commands';
+import { dungeonBase } from '../engine/object-editor/document';
 import type { Tower } from '../engine/tower';
 import {
   generateTower,
@@ -28,9 +31,9 @@ import {
 } from '../engine/courtyard-generate';
 import { DEFAULT_FOREST_CHARACTER, DEFAULT_PRESET } from '../engine/model';
 import type {
-  Dungeon,
+  DungeonDocument,
   ForestClearing,
-  GeneratedMap,
+  MapDocument,
   MapType,
   RuinedCourtyard,
 } from '../engine/model';
@@ -45,7 +48,7 @@ import type { DraftChange, SettingsDrafts } from './settings-draft';
 
 const SHUFFLE_HISTORY_LIMIT = 20;
 
-interface ShuffleHistory<T extends GeneratedMap> {
+interface ShuffleHistory<T extends MapDocument> {
   readonly past: readonly T[];
   readonly future: readonly T[];
 }
@@ -60,7 +63,7 @@ export type GenerationEffect = 'layout' | 'appearance' | 'invalid';
 export type Candidate = 'current' | 'pinned';
 
 interface Comparison {
-  readonly pinned?: GeneratedMap;
+  readonly pinned?: MapDocument;
   readonly selected: Candidate;
 }
 
@@ -74,14 +77,14 @@ interface SessionState {
   readonly comparisons: Comparisons;
   readonly type: MapType;
   readonly maps: {
-    readonly dungeon: Dungeon;
+    readonly dungeon: DungeonDocument;
     readonly forest: ForestClearing;
     readonly courtyard: RuinedCourtyard;
     readonly tower: Tower;
   };
   readonly drafts: SettingsDrafts;
   readonly histories: {
-    readonly dungeon: ShuffleHistory<Dungeon>;
+    readonly dungeon: ShuffleHistory<DungeonDocument>;
     readonly forest: ShuffleHistory<ForestClearing>;
     readonly courtyard: ShuffleHistory<RuinedCourtyard>;
     readonly tower: ShuffleHistory<Tower>;
@@ -92,7 +95,7 @@ export type ApplySettingsResult =
   | { readonly ok: true; readonly layoutChanged: boolean }
   | { readonly ok: false; readonly error: string };
 
-function draftsForMap(drafts: SettingsDrafts, map: GeneratedMap): SettingsDrafts {
+function draftsForMap(drafts: SettingsDrafts, map: MapDocument): SettingsDrafts {
   if (map.type === 'tower') return { ...drafts, tower: towerDraftForMap(map) };
   if (map.type === 'courtyard') return { ...drafts, courtyard: courtyardDraftForMap(map) };
   return map.type === 'dungeon'
@@ -100,14 +103,14 @@ function draftsForMap(drafts: SettingsDrafts, map: GeneratedMap): SettingsDrafts
     : { ...drafts, forest: forestDraftForMap(map) };
 }
 
-function recordShuffle<T extends GeneratedMap>(
+function recordShuffle<T extends MapDocument>(
   history: ShuffleHistory<T>,
   current: T,
 ): ShuffleHistory<T> {
   return { past: [...history.past, current].slice(-SHUFFLE_HISTORY_LIMIT), future: [] };
 }
 
-function moveShuffle<T extends GeneratedMap>(
+function moveShuffle<T extends MapDocument>(
   current: T,
   history: ShuffleHistory<T>,
   direction: 'undo' | 'redo',
@@ -346,7 +349,7 @@ export class WorkbenchSession {
     }));
   }
 
-  openSaved(map: GeneratedMap): void {
+  openSaved(map: MapDocument): void {
     this.state.update((state) => ({
       ...state,
       type: map.type,
@@ -364,8 +367,22 @@ export class WorkbenchSession {
     }));
   }
 
+  editObjects(source: MapDocument, command: ObjectCommand): EditResult {
+    const current = this.currentMap();
+    if (
+      current.type !== 'dungeon' ||
+      current !== source ||
+      this.comparison().selected !== 'current'
+    )
+      return { ok: false, error: 'The displayed map changed. Select the object again.' };
+    const result = applyObjectCommand(current, command);
+    if (result.ok && result.document !== current) this.accept(result.document, false);
+    return result;
+  }
+
   shuffle(): boolean {
     const current = this.currentMap();
+    if (current.type === 'dungeon' && current.objectEdits) return false;
     const next =
       current.type === 'tower'
         ? shuffleTowerDetails(current)
@@ -434,13 +451,20 @@ export class WorkbenchSession {
     });
   }
 
-  generate(): ApplySettingsResult {
+  generate(replaceCustomizations = false): ApplySettingsResult {
+    const current = this.currentMap();
     if (!this.pending()) return { ok: true, layoutChanged: false };
+    if (current.type === 'dungeon' && current.objectEdits && !replaceCustomizations)
+      return {
+        ok: false,
+        error:
+          'Choose Replace customizations and generate to replace this arrangement. Undo can restore it.',
+      };
     const parsed = this.parsedDraft();
     if (!parsed.ok) return parsed;
     const state = this.state();
     const layoutChanged = this.layoutPending();
-    let next: GeneratedMap;
+    let next: MapDocument;
     if (parsed.type === 'tower') {
       if (layoutChanged) {
         const result = generateTower(parsed.settings);
@@ -489,7 +513,7 @@ export class WorkbenchSession {
       next = forest;
     } else {
       const settings = parsed.settings;
-      let dungeon = state.maps.dungeon;
+      let dungeon = dungeonBase(state.maps.dungeon);
       if (layoutChanged) {
         const result = generateDungeon(settings);
         if (!result.ok) return result;
@@ -616,11 +640,12 @@ export class WorkbenchSession {
         ok: false,
         error: 'That study could not fit. Try another seed or decoration density.',
       };
-    this.accept(next, true);
+    const preserveHistory = current.type === 'dungeon' && !!current.objectEdits;
+    this.accept(next, true, preserveHistory);
     return { ok: true, layoutChanged };
   }
 
-  private accept(map: GeneratedMap, resetDraft: boolean): void {
+  private accept(map: MapDocument, resetDraft: boolean, preserveHistory = false): void {
     this.state.update((state) => ({
       ...state,
       comparisons: showCurrent(state.comparisons, map.type),
@@ -651,9 +676,10 @@ export class WorkbenchSession {
             : map.type === 'dungeon'
               ? {
                   ...state.histories,
-                  dungeon: resetDraft
-                    ? { past: [], future: [] }
-                    : recordShuffle(state.histories.dungeon, state.maps.dungeon),
+                  dungeon:
+                    resetDraft && !preserveHistory
+                      ? { past: [], future: [] }
+                      : recordShuffle(state.histories.dungeon, state.maps.dungeon),
                 }
               : {
                   ...state.histories,

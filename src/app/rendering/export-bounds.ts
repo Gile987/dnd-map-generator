@@ -1,8 +1,8 @@
-import type { GeneratedMap } from '../engine/model';
+import type { MapDocument } from '../engine/model';
 import { mapDimensions } from '../engine/model';
 
 /** Integer tile bounds retain grid alignment and the floor's heading and wall shadows. */
-export function exportBounds(map: GeneratedMap, towerFloor?: number, showSecrets = false) {
+export function exportBounds(map: MapDocument, towerFloor?: number, showSecrets = false) {
   if (towerFloor === undefined) return { x: 0, y: 0, ...mapDimensions(map) };
   if (map.type !== 'tower') throw new Error('Individual floors are available only for towers.');
   const floor = map.layout.floors.find((floor) => floor.number === towerFloor);
