@@ -120,6 +120,11 @@
   [grid]="grid()"
   [focused]="focused() && !editing()"
   [editMode]="active()"
+  [exploreHint]="!editing() && !disabled() && !readOnly() ? 'Click or tap a door to open or close it. Door controls below the map provide keyboard access.' : ''"
+  [exploreTarget]="doorTarget()"
+  [exploreClickable]="!editing() && !disabled() && !readOnly()"
+  (exploreHover)="doorHover($event)"
+  (exploreClick)="doorClick($event)"
   [selectedBounds]="selection()?.area"
   [ghost]="ghost()"
   (editPointer)="pointer($event)"
@@ -226,4 +231,37 @@
   </p>
   <p class="editor-message" role="status" aria-live="polite">{{message()}}</p>
 </div>
+} @if (!editing()) {
+<details class="door-controls">
+  <summary>Doors · {{openDoorCount()}} open / {{doors().length}} total</summary>
+  <p id="door-hint">
+    Click or tap a door to open or close it; drag to pan. Changes can be undone. Save to keep them
+    after refresh.
+  </p>
+  <div class="position-controls">
+    <label
+      >Door<select
+        #doorSelect
+        [value]="chosenDoor()?.id ?? ''"
+        (change)="chosenDoorId.set(doorSelect.value)"
+        [disabled]="disabled() || readOnly()"
+        aria-describedby="door-hint"
+      >
+        @for (door of doors(); track door.id; let i=$index) {
+        <option [value]="door.id">
+          Door {{i+1}} · column {{door.threshold.x+1}}, row {{door.threshold.y+1}} ·
+          {{isDoorOpen(door.id)?'Open':'Closed'}}
+        </option>
+        }
+      </select></label
+    >
+    <button
+      type="button"
+      (click)="toggleChosenDoor()"
+      [disabled]="disabled() || readOnly() || !chosenDoor()"
+    >
+      {{chosenDoorOpen()?'Close door':'Open door'}}
+    </button>
+  </div>
+</details>
 }

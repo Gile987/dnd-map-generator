@@ -1,3 +1,4 @@
+import type { DoorStates } from '../dungeon-doors';
 import { groupRotation, transformedGroup, transformedGroupProp } from './group-rotation';
 import type { GroupTransform } from './group-rotation';
 import { dungeonGroups, translatedGroup, translateGroupProp } from './dungeon-groups';
@@ -32,29 +33,34 @@ export interface ObjectEditsV4 extends Omit<ObjectEditsV3, 'version' | 'groups'>
 }
 export type ObjectEdits = ObjectEditsV1 | ObjectEditsV2 | ObjectEditsV3 | ObjectEditsV4;
 /** The ordinary map fields are the frozen base, never the resolved arrangement. */
-export interface AuthoredDungeon extends Omit<Dungeon, 'objectEdits'> {
+export interface AuthoredDungeon extends Omit<Dungeon, 'objectEdits' | 'doorStates'> {
   readonly objectEdits: ObjectEdits;
+  readonly doorStates?: DoorStates;
 }
-export type DungeonDocument = Dungeon | AuthoredDungeon;
-export type MapDocument = GeneratedMap | AuthoredDungeon;
+export interface DoorDungeon extends Omit<Dungeon, 'doorStates'> {
+  readonly doorStates: DoorStates;
+}
+export type DungeonDocument = Dungeon | DoorDungeon | AuthoredDungeon;
+export type MapDocument = GeneratedMap | DoorDungeon | AuthoredDungeon;
 export interface GroupArtworkTransform {
   readonly base: Dungeon;
   readonly group: DungeonGroup;
   readonly move: GroupTransform;
 }
-export interface ResolvedDungeon extends Omit<Dungeon, 'objectEdits'> {
+export interface ResolvedDungeon extends Omit<Dungeon, 'objectEdits' | 'doorStates'> {
   readonly objectEdits: 'resolved';
+  readonly doorStates?: DoorStates;
   readonly instances: readonly AddedObject[];
   readonly artTurns?: ReadonlyMap<Prop, QuarterTurn>;
   readonly ritualTransform?: GroupArtworkTransform;
   readonly studyTransform?: GroupArtworkTransform;
   readonly studyArea?: ReservedArea;
 }
-export type DungeonDrawing = Dungeon | ResolvedDungeon;
+export type DungeonDrawing = Dungeon | DoorDungeon | ResolvedDungeon;
 
 export function dungeonBase(document: DungeonDocument): Dungeon {
-  if (!document.objectEdits) return document;
-  const { objectEdits: _edits, ...base } = document;
+  if (!document.objectEdits && !document.doorStates) return document;
+  const { objectEdits: _edits, doorStates: _doors, ...base } = document;
   return base;
 }
 
@@ -124,6 +130,7 @@ export function resolveDungeon(document: DungeonDocument): DungeonDrawing {
   return {
     ...base,
     objectEdits: 'resolved',
+    ...(document.doorStates ? { doorStates: document.doorStates } : {}),
     instances: items,
     ...(artTurns.size ? { artTurns } : {}),
     ...(studyTransform ? { studyTransform } : {}),

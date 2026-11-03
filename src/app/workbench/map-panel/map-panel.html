@@ -125,18 +125,26 @@
   [disabled]="disabled()"
   [readOnly]="candidate() === 'pinned'"
   (changed)="objectEditRequested.emit($event)"
+  (doorToggleRequested)="doorToggleRequested.emit($event)"
 />
 } @loading {
 <p role="status">Opening map workspace…</p>
-} @error {
+} @error { @defer (on immediate) {
 <forge-preview [map]="map()" [grid]="grid()" [focused]="focused()" />
+} @error {
+<p role="status">The preview could not load. Your map can still be saved and exported.</p>
+}
 <p role="status">
   The object editor could not load. Your map can still be saved and exported. Refresh to retry
   editing.
 </p>
-} } @else {
+} } @else { @defer (on immediate) {
 <forge-preview [map]="map()" [grid]="grid()" [focused]="focused()" [showSecrets]="showSecrets()" />
-}
+} @loading {
+<p role="status">Opening map preview…</p>
+} @error {
+<p role="status">The preview could not load. Your map can still be saved and exported.</p>
+} }
 <div class="map-meta" id="map-summary">
   <div>
     <span>GENERATED SEED</span><strong class="seed-summary">{{ mapSummary().seed }}</strong>

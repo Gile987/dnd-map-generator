@@ -298,6 +298,7 @@ export interface ForestLayout {
 export interface Dungeon {
   /** Authored documents are deliberately excluded from generator inputs. */
   readonly objectEdits?: never;
+  readonly doorStates?: never;
   readonly type: 'dungeon';
   readonly version: string;
   readonly seed: string;

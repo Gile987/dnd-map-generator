@@ -365,8 +365,8 @@
     </button>
   </div>
   <p class="history-hint" id="shuffle-history-hint">
-    Up to {{ shuffleHistory().limit }} changes. Generate or Open starts over, except replacing
-    customizations stays undoable.
+    Up to {{ shuffleHistory().limit }} changes. Generate or Open usually starts over; replacing
+    object customizations or open-door states stays undoable.
   </p>
   <span class="preserve-note"
     ><forge-icon name="lock" />{{ map().type === 'tower' ? 'Your floors and connections stay put.' :
