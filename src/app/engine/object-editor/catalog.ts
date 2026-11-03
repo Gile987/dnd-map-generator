@@ -57,10 +57,10 @@ export const DUNGEON_OBJECTS_V2 = {
 
 export function dungeonCapability(
   kind: PropKind,
-  version: 1 | 2 = 1,
+  version: 1 | 2 | 3 = 1,
 ): ObjectCapability | undefined {
   return Object.hasOwn(DUNGEON_OBJECTS_V1, kind)
-    ? (version === 2 ? DUNGEON_OBJECTS_V2 : DUNGEON_OBJECTS_V1)[kind as DungeonPropKind]
+    ? (version !== 1 ? DUNGEON_OBJECTS_V2 : DUNGEON_OBJECTS_V1)[kind as DungeonPropKind]
     : undefined;
 }
 

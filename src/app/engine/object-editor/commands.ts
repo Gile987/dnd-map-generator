@@ -1,10 +1,11 @@
+import { layeredDungeonError } from './dungeon-layering-rules';
 import { authoredDungeonError, individualObjectLock } from './dungeon-authoring-rules';
 import { dungeonGroups } from './dungeon-groups';
 import { isBlockingProp, isTilePosition } from '../model';
 import type { Point, Prop, PropKind } from '../model';
 import { dungeonCapability } from './catalog';
 import { dungeonBase, dungeonInstances } from './document';
-import type { DungeonDocument, ObjectEditsV2 } from './document';
+import type { DungeonDocument, ObjectEditsV3 } from './document';
 import { dungeonTargetsError } from './dungeon-rules';
 
 export const MAX_AUTHORED_OBJECTS = 120;
@@ -23,14 +24,14 @@ export function applyObjectCommand(document: DungeonDocument, command: ObjectCom
   if (command.kind === 'reset') return { ok: true, document: base };
   if (command.kind !== 'remove' && !isTilePosition(command.target.x, command.target.y))
     return { ok: false, error: 'Place the object inside the map.' };
-  let edits: ObjectEditsV2 = document.objectEdits
+  let edits: ObjectEditsV3 = document.objectEdits
     ? {
         ...document.objectEdits,
-        version: 2,
-        groups: document.objectEdits.version === 2 ? document.objectEdits.groups : [],
+        version: 3,
+        groups: document.objectEdits.version !== 1 ? document.objectEdits.groups : [],
       }
     : {
-        version: 2,
+        version: 3,
         groups: [],
         nextId: 1,
         moves: [],
@@ -124,6 +125,8 @@ export function applyObjectCommand(document: DungeonDocument, command: ObjectCom
 }
 
 export function authoredPlacementError(document: DungeonDocument): string | undefined {
+  if (document.objectEdits?.version === 3)
+    return layeredDungeonError(dungeonBase(document), document, dungeonInstances(document));
   if (document.objectEdits?.version === 2)
     return authoredDungeonError(dungeonBase(document), document, dungeonInstances(document));
   const all = dungeonInstances(document),

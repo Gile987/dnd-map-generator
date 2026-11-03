@@ -1,3 +1,4 @@
+import { isDungeonSurface } from '../engine/object-editor/dungeon-occupancy';
 import type { Dungeon, Prop } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import { drawProp } from './props';
@@ -5,7 +6,7 @@ import { drawFittedStudyProp } from './study-props';
 
 /** Shared by painting and reverse-order selection. Architecture remains a separate layer. */
 export function isDungeonGroundProp(prop: Prop): boolean {
-  return prop.kind === 'rug' || prop.kind === 'moss';
+  return isDungeonSurface(prop.kind);
 }
 
 /** Generated objects, accepted edits and placement ghosts share the same art

@@ -76,7 +76,7 @@ test('opening old edits and rejected/no-op commands retain v1; a real successful
     validCommand(doc, (target) => ({ kind: 'add', propKind: 'moss', target })),
   );
   if (!changed.ok) throw Error(changed.error);
-  expect(changed.document.objectEdits?.version).toBe(2);
+  expect(changed.document.objectEdits?.version).toBe(3);
   expect(parseDungeonEdits(dungeonBase(doc), changed.document.objectEdits)).toEqual(
     changed.document,
   );
@@ -335,7 +335,7 @@ test('group save data rejects spoofed membership, duplicate identities and inval
   if (command.kind !== 'move-group') throw Error('Missing move');
   const document = accept(prepared, group.id, command.target, true),
     edits = document.objectEdits;
-  if (edits?.version !== 2) throw Error('Missing edits');
+  if (edits?.version !== 3) throw Error('Missing edits');
   const move = edits.groups[0],
     member = group.members[0];
   if (!move || !member) throw Error('Missing identity');

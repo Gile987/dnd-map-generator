@@ -30,11 +30,11 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
     !object(value) ||
     !keys(
       value,
-      value['version'] === 2
+      value['version'] === 2 || value['version'] === 3
         ? ['version', 'nextId', 'moves', 'added', 'removed', 'groups']
         : ['version', 'nextId', 'moves', 'added', 'removed'],
     ) ||
-    (value['version'] !== 1 && value['version'] !== 2) ||
+    (value['version'] !== 1 && value['version'] !== 2 && value['version'] !== 3) ||
     typeof value['nextId'] !== 'number' ||
     !Number.isSafeInteger(value['nextId']) ||
     value['nextId'] < 1 ||
@@ -47,7 +47,7 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
   )
     return undefined;
   const groups: GroupMove[] = [];
-  if (value['version'] === 2) {
+  if (value['version'] === 2 || value['version'] === 3) {
     if (!Array.isArray(value['groups']) || value['groups'].length > 4) return undefined;
     const available = dungeonGroups(base),
       seen = new Set<string>();
@@ -136,7 +136,9 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
   if (!moves.length && !added.length && !removed.length && !groups.length) return undefined;
   const common = { nextId: value['nextId'], moves, added, removed };
   const edits: ObjectEdits =
-    value['version'] === 2 ? { ...common, version: 2, groups } : { ...common, version: 1 };
+    value['version'] === 1
+      ? { ...common, version: 1 }
+      : { ...common, version: value['version'], groups };
   const result = { ...base, objectEdits: edits };
   return authoredPlacementError(result) ? undefined : result;
 }
