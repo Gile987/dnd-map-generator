@@ -1,4 +1,5 @@
-import type { Point, Prop } from '../model';
+import { groupRotation } from './group-rotation';
+import type { Point, Prop, QuarterTurn } from '../model';
 import type { ReservedArea } from '../feature-reservation';
 import { authoredObjectArea } from './object-geometry';
 import { dungeonBase, dungeonInstances } from './document';
@@ -10,6 +11,7 @@ import type { DungeonGroupId } from './dungeon-groups';
 export interface DungeonSelection {
   readonly id: string;
   readonly groupId?: DungeonGroupId;
+  readonly rotation?: QuarterTurn;
   readonly label: string;
   readonly position: Point;
   readonly area: ReservedArea;
@@ -26,6 +28,11 @@ export function dungeonSelections(document: DungeonDocument): readonly DungeonSe
     ...groups.map((group) => ({
       id: `group-${group.id}`,
       groupId: group.id,
+      rotation: groupRotation(
+        document.objectEdits && document.objectEdits.version !== 1
+          ? document.objectEdits.groups.find((g) => g.id === group.id)
+          : undefined,
+      ),
       label: group.label,
       position: group.area,
       area: group.area,

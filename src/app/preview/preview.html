@@ -16,7 +16,8 @@
   ></canvas>
   @if (editMode() && ghost(); as placement) {
   <p class="placement-status" [class.invalid]="!placement.valid" role="status">
-    {{ placement.valid ? 'Valid position — release to place' : placement.reason }}
+    {{ placement.valid ? (placement.placementAction === 'place' ? 'Valid position — choose Place
+    object' : 'Valid position — release to place') : placement.reason }}
   </p>
   }
   <span class="north" aria-hidden="true"

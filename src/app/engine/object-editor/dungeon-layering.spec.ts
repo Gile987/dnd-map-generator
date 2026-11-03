@@ -59,7 +59,7 @@ test('old v2 documents retain their frozen rules and only adopt layering after a
   const noop = applyObjectCommand(old, { kind: 'move', id: rug.id, target: rug.prop });
   expect(noop.ok && noop.document).toBe(old);
   const edited = accept(old, { kind: 'add', propKind: 'barrel', target: rug.prop });
-  expect(edited.objectEdits?.version).toBe(3);
+  expect(edited.objectEdits?.version).toBe(4);
   expect(parseDungeonEdits(base, { ...edited.objectEdits, version: 2 })).toBeUndefined();
 });
 

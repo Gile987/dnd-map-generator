@@ -1,5 +1,7 @@
 import { individualObjectLock } from './dungeon-authoring-rules';
 import { dungeonGroups } from './dungeon-groups';
+import { QUARTER_TURNS } from '../prop-footprint';
+import type { GroupTransform } from './group-rotation';
 import type { GroupMove } from './dungeon-groups';
 import { isBlockingProp, isDungeonPropKind, isTilePosition } from '../model';
 import type { Dungeon, PropKind } from '../model';
@@ -30,11 +32,14 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
     !object(value) ||
     !keys(
       value,
-      value['version'] === 2 || value['version'] === 3
+      value['version'] === 2 || value['version'] === 3 || value['version'] === 4
         ? ['version', 'nextId', 'moves', 'added', 'removed', 'groups']
         : ['version', 'nextId', 'moves', 'added', 'removed'],
     ) ||
-    (value['version'] !== 1 && value['version'] !== 2 && value['version'] !== 3) ||
+    (value['version'] !== 1 &&
+      value['version'] !== 2 &&
+      value['version'] !== 3 &&
+      value['version'] !== 4) ||
     typeof value['nextId'] !== 'number' ||
     !Number.isSafeInteger(value['nextId']) ||
     value['nextId'] < 1 ||
@@ -47,17 +52,34 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
   )
     return undefined;
   const groups: GroupMove[] = [];
-  if (value['version'] === 2 || value['version'] === 3) {
+  const transforms: GroupTransform[] = [];
+  if (value['version'] === 2 || value['version'] === 3 || value['version'] === 4) {
     if (!Array.isArray(value['groups']) || value['groups'].length > 4) return undefined;
     const available = dungeonGroups(base),
       seen = new Set<string>();
     for (const move of value['groups']) {
-      if (!object(move) || !keys(move, ['id', 'x', 'y']) || !position(move)) return undefined;
+      if (
+        !object(move) ||
+        !keys(move, value['version'] === 4 ? ['id', 'x', 'y', 'rotation'] : ['id', 'x', 'y']) ||
+        !position(move)
+      )
+        return undefined;
+      const rotation = QUARTER_TURNS.find((q) => q === move['rotation']);
+      if (value['version'] === 4 && rotation === undefined) return undefined;
       const group = available.find((group) => group.id === move['id']);
-      if (!group || seen.has(group.id) || (group.area.x === move.x && group.area.y === move.y))
+      if (
+        !group ||
+        seen.has(group.id) ||
+        (group.area.x === move.x &&
+          group.area.y === move.y &&
+          (value['version'] !== 4 || move['rotation'] === 0))
+      )
         return undefined;
       seen.add(group.id);
-      groups.push({ id: group.id, x: move.x, y: move.y });
+      const groupPosition = { id: group.id, x: move.x, y: move.y };
+      groups.push(groupPosition);
+      if (value['version'] === 4 && rotation !== undefined)
+        transforms.push({ ...groupPosition, rotation });
     }
   }
   const moves: ObjectMove[] = [],
@@ -138,7 +160,9 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
   const edits: ObjectEdits =
     value['version'] === 1
       ? { ...common, version: 1 }
-      : { ...common, version: value['version'], groups };
+      : value['version'] === 4
+        ? { ...common, version: 4, groups: transforms }
+        : { ...common, version: value['version'], groups };
   const result = { ...base, objectEdits: edits };
   return authoredPlacementError(result) ? undefined : result;
 }

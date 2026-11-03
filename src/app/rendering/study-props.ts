@@ -1,4 +1,4 @@
-import type { Layout, Prop } from '../engine/model';
+import type { Layout, Prop, QuarterTurn } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import { exposedTileBounds } from './floor-artwork';
 
@@ -9,6 +9,7 @@ export function drawFittedStudyProp(
   ctx: DrawingContext,
   prop: Prop,
   layout: Pick<Layout, 'tiles'>,
+  turn: QuarterTurn = 0,
 ): boolean {
   let draw: (ctx: DrawingContext, prop: Prop) => void;
   let halfWidth: number;
@@ -33,7 +34,8 @@ export function drawFittedStudyProp(
     default:
       return false;
   }
-  if (Math.floor(prop.variation * 4) % 2 === 1) [halfWidth, halfHeight] = [halfHeight, halfWidth];
+  if ((Math.floor(prop.variation * 4) + turn) % 2 === 1)
+    [halfWidth, halfHeight] = [halfHeight, halfWidth];
   const bounds = exposedTileBounds(layout, prop);
   const scale = Math.min(
     1,
@@ -44,6 +46,7 @@ export function drawFittedStudyProp(
   ctx.translate((bounds.left + bounds.right) / 2, (bounds.top + bounds.bottom) / 2);
   ctx.scale(scale, scale);
   ctx.lineWidth = 0.025;
+  if (turn) ctx.rotate((turn * Math.PI) / 2);
   draw(ctx, prop);
   ctx.restore();
   return true;

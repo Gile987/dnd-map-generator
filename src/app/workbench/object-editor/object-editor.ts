@@ -13,9 +13,10 @@ import {
 import { isBlockingProp } from '../../engine/model';
 import type { DungeonDocument, MapDocument, Point, PropKind } from '../../engine/model';
 import { DUNGEON_PALETTE_V2 as DUNGEON_PALETTE } from '../../engine/object-editor/catalog';
-import { applyObjectCommand } from '../../engine/object-editor/commands';
+import { quarterTurn } from '../../engine/object-editor/group-rotation';
+import { applyObjectCommand, proposeObjectCommand } from '../../engine/object-editor/commands';
 import type { ObjectCommand } from '../../engine/object-editor/commands';
-import { dungeonInstances } from '../../engine/object-editor/document';
+import { dungeonInstances, resolveDungeon } from '../../engine/object-editor/document';
 import { dungeonSelections } from '../../engine/object-editor/dungeon-selection';
 import type { DungeonSelection } from '../../engine/object-editor/dungeon-selection';
 import { areaContains } from '../../engine/feature-reservation';
@@ -86,13 +87,23 @@ export class ObjectEditor {
     if (!placement) return undefined;
     const command = placement.command;
     if (command.kind === 'move-group') {
-      const group = dungeonSelections(placement.source).find((item) => item.groupId === command.id);
+      const proposal = proposeObjectCommand(placement.source, command);
+      if (!proposal.ok) return undefined;
+      const group = dungeonSelections(proposal.document).find(
+        (item) => item.groupId === command.id,
+      );
       if (!group) return undefined;
-      const dx = command.target.x - group.position.x,
-        dy = command.target.y - group.position.y;
+      const drawing = resolveDungeon(proposal.document);
+      const items =
+        drawing.objectEdits === 'resolved'
+          ? drawing.instances
+          : dungeonInstances(proposal.document);
       return {
-        props: group.props.map((prop) => ({ ...prop, x: prop.x + dx, y: prop.y + dy })),
-        bounds: { ...group.area, ...command.target },
+        props: items.filter((item) => group.members.includes(item.id)).map((item) => item.prop),
+        bounds: group.area,
+        drawing,
+        groupId: group.groupId,
+        placementAction: this.grab ? ('drop' as const) : ('place' as const),
         valid: !!verdict?.ok,
         reason: verdict && !verdict.ok ? verdict.error : undefined,
       };
@@ -116,6 +127,30 @@ export class ObjectEditor {
       reason: verdict && !verdict.ok ? verdict.error : undefined,
     };
   });
+  protected readonly rotation = computed(() => {
+    const command = this.placement()?.command;
+    return command?.kind === 'move-group'
+      ? (command.rotation ?? this.selection()?.rotation ?? 0)
+      : (this.selection()?.rotation ?? 0);
+  });
+  protected rotate(direction: -1 | 1): void {
+    const item = this.selection();
+    if (!this.active() || !item?.groupId || item.lock) return;
+    this.grab = undefined;
+    this.placement.set({
+      source: this.map(),
+      command: {
+        kind: 'move-group',
+        id: item.groupId,
+        target: this.target() ?? item.position,
+        rotation: quarterTurn(this.rotation() + direction),
+      },
+    });
+    this.message.set(
+      'Rotation preview. Place object to apply; Escape cancels. Column and Row keep the top-left anchor.',
+    );
+  }
+
   protected readonly target = computed(
     () => this.placement()?.command.target ?? this.selection()?.position,
   );
@@ -142,12 +177,14 @@ export class ObjectEditor {
     effect(() => this.editingChanged.emit(this.isEditing()));
     effect(() => {
       this.map();
-      this.disabled();
       this.readOnly();
       untracked(() => {
         this.cancel();
         this.selected.set('');
       });
+    });
+    effect(() => {
+      if (this.disabled()) untracked(() => this.cancel());
     });
   }
 
@@ -212,12 +249,20 @@ export class ObjectEditor {
         this.select('');
         return;
       }
+      const pending = this.placement()?.command;
+      const rotation =
+        pending?.kind === 'move-group' && pending.id === unit.groupId
+          ? pending.rotation
+          : undefined;
       this.select(unit.id);
       if (unit.lock) return;
       this.grab = { x: event.point.x - unit.position.x, y: event.point.y - unit.position.y };
       this.placement.set({
         source: this.map(),
-        command: this.moveCommand(unit, unit.position),
+        command: {
+          ...this.moveCommand(unit, unit.position),
+          ...(unit.groupId && rotation !== undefined ? { rotation } : {}),
+        },
       });
     } else if (this.placement()) {
       this.setTarget(event.point);

@@ -1,9 +1,51 @@
 import '@angular/compiler';
 import { expect, test } from 'vitest';
-import { validCommand } from '../../../scripts/editor-test-support';
+import { validCommand, rotationFixture } from '../../../scripts/editor-test-support';
 import { WorkbenchSession } from './workbench-session';
 import { generateDungeon } from '../engine/generate';
 import { dungeonGroups } from '../engine/object-editor/dungeon-groups';
+
+test('addition rotation shares accepted history while preserving drafts, pinned artwork and stale-command guards', () => {
+  const { prepared, target } = rotationFixture('table');
+  const session = new WorkbenchSession();
+  session.openSaved(prepared);
+  session.pinCurrent();
+  session.updateDraft({ type: 'dungeon', changes: { seed: 'pending-rotation-layout' } });
+  const draft = session.draft();
+  expect(
+    session.editObjects(prepared, { kind: 'move-group', id: 'table', target, rotation: 1 }).ok,
+  ).toBe(true);
+  const turned = session.map(),
+    history = session.shuffleHistory();
+  expect(session.draft()).toBe(draft);
+  expect(session.comparison().pinned).toBe(prepared);
+  expect(
+    session.editObjects(prepared, { kind: 'move-group', id: 'table', target, rotation: 2 }).ok,
+  ).toBe(false);
+  expect(
+    session.editObjects(turned, {
+      kind: 'move-group',
+      id: 'table',
+      target: { x: 39, y: 29 },
+      rotation: 2,
+    }).ok,
+  ).toBe(false);
+  expect(session.map()).toBe(turned);
+  expect(session.shuffleHistory()).toEqual(history);
+  session.selectCandidate('pinned');
+  expect(
+    session.editObjects(turned, { kind: 'move-group', id: 'table', target, rotation: 2 }).ok,
+  ).toBe(false);
+  session.selectCandidate('current');
+  session.undoShuffle();
+  expect(session.map()).toBe(prepared);
+  expect(session.draft()).toBe(draft);
+  session.redoShuffle();
+  expect(session.map()).toBe(turned);
+  session.openSaved(turned);
+  expect(session.pending()).toBe(false);
+  expect(session.shuffleHistory()).toMatchObject({ undo: 0, redo: 0 });
+});
 
 test('complete-addition edits preserve pending settings, pins and exact chronological snapshots through refusal and recovery', () => {
   const generated = generateDungeon({

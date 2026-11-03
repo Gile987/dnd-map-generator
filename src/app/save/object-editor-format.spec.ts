@@ -27,16 +27,18 @@ function record() {
     '2026-11-02T12:00:00Z',
   );
 }
-test('format 21 persists the immutable base plus bounded edits through record, backup and sharing roundtrips', () => {
+test('format 22 persists the immutable base plus bounded edits through record, backup and sharing roundtrips', () => {
   const saved = record(),
     before = structuredClone(saved);
-  expect(saved.saveFormatVersion).toBe('21.0.0');
+  expect(saved.saveFormatVersion).toBe('22.0.0');
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   expect(saved).toEqual(before);
   expect(saveVocabulary('19.0.0')?.objectEditVersions).toEqual([1]);
   expect(saveVocabulary('20.0.0')?.objectEditVersions).toEqual([1, 2]);
   expect(saveVocabulary('21.0.0')?.objectEditVersions).toEqual([1, 2, 3]);
+  expect(saveVocabulary('22.0.0')?.objectEditVersions).toEqual([1, 2, 3, 4]);
+  expect(parseSavedMap({ ...saved, saveFormatVersion: '21.0.0' })).toBeUndefined();
   expect(parseSavedMap({ ...saved, saveFormatVersion: '20.0.0' })).toBeUndefined();
   expect(parseSavedMap({ ...saved, saveFormatVersion: '19.0.0' })).toBeUndefined();
   expect(isUsableMap(saved.map)).toBe(false); // Not a canonical generator snapshot.
@@ -65,7 +67,7 @@ test('malformed and future editing data are rejected, counted and never silently
     undefined,
     null,
     {},
-    { ...saved.map.objectEdits, version: 4 },
+    { ...saved.map.objectEdits, version: 5 },
     { ...saved.map.objectEdits, added: [] },
   ]) {
     const bad = { ...saved, map: { ...saved.map, objectEdits } };
@@ -75,7 +77,7 @@ test('malformed and future editing data are rejected, counted and never silently
         parseBundle(
           JSON.stringify({
             format: 'encounter-map-forge-saves',
-            saveFormatVersion: '21.0.0',
+            saveFormatVersion: '22.0.0',
             maps: [saved, bad],
           }),
         ),
