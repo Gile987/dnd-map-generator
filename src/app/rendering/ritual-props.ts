@@ -1,5 +1,6 @@
-import type { DungeonDrawing } from '../engine/object-editor/document';
-import type { DecorationPreset, Prop } from '../engine/model';
+import { quarterTurn, rotateGroupPoint } from '../engine/object-editor/group-rotation';
+import type { DungeonDrawing, GroupArtworkTransform } from '../engine/object-editor/document';
+import type { DecorationPreset, Prop, QuarterTurn } from '../engine/model';
 import { ritualCenter } from '../engine/dungeon-ritual';
 import type { DrawingContext } from './drawing-context';
 import { path } from './drawing-primitives';
@@ -70,8 +71,8 @@ export function drawRitualAltar(ctx: DrawingContext, prop: Prop): void {
   ctx.stroke();
 }
 
-export function drawRitualCandles(ctx: DrawingContext, prop: Prop): void {
-  const angle = (Math.floor(prop.variation * 4) * Math.PI) / 2;
+export function drawRitualCandles(ctx: DrawingContext, prop: Prop, turn: QuarterTurn = 0): void {
+  const angle = ((Math.floor(prop.variation * 4) + turn) * Math.PI) / 2;
   ctx.rotate(angle);
   for (const [x, y, radius] of [
     [-0.17, 0.05, 0.075],
@@ -179,13 +180,28 @@ export function drawRitualFloor(
   ctx: DrawingContext,
   props: readonly Prop[],
   preset: DecorationPreset,
+  transform?: GroupArtworkTransform,
 ): void {
   const altar = props.find((p) => p.kind === 'ritual_altar');
   if (!altar) return;
-  const center = ritualCenter(altar);
+  let center = ritualCenter(altar);
+  let orientation = Math.floor(altar.variation * 4);
+  if (transform) {
+    const original = transform.base.decoration.props.find((p) => p.kind === 'ritual_altar');
+    if (original) {
+      const origin = ritualCenter(original);
+      const point = rotateGroupPoint(
+        { x: origin.x - transform.group.area.x + 0.5, y: origin.y - transform.group.area.y + 0.5 },
+        transform.group.area,
+        transform.move.rotation,
+      );
+      center = { x: transform.move.x + point.x - 0.5, y: transform.move.y + point.y - 0.5 };
+      orientation = quarterTurn(Math.floor(original.variation * 4) + transform.move.rotation);
+    }
+  }
   ctx.save();
   ctx.translate(center.x + 0.5, center.y + 0.5);
-  ctx.rotate((Math.floor(altar.variation * 4) * Math.PI) / 2);
+  ctx.rotate((orientation * Math.PI) / 2);
   ctx.strokeStyle = chalk[preset];
   ctx.lineWidth = 0.025;
   for (const radius of [1.08, 1.27]) {
@@ -231,5 +247,11 @@ export function drawRitualFloor(
 }
 
 export function drawDungeonRitualFloor(ctx: DrawingContext, map: DungeonDrawing): void {
-  if (map.decoration.ritual) drawRitualFloor(ctx, map.decoration.props, map.decoration.preset);
+  if (map.decoration.ritual)
+    drawRitualFloor(
+      ctx,
+      map.decoration.props,
+      map.decoration.preset,
+      map.objectEdits === 'resolved' ? map.ritualTransform : undefined,
+    );
 }

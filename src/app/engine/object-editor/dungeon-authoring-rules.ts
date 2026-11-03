@@ -1,3 +1,4 @@
+import { transformedGroup } from './group-rotation';
 import { authoredObjectArea } from './object-geometry';
 import { DENSITY_BUDGETS, indexOf, isFloor, isTilePosition } from '../model';
 import type { Dungeon, Prop } from '../model';
@@ -43,7 +44,7 @@ export function currentDungeonGroups(
   const moves =
     document.objectEdits && document.objectEdits.version !== 1 ? document.objectEdits.groups : [];
   return dungeonGroups(base).map((group) =>
-    translatedGroup(
+    (document.objectEdits?.version === 4 ? transformedGroup : translatedGroup)(
       group,
       moves.find((move) => move.id === group.id),
     ),

@@ -1,3 +1,7 @@
+import type { DungeonDrawing } from '../engine/object-editor/document';
+import type { DungeonGroupId } from '../engine/object-editor/dungeon-groups';
+import { drawDungeonRitualFloor } from '../rendering/ritual-props';
+import { drawStudySurface } from '../rendering/study-surface';
 import { viewportTransform, inversePoint } from './viewport-transform';
 import type { ReservedArea } from '../engine/feature-reservation';
 import { drawDungeonProp } from '../rendering/dungeon-prop-layer';
@@ -47,6 +51,9 @@ export class Preview {
   readonly selectedBounds = input<ReservedArea>();
   readonly ghost = input<{
     readonly props: readonly Prop[];
+    readonly drawing?: DungeonDrawing;
+    readonly groupId?: DungeonGroupId;
+    readonly placementAction?: 'place' | 'drop';
     readonly bounds: ReservedArea;
     readonly valid: boolean;
     readonly reason?: string;
@@ -307,9 +314,12 @@ export class Preview {
       if (ghost && Number.isFinite(ghost.bounds.x) && Number.isFinite(ghost.bounds.y)) {
         const bounds = ghost.bounds;
         context.globalAlpha = 0.7;
+        if (ghost.drawing && ghost.groupId === 'ritual')
+          drawDungeonRitualFloor(context, ghost.drawing);
+        if (ghost.drawing && ghost.groupId === 'study') drawStudySurface(context, ghost.drawing);
         for (const prop of ghost.props) {
           const map = this.map();
-          if (map.type === 'dungeon') drawDungeonProp(context, prop, map);
+          if (map.type === 'dungeon') drawDungeonProp(context, prop, ghost.drawing ?? map);
           else drawProp(context, prop);
         }
         context.globalAlpha = 1;

@@ -16,7 +16,7 @@ export function layeredDungeonError(
   items: readonly AddedObject[],
 ): string | undefined {
   const edits = document.objectEdits;
-  if (edits?.version !== 3) return undefined;
+  if (edits?.version !== 3 && edits?.version !== 4) return undefined;
   const groups = currentDungeonGroups(base, document),
     architecture = dungeonArchitectureCells(base);
   const changed = new Set(edits.moves.map((move) => move.id));

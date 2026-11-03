@@ -173,7 +173,7 @@ test('parser rejects unsupported versions, references, complete-arrangement coll
   const bad = [
     null,
     {},
-    { ...edits, version: 4 },
+    { ...edits, version: 5 },
     { ...edits, nextId: 0 },
     { ...edits, nextId: Infinity },
     { ...edits, moves: [{ id: 'base-99999', x: 10, y: 10 }] },

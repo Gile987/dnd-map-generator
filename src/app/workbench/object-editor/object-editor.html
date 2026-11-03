@@ -136,7 +136,28 @@
     Its objects keep their arrangement; the outline includes reserved space.' : 'Drag on the map, or
     choose a destination below.')}}
   </p>
-  } @if ((selection() && !selection()?.lock) || placement()) {
+  } @if ((selection() && !selection()?.lock) || placement()) { @if (selection()?.groupId) {
+  <div class="position-controls rotation-controls" role="group" aria-label="Addition rotation">
+    <button
+      type="button"
+      (click)="rotate(-1)"
+      [disabled]="disabled()"
+      aria-label="Rotate addition left"
+    >
+      ↶ Rotate left
+    </button>
+    <button
+      type="button"
+      (click)="rotate(1)"
+      [disabled]="disabled()"
+      aria-label="Rotate addition right"
+    >
+      ↷ Rotate right
+    </button>
+    <output aria-label="Addition rotation">{{rotation() * 90}}° from generated</output>
+    <span>Column and Row keep the top-left anchor.</span>
+  </div>
+  }
   <div class="position-controls">
     @if (selection()?.removable && !selection()?.lock) {
     <button type="button" (click)="remove()" [disabled]="disabled()">Remove object</button> }

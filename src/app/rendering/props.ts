@@ -54,7 +54,7 @@ type PropDrawer = (ctx: DrawingContext, prop: Prop, forest: ForestPalette) => vo
 
 const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   ritual_altar: drawRitualAltar,
-  ritual_candles: drawRitualCandles,
+  ritual_candles: (ctx, prop) => drawRitualCandles(ctx, prop),
   ritual_offering: drawRitualOffering,
   crate: drawCrate,
   barrel: drawBarrel,

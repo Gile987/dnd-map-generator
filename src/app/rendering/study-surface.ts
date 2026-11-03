@@ -1,3 +1,5 @@
+import { areaContains } from '../engine/feature-reservation';
+import { rotateGroupPoint } from '../engine/object-editor/group-rotation';
 import type { DungeonDrawing } from '../engine/object-editor/document';
 import { contains, indexOf } from '../engine/model';
 import type { Point } from '../engine/model';
@@ -15,6 +17,50 @@ interface SurfaceMark extends Point {
 /** Derived artwork only: never contributes props, blocking tiles, or generator RNG draws. */
 export function studySurfaceMarks(map: DungeonDrawing): readonly SurfaceMark[] {
   if (map.decoration.studySurface !== 1 || map.decoration.scene !== 'Forgotten study') return [];
+  if (map.objectEdits === 'resolved' && map.studyTransform) {
+    const { base, group, move } = map.studyTransform;
+    const occupied = new Set(map.decoration.props.flatMap(propCells).map((p) => indexOf(p.x, p.y)));
+    const reserved = reservedTiles(map.layout);
+    const source = studySurfaceMarks(base);
+    const rotated = source
+      .filter((mark) => mark.kind !== 'wear' && areaContains(group.area, mark))
+      .map((mark) => {
+        const point = rotateGroupPoint(
+          { x: mark.x - group.area.x, y: mark.y - group.area.y },
+          group.area,
+          move.rotation,
+        );
+        return {
+          ...mark,
+          x: move.x + point.x,
+          y: move.y + point.y,
+          angle: mark.angle + (move.rotation * Math.PI) / 2,
+        };
+      })
+      .filter((mark) => {
+        const x = Math.floor(mark.x),
+          y = Math.floor(mark.y);
+        return (
+          !occupied.has(indexOf(x, y)) &&
+          !reserved.has(indexOf(x, y)) &&
+          !map.decoration.props.some(
+            (p) => p.kind === 'rug' && Math.abs(x - p.x) <= 1 && Math.abs(y - p.y) <= 1,
+          )
+        );
+      })
+      .map((mark) => {
+        const bounds = exposedTileBounds(map.layout, {
+          x: Math.floor(mark.x),
+          y: Math.floor(mark.y),
+        });
+        return {
+          ...mark,
+          x: Math.max(bounds.left + 0.23, Math.min(bounds.right - 0.23, mark.x)),
+          y: Math.max(bounds.top + 0.23, Math.min(bounds.bottom - 0.23, mark.y)),
+        };
+      });
+    return [...source.filter((mark) => mark.kind === 'wear'), ...rotated];
+  }
   const desk = map.decoration.props.find((prop) => prop.kind === 'desk');
   const shelf = map.decoration.props.find((prop) => prop.kind === 'bookshelf');
   let room = desk && map.layout.rooms.find((candidate) => contains(candidate, desk));
