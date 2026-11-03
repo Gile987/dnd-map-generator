@@ -790,3 +790,20 @@ test('unknown authored versions stay recoverable and block later mutations inste
   expect(storage.setItem).not.toHaveBeenCalled();
   expect(store.saved()).toEqual([original]);
 });
+
+test('future door states remain recoverable and cannot be silently discarded by a library write', async () => {
+  const future = {
+    ...original,
+    id: 'future-doors',
+    map: { ...original.map, doorStates: { version: 2, open: ['unknown-door'] } },
+  };
+  const raw = JSON.stringify([original, future]);
+  const storage = stubStorage(raw),
+    store = createStore();
+  expect(store.saved()).toEqual([original]);
+  expect(store.canWrite()).toBe(false);
+  expect(store.recoveryData()).toBe(raw);
+  await expect(store.add(original.map, 'Do not discard doors', thumbnail)).rejects.toThrow();
+  expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
+  expect(storage.setItem).not.toHaveBeenCalled();
+});

@@ -73,6 +73,7 @@
       (clearPinRequested)="clearPin()"
       (gridChanged)="grid.set($event)"
       (objectEditRequested)="editObjects($event)"
+      (doorToggleRequested)="toggleDoor($event)"
       [history]="shuffleHistory()"
       (historyRequested)="restoreShuffle($event)"
       (focusChanged)="setFocused($event)"

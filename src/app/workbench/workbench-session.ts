@@ -1,3 +1,4 @@
+import { toggleDungeonDoor, withDoorStates } from '../engine/dungeon-doors';
 import { applyObjectCommand } from '../engine/object-editor/commands';
 import type { ObjectCommand, EditResult } from '../engine/object-editor/commands';
 import { dungeonBase } from '../engine/object-editor/document';
@@ -380,6 +381,19 @@ export class WorkbenchSession {
     return result;
   }
 
+  toggleDoor(source: MapDocument, id: string): EditResult {
+    const current = this.currentMap();
+    if (
+      current.type !== 'dungeon' ||
+      current !== source ||
+      this.comparison().selected !== 'current'
+    )
+      return { ok: false, error: 'The displayed map changed. Choose the door again.' };
+    const result = toggleDungeonDoor(current, id);
+    if (result.ok) this.accept(result.document, false);
+    return result;
+  }
+
   shuffle(): boolean {
     const current = this.currentMap();
     if (current.type === 'dungeon' && current.objectEdits) return false;
@@ -389,7 +403,7 @@ export class WorkbenchSession {
         : current.type === 'courtyard'
           ? shuffleCourtyardDetails(current)
           : current.type === 'dungeon'
-            ? shuffleDetails(current)
+            ? withDoorStates(shuffleDetails(dungeonBase(current)), current.doorStates)
             : shuffleForestDetails(current);
     if (next === current) return false;
     this.accept(next, false);
@@ -535,7 +549,7 @@ export class WorkbenchSession {
         if (settings.preset !== dungeon.decoration.preset)
           dungeon = changePreset(dungeon, settings.preset);
       }
-      next = dungeon;
+      next = layoutChanged ? dungeon : withDoorStates(dungeon, state.maps.dungeon.doorStates);
     }
     if (
       next.type === 'tower' &&
@@ -640,7 +654,8 @@ export class WorkbenchSession {
         ok: false,
         error: 'That study could not fit. Try another seed or decoration density.',
       };
-    const preserveHistory = current.type === 'dungeon' && !!current.objectEdits;
+    const preserveHistory =
+      current.type === 'dungeon' && (!!current.objectEdits || !!current.doorStates);
     this.accept(next, true, preserveHistory);
     return { ok: true, layoutChanged };
   }

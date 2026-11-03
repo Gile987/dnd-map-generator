@@ -1,3 +1,5 @@
+import { doorIsOpen } from './engine/dungeon-doors';
+import type { DoorToggleRequest } from './engine/dungeon-doors';
 import type { ObjectEditRequest } from './workbench/object-editor/object-editor';
 import {
   ChangeDetectionStrategy,
@@ -165,6 +167,16 @@ export class App {
     if (result.ok)
       this.status.set(
         'Dungeon objects updated. Undo restores the previous arrangement. Save to keep your changes.',
+      );
+  }
+
+  protected toggleDoor(request: DoorToggleRequest): void {
+    if (this.busy()) return;
+    const result = this.session.toggleDoor(request.source, request.id);
+    this.error.set(result.ok ? '' : result.error);
+    if (result.ok)
+      this.status.set(
+        `Door ${doorIsOpen(result.document, request.id) ? 'opened' : 'closed'}. Undo restores its previous state. Save to keep your changes.`,
       );
   }
 

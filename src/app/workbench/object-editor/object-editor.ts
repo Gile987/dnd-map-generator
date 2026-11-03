@@ -1,3 +1,6 @@
+import { doorIsOpen, dungeonDoorAt, dungeonDoors } from '../../engine/dungeon-doors';
+import type { DoorToggleRequest } from '../../engine/dungeon-doors';
+import type { ExploreClick, ExplorePoint } from '../../preview/preview';
 import { isDungeonGroundProp } from '../../rendering/dungeon-prop-layer';
 import {
   ChangeDetectionStrategy,
@@ -55,9 +58,68 @@ export class ObjectEditor {
   readonly disabled = input(false);
   readonly readOnly = input(false);
   readonly changed = output<ObjectEditRequest>();
+  readonly doorToggleRequested = output<DoorToggleRequest>();
   readonly editingChanged = output<boolean>();
   readonly history = input({ undo: 0, redo: 0, limit: 20 });
   readonly historyRequested = output<'undo' | 'redo'>();
+  protected readonly doors = computed(() => dungeonDoors(this.map().layout));
+  protected readonly openDoorCount = computed(() => this.map().doorStates?.open.length ?? 0);
+  protected readonly chosenDoorId = signal('');
+  protected readonly chosenDoor = computed(
+    () => this.doors().find((door) => door.id === this.chosenDoorId()) ?? this.doors()[0],
+  );
+  protected readonly chosenDoorOpen = computed(() => {
+    const door = this.chosenDoor();
+    return !!door && doorIsOpen(this.map(), door.id);
+  });
+  private readonly hoveredDoor = signal<{ source: MapDocument; id: string } | undefined>(undefined);
+  protected readonly doorTarget = computed(() => {
+    const hover = this.hoveredDoor(),
+      map = this.map();
+    if (
+      this.editing() ||
+      this.disabled() ||
+      this.readOnly() ||
+      !hover ||
+      hover.source.type !== 'dungeon' ||
+      hover.source.layout !== map.layout
+    )
+      return undefined;
+    const door = this.doors().find((d) => d.id === hover.id)?.threshold;
+    if (!door) return undefined;
+    return {
+      label: doorIsOpen(map, hover.id) ? 'Close door' : 'Open door',
+      bounds:
+        door.axis === 'horizontal'
+          ? { x: door.x, y: door.y - 0.3, width: door.span, height: 0.6 }
+          : { x: door.x - 0.3, y: door.y, width: 0.6, height: door.span },
+    };
+  });
+  protected doorHover(event: ExplorePoint): void {
+    const id =
+      !this.editing() &&
+      !this.disabled() &&
+      !this.readOnly() &&
+      event.source === this.map() &&
+      event.point
+        ? dungeonDoorAt(this.map().layout, event.point, event.padding)
+        : undefined;
+    this.hoveredDoor.set(id ? { source: event.source, id } : undefined);
+  }
+  protected doorClick(event: ExploreClick): void {
+    if (this.editing() || this.disabled() || this.readOnly() || event.source !== this.map()) return;
+    const id = dungeonDoorAt(this.map().layout, event.point, event.padding);
+    if (id && id === dungeonDoorAt(this.map().layout, event.start, event.padding))
+      this.doorToggleRequested.emit({ source: event.source, id });
+  }
+  protected toggleChosenDoor(): void {
+    const door = this.chosenDoor();
+    if (door && !this.editing() && !this.disabled() && !this.readOnly())
+      this.doorToggleRequested.emit({ source: this.map(), id: door.id });
+  }
+  protected isDoorOpen(id: string): boolean {
+    return doorIsOpen(this.map(), id);
+  }
   protected readonly editing = signal(false);
   readonly isEditing = computed(() => this.editing() && !this.readOnly());
   protected readonly active = computed(

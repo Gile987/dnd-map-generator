@@ -28,6 +28,16 @@ import { renderMap } from '../rendering/render-map';
 import { PIXELS_PER_TILE } from '../rendering/resolution';
 import { Icon } from '../icon';
 
+export interface ExplorePoint {
+  readonly source: MapDocument;
+  readonly point?: Point;
+  readonly padding: number;
+}
+export interface ExploreClick extends ExplorePoint {
+  readonly point: Point;
+  readonly start: Point;
+}
+
 export interface EditPointer {
   readonly phase: 'start' | 'move' | 'end' | 'cancel';
   readonly point: Point;
@@ -48,6 +58,11 @@ export interface EditPointer {
 export class Preview {
   readonly map = input.required<MapDocument>();
   readonly editMode = input(false);
+  readonly exploreHint = input('');
+  readonly exploreClickable = input(false);
+  readonly exploreTarget = input<{ readonly bounds: ReservedArea; readonly label: string }>();
+  readonly exploreHover = output<ExplorePoint>();
+  readonly exploreClick = output<ExploreClick>();
   readonly selectedBounds = input<ReservedArea>();
   readonly ghost = input<{
     readonly props: readonly Prop[];
@@ -71,7 +86,7 @@ export class Preview {
     const m = this.map();
     const navigation = this.editMode()
       ? 'Edit objects. Select an object on the map or from Objects on this map. Arrow keys position the selection, Enter places it, Escape cancels. Switch to Explore to pan. Plus and minus zoom; Home fits.'
-      : 'Use arrow keys to pan, plus and minus to zoom, Home to fit.';
+      : 'Use arrow keys to pan, plus and minus to zoom, Home to fit. ' + this.exploreHint();
     if (m.type === 'tower')
       return `Tower map for seed ${m.seed}. ${m.layout.floors.length} numbered floors. Matching stair letters connect floors.${m.decoration.laboratoryFloor !== undefined && (this.showSecrets() || !m.layout.floors.find((f) => f.number === m.decoration.laboratoryFloor)?.secret) ? ' An alchemist’s laboratory occupies floor ' + m.decoration.laboratoryFloor + '. Its cauldron, desk and bookshelf each block one square.' : ''}${m.decoration.observatoryFloor !== undefined && (this.showSecrets() || !m.layout.floors.find((f) => f.number === m.decoration.observatoryFloor)?.secret) ? ' An observatory occupies floor ' + m.decoration.observatoryFloor + '. Its telescope, chart table and cabinet each block one square.' : ''}${m.layout.portalFloor !== null ? (this.showSecrets() ? ' One portal pair leads to a secret floor.' : ' Secret chamber and portal omitted from the image.') : ''} ${navigation}`;
     if (m.type === 'courtyard')
@@ -127,7 +142,19 @@ export class Preview {
   private width = 1;
   private height = 1;
   private pan = { x: 0, y: 0 };
-  private pointer: { id: number; x: number; y: number } | undefined;
+  private pointer:
+    | {
+        id: number;
+        x: number;
+        y: number;
+        startX: number;
+        startY: number;
+        dragged: boolean;
+        source: MapDocument;
+        clickable: boolean;
+        start?: Point;
+      }
+    | undefined;
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -147,7 +174,13 @@ export class Preview {
       this.selectedBounds();
       this.ghost();
       this.editMode();
+      this.exploreTarget();
       untracked(() => this.paint());
+    });
+    effect(() => {
+      this.editMode();
+      this.exploreClickable();
+      untracked(() => this.cancelPointer());
     });
     afterNextRender({
       write: () => {
@@ -160,6 +193,7 @@ export class Preview {
   }
 
   protected fit(): void {
+    this.leave();
     this.zoom.set(1);
     this.pan = { x: 0, y: 0 };
     this.paint();
@@ -171,28 +205,94 @@ export class Preview {
   }
 
   protected startPan(event: PointerEvent): void {
-    if (event.button !== 0 || this.pointer) return;
-    this.pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    if (event.button !== 0) return;
+    if (this.pointer) {
+      if (this.pointer.id !== event.pointerId) this.cancelPointer();
+      return;
+    }
+    this.pointer = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      startX: event.clientX,
+      startY: event.clientY,
+      dragged: false,
+      source: this.map(),
+      clickable: this.exploreClickable(),
+      start: this.clientMapPoint(event.clientX, event.clientY),
+    };
     this.canvas()?.nativeElement.setPointerCapture(event.pointerId);
     if (this.editMode()) this.emitEditPointer('start', event);
-    else this.dragging.set(true);
   }
 
   protected movePan(event: PointerEvent): void {
-    if (!this.pointer || event.pointerId !== this.pointer.id) return;
+    const pointer = this.pointer;
+    if (!pointer) {
+      if (!this.editMode())
+        this.exploreHover.emit({
+          source: this.map(),
+          point: this.clientMapPoint(event.clientX, event.clientY),
+          padding: this.hitPadding(),
+        });
+      return;
+    }
+    if (event.pointerId !== pointer.id) return;
+    if (pointer.source !== this.map()) {
+      this.cancelPointer();
+      return;
+    }
     if (this.editMode()) {
       this.emitEditPointer('move', event);
       return;
     }
-    this.panBy(event.clientX - this.pointer.x, event.clientY - this.pointer.y);
-    this.pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    const dragged =
+      pointer.dragged ||
+      Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) > 5;
+    if (dragged) {
+      this.dragging.set(true);
+      this.panBy(
+        event.clientX - (pointer.dragged ? pointer.x : pointer.startX),
+        event.clientY - (pointer.dragged ? pointer.y : pointer.startY),
+      );
+      this.exploreHover.emit({ source: this.map(), padding: this.hitPadding() });
+    }
+    this.pointer = { ...pointer, x: event.clientX, y: event.clientY, dragged };
   }
 
   protected endPan(event: PointerEvent): void {
-    if (this.pointer?.id !== event.pointerId) return;
+    const pointer = this.pointer;
+    if (pointer?.id !== event.pointerId) return;
     this.pointer = undefined;
     this.dragging.set(false);
     if (this.editMode()) this.emitEditPointer(event.type === 'pointerup' ? 'end' : 'cancel', event);
+    else if (
+      event.type === 'pointerup' &&
+      !pointer.dragged &&
+      pointer.clickable &&
+      this.exploreClickable() &&
+      Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) <= 5 &&
+      pointer.source === this.map() &&
+      pointer.start
+    ) {
+      const point = this.clientMapPoint(event.clientX, event.clientY);
+      if (point)
+        this.exploreClick.emit({
+          source: pointer.source,
+          point,
+          start: pointer.start,
+          padding: this.hitPadding(),
+        });
+    }
+  }
+  protected leave(): void {
+    this.exploreHover.emit({ source: this.map(), padding: this.hitPadding() });
+  }
+  private hitPadding(): number {
+    const { width, height } = mapDimensions(this.map());
+    return Math.max(
+      0.35,
+      6 / viewportTransform(this.width, this.height, width, height, this.zoom(), this.pan).scale,
+    );
   }
 
   protected cancelPointer(): void {
@@ -264,6 +364,7 @@ export class Preview {
   }
 
   private panBy(x: number, y: number): void {
+    this.leave();
     const { width: columns, height: rows } = mapDimensions(this.map());
     const scale = Math.min(this.width / columns, this.height / rows) * 0.94 * this.zoom();
     const limitX = (columns * scale) / 2;
@@ -299,6 +400,17 @@ export class Preview {
       this.pan,
     );
     context.drawImage(this.image, transform.x, transform.y, transform.width, transform.height);
+    const target = this.exploreTarget();
+    if (!this.editMode() && target) {
+      context.save();
+      context.translate(transform.x, transform.y);
+      context.scale(transform.scale, transform.scale);
+      context.strokeStyle = '#f0d585';
+      context.lineWidth = 2 / transform.scale;
+      const b = target.bounds;
+      context.strokeRect(b.x, b.y, b.width, b.height);
+      context.restore();
+    }
     if (this.editMode()) {
       context.save();
       context.translate(transform.x, transform.y);

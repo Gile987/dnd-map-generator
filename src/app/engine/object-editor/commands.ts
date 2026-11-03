@@ -1,3 +1,4 @@
+import { withDoorStates } from '../dungeon-doors';
 import { groupRotation } from './group-rotation';
 import { QUARTER_TURNS } from '../prop-footprint';
 import { layeredDungeonError } from './dungeon-layering-rules';
@@ -32,7 +33,9 @@ export function proposeObjectCommand(
   command: ObjectCommand,
 ): EditResult {
   const base = dungeonBase(document);
-  if (command.kind === 'reset') return { ok: true, document: base };
+  const plain = withDoorStates(base, document.doorStates);
+  if (command.kind === 'reset')
+    return { ok: true, document: document.objectEdits ? plain : document };
   if (command.kind !== 'remove' && !isTilePosition(command.target.x, command.target.y))
     return { ok: false, error: 'Place the object inside the map.' };
   if (
@@ -119,8 +122,8 @@ export function proposeObjectCommand(
       };
       const next =
         edits.moves.length || edits.added.length || edits.removed.length || edits.groups.length
-          ? { ...base, objectEdits: edits }
-          : base;
+          ? { ...plain, objectEdits: edits }
+          : plain;
       return { ok: true, document: next };
     }
     if (item.prop.x === command.target.x && item.prop.y === command.target.y)
@@ -149,8 +152,8 @@ export function proposeObjectCommand(
   }
   const next: DungeonDocument =
     edits.moves.length || edits.added.length || edits.removed.length || edits.groups.length
-      ? { ...base, objectEdits: edits }
-      : base;
+      ? { ...plain, objectEdits: edits }
+      : plain;
   return { ok: true, document: next };
 }
 

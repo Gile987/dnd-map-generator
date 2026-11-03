@@ -1,3 +1,4 @@
+import { drawDungeonDoors } from './dungeon-doors';
 import { drawDungeonProp, isDungeonGroundProp } from './dungeon-prop-layer';
 import type { DungeonDrawing } from '../engine/object-editor/document';
 import { HEIGHT, WIDTH, isFloor } from '../engine/model';
@@ -166,30 +167,7 @@ function walls(ctx: DrawingContext, layout: Layout): void {
 }
 
 function architecture(ctx: DrawingContext, map: DungeonDrawing): void {
-  for (const door of map.layout.thresholds) {
-    ctx.save();
-    ctx.translate(door.x, door.y);
-    if (door.axis === 'vertical') ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = '#35494c';
-    ctx.fillRect(0.1, -0.15, 1.8, 0.3);
-    ctx.fillStyle = '#a4936f';
-    ctx.fillRect(0.18, -0.085, 1.64, 0.17);
-    ctx.strokeStyle = '#c6b994';
-    ctx.lineWidth = 0.02;
-    for (const x of [0.24, 0.75, 1.25, 1.76]) {
-      ctx.beginPath();
-      ctx.moveTo(x, -0.07);
-      ctx.lineTo(x, 0.07);
-      ctx.stroke();
-    }
-    for (const x of [0, 1.83]) {
-      ctx.fillStyle = '#2e4249';
-      ctx.fillRect(x, -0.29, 0.17, 0.58);
-      ctx.fillStyle = '#8d9f97';
-      ctx.fillRect(x, -0.29, 0.17, 0.06);
-    }
-    ctx.restore();
-  }
+  drawDungeonDoors(ctx, map);
   const { entrance, objective } = map.layout;
   ctx.save();
   ctx.translate(entrance.x + 0.5, entrance.y + 0.5);

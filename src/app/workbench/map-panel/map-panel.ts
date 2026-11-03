@@ -1,3 +1,4 @@
+import type { DoorToggleRequest } from '../../engine/dungeon-doors';
 import { ObjectEditor } from '../object-editor/object-editor';
 import type { ObjectEditRequest } from '../object-editor/object-editor';
 import { towerStairStyle } from '../../engine/tower';
@@ -41,6 +42,7 @@ export class MapPanel {
   readonly history = input({ undo: 0, redo: 0, limit: 20 });
   readonly historyRequested = output<'undo' | 'redo'>();
   readonly objectEditRequested = output<ObjectEditRequest>();
+  readonly doorToggleRequested = output<DoorToggleRequest>();
   protected readonly dungeon = computed(() => {
     const map = this.map();
     return map.type === 'dungeon' ? map : undefined;
