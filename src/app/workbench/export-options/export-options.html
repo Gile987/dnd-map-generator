@@ -76,6 +76,15 @@
         floors stay in place.' }} } @else { {{ secrets() ? 'GM image: shows portal markers on this
         floor.' : 'Player image: omits portal markers.' }} }
       </p>
+      } @if (map.type === 'dungeon') {
+      <label class="grid-option"
+        ><input type="checkbox" [checked]="layers()" (change)="changeLayers($event)" />Show layer
+        indicators</label
+      >
+      <p>
+        Include “underneath” counts and outlines of covered object areas. Off exports only the
+        artwork, with your chosen drawing order. JSON always retains every object.
+      </p>
       }
       <label class="grid-option"
         ><input type="checkbox" [checked]="grid()" (change)="changeGrid($event)" />Include

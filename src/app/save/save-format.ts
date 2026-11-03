@@ -4,7 +4,7 @@ import type { MapDocument } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '23.0.0';
+export const SAVE_FORMAT_VERSION = '24.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -229,8 +229,15 @@ const FORMAT_22_VOCABULARY: SaveVocabulary = {
 
 const FORMAT_23_VOCABULARY: SaveVocabulary = { ...FORMAT_22_VOCABULARY, doorStateVersions: [1] };
 
+const FORMAT_24_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_23_VOCABULARY,
+  objectEditVersions: [1, 2, 3, 4, 5],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '24.0.0':
+      return FORMAT_24_VOCABULARY;
     case '23.0.0':
       return FORMAT_23_VOCABULARY;
     case '22.0.0':

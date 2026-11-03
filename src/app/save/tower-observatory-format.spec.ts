@@ -35,7 +35,7 @@ function saved() {
 test('format 16 freezes observatory vocabulary while earlier readers and other map types reject it', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('23.0.0');
+  expect(record.saveFormatVersion).toBe('24.0.0');
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 15; v++) {

@@ -31,7 +31,7 @@ function record() {
 
 test('format 11 round-trips exact ritual models and freezes older vocabularies', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('23.0.0');
+  expect(saved.saveFormatVersion).toBe('24.0.0');
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   for (let version = 1; version <= 10; version++) {

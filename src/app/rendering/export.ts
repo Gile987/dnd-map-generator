@@ -51,6 +51,7 @@ export function configuredExportFilename(
   preset: ExportPreset = EXPORT_PRESETS[0],
   showSecrets = false,
   towerFloor?: number,
+  showLayerIndicators = false,
 ): string {
   const suffix = grid ? `grid-${opacity}pct` : 'grid-off';
   const { width, height } = exportBounds(map, towerFloor, showSecrets);
@@ -60,7 +61,10 @@ export function configuredExportFilename(
         ? ''
         : `-${width}x${height}-${preset.pixelsPerTile}px`
       : `-${preset.id}-${width}x${height}-${preset.pixelsPerTile}px`;
-  return exportFilename(map, showSecrets, towerFloor).replace(/\.png$/, `${target}-${suffix}.png`);
+  return exportFilename(map, showSecrets, towerFloor).replace(
+    /\.png$/,
+    `${target}-${suffix}${map.type === 'dungeon' && showLayerIndicators ? '-layers' : ''}.png`,
+  );
 }
 
 export async function createPng(
@@ -70,6 +74,7 @@ export async function createPng(
   pixelsPerTile: number = PIXELS_PER_TILE,
   showSecrets = false,
   towerFloor?: number,
+  showLayerIndicators = false,
 ): Promise<Blob> {
   // Validate the request before allocating either drawing surface.
   const bounds = exportBounds(map, towerFloor, showSecrets);
@@ -80,7 +85,7 @@ export async function createPng(
   const context = canvas.getContext('2d');
   if (!context)
     throw new Error('PNG export is unavailable because a drawing surface could not be created.');
-  renderMap(context, map, { grid, gridOpacity, pixelsPerTile, showSecrets });
+  renderMap(context, map, { grid, gridOpacity, pixelsPerTile, showSecrets, showLayerIndicators });
   let output = canvas;
   if (towerFloor !== undefined) {
     output = document.createElement('canvas');

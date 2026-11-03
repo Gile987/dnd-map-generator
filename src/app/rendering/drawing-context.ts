@@ -3,6 +3,7 @@ export type DrawingContext = Pick<
   | 'font'
   | 'textAlign'
   | 'fillText'
+  | 'measureText'
   | 'fillStyle'
   | 'strokeStyle'
   | 'lineWidth'

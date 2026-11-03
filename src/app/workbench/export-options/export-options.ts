@@ -26,6 +26,7 @@ type PreviewState =
       readonly map: MapDocument;
       readonly grid: boolean;
       readonly secrets: boolean;
+      readonly layers: boolean;
       readonly floor: number | undefined;
       readonly opacity: number;
       readonly preset: ExportPreset;
@@ -45,6 +46,7 @@ export class ExportOptions {
   readonly disabled = input(false);
   readonly showSecrets = input(false);
   protected readonly secrets = signal(false);
+  protected readonly layers = signal(false);
   protected readonly floor = signal<number | undefined>(undefined);
   protected readonly floors = computed(() => {
     const map = this.snapshot();
@@ -99,6 +101,7 @@ export class ExportOptions {
       preview.map === this.snapshot() &&
       preview.grid === this.grid() &&
       preview.secrets === this.secrets() &&
+      preview.layers === this.layers() &&
       preview.floor === this.floor() &&
       preview.opacity === this.opacity() &&
       preview.preset === this.preset()
@@ -111,6 +114,7 @@ export class ExportOptions {
       const map = this.snapshot();
       const grid = this.grid();
       const secrets = this.secrets();
+      const layers = this.layers();
       const floor = this.floor();
       const opacity = this.opacity();
       const preset = this.preset();
@@ -133,6 +137,7 @@ export class ExportOptions {
               preset.pixelsPerTile,
               secrets,
               floor,
+              layers,
             );
             if (!active) return;
             url = URL.createObjectURL(blob);
@@ -146,6 +151,7 @@ export class ExportOptions {
               url,
               secrets,
               floor,
+              layers,
             });
           } catch (error: unknown) {
             if (active)
@@ -171,6 +177,7 @@ export class ExportOptions {
   show(): void {
     if (this.disabled() || this.dialog().nativeElement.open) return;
     this.floor.set(undefined);
+    this.layers.set(false);
     this.secrets.set(this.showSecrets());
     this.snapshot.set(this.map());
     this.dialog().nativeElement.showModal();
@@ -203,6 +210,11 @@ export class ExportOptions {
       if (floor) this.floor.set(floor.number);
     }
   }
+  protected changeLayers(event: Event): void {
+    if (!this.disabled() && event.target instanceof HTMLInputElement)
+      this.layers.set(event.target.checked);
+  }
+
   protected changeGrid(event: Event): void {
     if (!this.disabled() && event.target instanceof HTMLInputElement)
       this.grid.set(event.target.checked);
@@ -244,6 +256,7 @@ export class ExportOptions {
           preview.preset,
           preview.secrets,
           preview.floor,
+          preview.layers,
         ),
       );
       this.notice.set('PNG ready. Check your downloads.');

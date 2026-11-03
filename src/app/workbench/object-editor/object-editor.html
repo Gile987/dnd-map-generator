@@ -56,13 +56,12 @@
       <select
         [attr.aria-describedby]="selection() ? 'object-selection-description' : null"
         #instancesSelect
-        [value]="selected()"
         (change)="select(instancesSelect.value)"
         [disabled]="disabled()"
       >
-        <option value="">Choose an object</option>
+        <option value="" [selected]="selected() === ''">Choose an object</option>
         @for (item of instances(); track item.id) {
-        <option [value]="item.id">
+        <option [value]="item.id" [selected]="selected() === item.id">
           {{item.label}} · column {{item.position.x + 1}}, row {{item.position.y + 1}}{{item.groupId
           ? ' · whole addition' : item.lock ? ' · protected' : ''}}
         </option>
@@ -125,7 +124,10 @@
   [exploreClickable]="!editing() && !disabled() && !readOnly()"
   (exploreHover)="doorHover($event)"
   (exploreClick)="doorClick($event)"
-  [selectedBounds]="selection()?.area"
+  [selectedBounds]="revealedBounds() ?? (editing() ? selection()?.area : undefined)"
+  [layerBadges]="layerBadges()"
+  [activeLayer]="layerId()"
+  (layerInspect)="inspectLayers($event)"
   [ghost]="ghost()"
   (editPointer)="pointer($event)"
   (editNudge)="nudge($event)"
@@ -133,7 +135,41 @@
   (editCancel)="cancel()"
 />
 
-@if (editing() && !readOnly()) {
+@if (layerInfo(); as layers) {
+<section
+  #layerDetails
+  id="map-layer-details"
+  class="layer-details"
+  aria-label="Overlapping objects"
+  tabindex="-1"
+>
+  <div class="position-controls">
+    <strong>Overlapping objects · top to bottom</strong>
+    <button type="button" (click)="layerId.set(''); revealedBounds.set(undefined)">
+      Close layer details
+    </button>
+  </div>
+  <p>
+    Counts include partial overlaps. Covered solid objects still block movement. @if (!editing() &&
+    !readOnly()) { Switch to Edit objects to change their drawing order. }
+  </p>
+  <ul>
+    @for (item of layers; track item.id) {
+    <li>
+      <button
+        type="button"
+        (click)="revealLayer(item.id)"
+        [disabled]="disabled()"
+        [attr.aria-pressed]="selected() === item.selectionId"
+      >
+        {{item.label}} · column {{item.position.x+1}}, row {{item.position.y+1}}{{item.group ? ' · '
+        + item.group : ''}}
+      </button>
+    </li>
+    }
+  </ul>
+</section>
+} @if (editing() && !readOnly()) {
 <div class="editor-inspector">
   @if (selection(); as item) {
   <p id="object-selection-description" class="selection-label">
@@ -141,6 +177,23 @@
     Its objects keep their arrangement; the outline includes reserved space.' : 'Drag on the map, or
     choose a destination below.')}}
   </p>
+  <div class="position-controls layer-order" role="group" aria-label="Drawing order">
+    <button
+      type="button"
+      (click)="order('forward')"
+      [disabled]="disabled() || !canOrder('forward')"
+    >
+      Bring forward
+    </button>
+    <button
+      type="button"
+      (click)="order('backward')"
+      [disabled]="disabled() || !canOrder('backward')"
+    >
+      Send backward
+    </button>
+    <span>Steps past overlapping objects. Additions stay together. Save to keep the order.</span>
+  </div>
   } @if ((selection() && !selection()?.lock) || placement()) { @if (selection()?.groupId) {
   <div class="position-controls rotation-controls" role="group" aria-label="Addition rotation">
     <button

@@ -12,7 +12,8 @@ async function openOptions(page: Page) {
 
 async function preview(dialog: Locator): Promise<string> {
   const image = dialog.getByRole('img', { name: 'Full map PNG preview' });
-  await expect(image).toBeVisible();
+  // Chromium's idle PNG encoder can take about seven seconds before its fallback completes.
+  await expect(image).toBeVisible({ timeout: 10_000 });
   await expect(image).toHaveJSProperty('naturalWidth', 2560);
   const src = await image.getAttribute('src');
   if (!src) throw new Error('Missing preview URL');
@@ -131,7 +132,11 @@ test('native modal focus, keyboard opacity, and Escape leave the workbench intac
   await page.keyboard.press('Tab');
   await expect(dialog.getByRole('combobox', { name: 'Export preset', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
-  await expect(dialog.getByRole('checkbox')).toBeFocused();
+  await expect(
+    dialog.getByRole('checkbox', { name: 'Show layer indicators', exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('checkbox', { name: 'Include grid', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   const slider = dialog.getByRole('slider');
   await expect(slider).toBeFocused();

@@ -1,3 +1,4 @@
+import { drawDungeonLayerIndicators } from './dungeon-layer-indicators';
 import { resolveDungeon } from '../engine/object-editor/document';
 import { renderTower } from './tower-renderer';
 import type { MapDocument } from '../engine/model';
@@ -12,7 +13,9 @@ export function renderMap(ctx: DrawingContext, map: MapDocument, options: Render
     case 'tower':
       return renderTower(ctx, map, options);
     case 'dungeon':
-      return renderDungeon(ctx, resolveDungeon(map), options);
+      renderDungeon(ctx, resolveDungeon(map), options);
+      if (options.showLayerIndicators) drawDungeonLayerIndicators(ctx, map, options.pixelsPerTile);
+      return;
     case 'forest':
       return renderForest(ctx, map, options);
     case 'courtyard':

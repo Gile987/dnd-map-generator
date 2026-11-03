@@ -17,7 +17,22 @@
     [attr.aria-label]="ariaLabel()"
     aria-describedby="map-summary"
   ></canvas>
-  @if (editMode() && ghost(); as placement) {
+  @for (badge of badges(); track badge.id) {
+  <button
+    type="button"
+    class="layer-badge"
+    [style.width.px]="badge.width"
+    [style.left.px]="badge.x"
+    [style.top.px]="badge.y"
+    [attr.aria-label]="badge.label"
+    [title]="badge.label"
+    [attr.aria-expanded]="activeLayer() === badge.id"
+    aria-controls="map-layer-details"
+    (click)="layerInspect.emit(badge.id)"
+  >
+    {{badge.text}}
+  </button>
+  } @if (editMode() && ghost(); as placement) {
   <p class="placement-status" [class.invalid]="!placement.valid" role="status">
     {{ placement.valid ? (placement.placementAction === 'place' ? 'Valid position — choose Place
     object' : 'Valid position — release to place') : placement.reason }}
@@ -31,6 +46,24 @@
   ></span>
   <span class="scale" aria-hidden="true"><span></span>5 ft / square</span>
 </div>
+@if (layerBadges().length) {
+<details class="layer-list">
+  <summary>
+    Layers · {{layerBadges().length}} {{layerBadges().length === 1 ? 'overlap' : 'overlaps'}}
+  </summary>
+  <p>Choose an overlap to inspect its objects, including those outside the current view.</p>
+  @for (badge of layerBadges(); track badge.id) {
+  <button
+    type="button"
+    (click)="layerInspect.emit(badge.id)"
+    aria-controls="map-layer-details"
+    [attr.aria-expanded]="activeLayer() === badge.id"
+  >
+    {{badge.label}}
+  </button>
+  }
+</details>
+}
 <div class="view-controls">
   <span class="pan-hint"
     ><forge-icon name="hand" />{{ editMode() ? 'Drag an object' : 'Drag to explore' }}<span

@@ -44,7 +44,9 @@ export function currentDungeonGroups(
   const moves =
     document.objectEdits && document.objectEdits.version !== 1 ? document.objectEdits.groups : [];
   return dungeonGroups(base).map((group) =>
-    (document.objectEdits?.version === 4 ? transformedGroup : translatedGroup)(
+    (document.objectEdits?.version === 4 || document.objectEdits?.version === 5
+      ? transformedGroup
+      : translatedGroup)(
       group,
       moves.find((move) => move.id === group.id),
     ),

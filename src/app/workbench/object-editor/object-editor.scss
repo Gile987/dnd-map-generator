@@ -200,3 +200,27 @@ label {
     max-width: 100%;
   }
 }
+
+.layer-details {
+  padding: 0.75rem;
+  border: 1px solid #718574;
+  border-radius: 0.6rem;
+  color: #dce1ce;
+  background: #1b2e32;
+}
+.layer-details p,
+.layer-order span {
+  color: #bacbbb;
+  font-size: 0.8rem;
+}
+.layer-details ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.layer-details button {
+  max-width: 100%;
+  text-align: left;
+}
