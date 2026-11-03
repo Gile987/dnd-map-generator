@@ -10,7 +10,8 @@ async function open(page: Page) {
 
 async function ready(dialog: Locator, width: number, height: number) {
   const image = dialog.getByRole('img', { name: 'Full map PNG preview' });
-  await expect(image).toHaveJSProperty('naturalWidth', width);
+  // Allow Chromium's idle PNG encoder to reach its fallback without adding a fixed wait.
+  await expect(image).toHaveJSProperty('naturalWidth', width, { timeout: 10_000 });
   await expect(image).toHaveJSProperty('naturalHeight', height);
   await expect(dialog.locator('figcaption')).toContainText(`${width} × ${height} px`);
   return image;
@@ -81,7 +82,7 @@ for (const type of ['Dungeon', 'Forest', 'Courtyard'] as const) {
     expect(await download(page, quickButton)).toEqual(quick);
     await open(page);
     await expect(dialog.getByRole('combobox')).toHaveValue('foundry');
-    await expect(dialog.getByRole('checkbox')).toBeChecked();
+    await expect(dialog.getByRole('checkbox', { name: 'Include grid', exact: true })).toBeChecked();
   });
 }
 
@@ -136,7 +137,9 @@ test('obsolete preset encodes cannot replace the selected image and failed previ
   await selector.selectOption('owlbear');
   await expect(dialog.getByRole('button', { name: 'Retry preview' })).toBeVisible();
   await expect(selector).toHaveValue('owlbear');
-  await expect(dialog.getByRole('checkbox')).not.toBeChecked();
+  await expect(
+    dialog.getByRole('checkbox', { name: 'Include grid', exact: true }),
+  ).not.toBeChecked();
   await dialog.screenshot({ path: 'artifacts/vtt/preview-error.png' });
   await dialog.getByRole('button', { name: 'Retry preview' }).click();
   await ready(dialog, 2560, 1920);
@@ -146,7 +149,9 @@ test('obsolete preset encodes cannot replace the selected image and failed previ
   await expect(page.locator('.workbench')).toHaveAttribute('aria-busy', 'false');
   await open(page);
   await expect(selector).toHaveValue('owlbear');
-  await expect(dialog.getByRole('checkbox')).not.toBeChecked();
+  await expect(
+    dialog.getByRole('checkbox', { name: 'Include grid', exact: true }),
+  ).not.toBeChecked();
 });
 
 test('legacy forest artwork exports with the original bytes and its saved version', async ({
@@ -210,8 +215,12 @@ for (const [width, height] of [
     );
     await selector.focus();
     await dialog.screenshot({ path: `artifacts/vtt/preset-${width}-${height}.png` });
-    await dialog.getByRole('checkbox').scrollIntoViewIfNeeded();
-    await expect(dialog.getByRole('checkbox')).toBeInViewport();
+    await dialog
+      .getByRole('checkbox', { name: 'Include grid', exact: true })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      dialog.getByRole('checkbox', { name: 'Include grid', exact: true }),
+    ).toBeInViewport();
     await dialog.getByRole('img').scrollIntoViewIfNeeded();
     await expect(dialog.getByRole('img')).toBeInViewport();
     await dialog.screenshot({ path: `artifacts/vtt/preview-${width}-${height}.png` });

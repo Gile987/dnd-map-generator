@@ -31,7 +31,13 @@ export interface ObjectEditsV4 extends Omit<ObjectEditsV3, 'version' | 'groups'>
   readonly version: 4;
   readonly groups: readonly GroupTransform[];
 }
-export type ObjectEdits = ObjectEditsV1 | ObjectEditsV2 | ObjectEditsV3 | ObjectEditsV4;
+export interface ObjectEditsV5 extends Omit<ObjectEditsV4, 'version'> {
+  readonly version: 5;
+  /** Complete bottom-to-top instance order, or empty for predictable defaults. */
+  readonly order: readonly string[];
+}
+export type ObjectEdits =
+  ObjectEditsV1 | ObjectEditsV2 | ObjectEditsV3 | ObjectEditsV4 | ObjectEditsV5;
 /** The ordinary map fields are the frozen base, never the resolved arrangement. */
 export interface AuthoredDungeon extends Omit<Dungeon, 'objectEdits' | 'doorStates'> {
   readonly objectEdits: ObjectEdits;
@@ -51,6 +57,7 @@ export interface ResolvedDungeon extends Omit<Dungeon, 'objectEdits' | 'doorStat
   readonly objectEdits: 'resolved';
   readonly doorStates?: DoorStates;
   readonly instances: readonly AddedObject[];
+  readonly order?: readonly string[];
   readonly artTurns?: ReadonlyMap<Prop, QuarterTurn>;
   readonly ritualTransform?: GroupArtworkTransform;
   readonly studyTransform?: GroupArtworkTransform;
@@ -83,7 +90,7 @@ export function dungeonInstances(document: DungeonDocument): readonly AddedObjec
         id,
         prop:
           group && groupMove
-            ? document.objectEdits?.version === 4
+            ? document.objectEdits?.version === 4 || document.objectEdits?.version === 5
               ? transformedGroupProp(prop, group, groupMove)
               : translateGroupProp(prop, group, groupMove)
             : move
@@ -108,7 +115,7 @@ export function resolveDungeon(document: DungeonDocument): DungeonDrawing {
       : undefined;
   const artTurns = new Map<Prop, QuarterTurn>();
   const base = dungeonBase(document);
-  if (document.objectEdits.version === 4) {
+  if (document.objectEdits.version === 4 || document.objectEdits.version === 5) {
     const groups = dungeonGroups(base);
     for (const move of document.objectEdits.groups) {
       const group = groups.find((g) => g.id === move.id);
@@ -119,12 +126,12 @@ export function resolveDungeon(document: DungeonDocument): DungeonDrawing {
     }
   }
   const studyTransform =
-    document.objectEdits.version === 4 && studyMove && study
+    (document.objectEdits.version === 4 || document.objectEdits.version === 5) && studyMove && study
       ? { base, group: study, move: { ...studyMove, rotation: groupRotation(studyMove) } }
       : undefined;
   const ritual = dungeonGroups(base).find((g) => g.id === 'ritual');
   const ritualMove =
-    document.objectEdits.version === 4
+    document.objectEdits.version === 4 || document.objectEdits.version === 5
       ? document.objectEdits.groups.find((g) => g.id === 'ritual')
       : undefined;
   return {
@@ -132,12 +139,13 @@ export function resolveDungeon(document: DungeonDocument): DungeonDrawing {
     objectEdits: 'resolved',
     ...(document.doorStates ? { doorStates: document.doorStates } : {}),
     instances: items,
+    ...(document.objectEdits.version === 5 ? { order: document.objectEdits.order } : {}),
     ...(artTurns.size ? { artTurns } : {}),
     ...(studyTransform ? { studyTransform } : {}),
     ...(ritual && ritualMove ? { ritualTransform: { base, group: ritual, move: ritualMove } } : {}),
     ...(study && studyMove
       ? {
-          studyArea: (document.objectEdits.version === 4
+          studyArea: (document.objectEdits.version === 4 || document.objectEdits.version === 5
             ? transformedGroup(study, studyMove)
             : translatedGroup(study, studyMove)
           ).area,

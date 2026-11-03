@@ -1,3 +1,4 @@
+import { placeLayerLabels } from '../rendering/layer-label-layout';
 import type { DungeonDrawing } from '../engine/object-editor/document';
 import type { DungeonGroupId } from '../engine/object-editor/dungeon-groups';
 import { drawDungeonRitualFloor } from '../rendering/ritual-props';
@@ -63,6 +64,19 @@ export class Preview {
   readonly exploreTarget = input<{ readonly bounds: ReservedArea; readonly label: string }>();
   readonly exploreHover = output<ExplorePoint>();
   readonly exploreClick = output<ExploreClick>();
+  readonly layerBadges = input<
+    readonly {
+      readonly id: string;
+      readonly text: string;
+      readonly label: string;
+      readonly bounds: ReservedArea;
+    }[]
+  >([]);
+  readonly activeLayer = input('');
+  readonly layerInspect = output<string>();
+  protected readonly badges = signal<
+    readonly { id: string; text: string; width: number; label: string; x: number; y: number }[]
+  >([]);
   readonly selectedBounds = input<ReservedArea>();
   readonly ghost = input<{
     readonly props: readonly Prop[];
@@ -171,6 +185,7 @@ export class Preview {
       untracked(() => this.paint());
     });
     effect(() => {
+      this.layerBadges();
       this.selectedBounds();
       this.ghost();
       this.editMode();
@@ -400,6 +415,45 @@ export class Preview {
       this.pan,
     );
     context.drawImage(this.image, transform.x, transform.y, transform.width, transform.height);
+    const visible = this.layerBadges().flatMap((badge) => {
+      const x = transform.x + (badge.bounds.x + badge.bounds.width / 2) * transform.scale;
+      const y = transform.y + badge.bounds.y * transform.scale;
+      return x >= 0 && x <= this.width && y >= 0 && y <= this.height ? [{ ...badge, x, y }] : [];
+    });
+    context.font = '600 10px system-ui';
+    const labelWidth = Math.min(
+      this.width - 12,
+      Math.max(
+        96,
+        ...visible.map((badge) => Math.ceil(context.measureText(badge.text).width) + 18),
+      ),
+    );
+    const labels = placeLayerLabels(visible, this.width, this.height, labelWidth, 28, 6);
+    this.badges.set(
+      labels.flatMap((label) => {
+        const badge = visible.find((badge) => badge.id === label.id);
+        return badge
+          ? [
+              {
+                id: badge.id,
+                text: badge.text,
+                label: badge.label,
+                width: labelWidth,
+                x: label.x,
+                y: label.y,
+              },
+            ]
+          : [];
+      }),
+    );
+    context.strokeStyle = '#d0c68a99';
+    context.lineWidth = 1;
+    for (const label of labels) {
+      context.beginPath();
+      context.moveTo(label.anchorX, label.anchorY);
+      context.lineTo(label.x, label.y);
+      context.stroke();
+    }
     const target = this.exploreTarget();
     if (!this.editMode() && target) {
       context.save();
@@ -411,7 +465,7 @@ export class Preview {
       context.strokeRect(b.x, b.y, b.width, b.height);
       context.restore();
     }
-    if (this.editMode()) {
+    if (this.editMode() || this.selectedBounds()) {
       context.save();
       context.translate(transform.x, transform.y);
       context.scale(transform.scale, transform.scale);

@@ -1,8 +1,18 @@
+import { describeDungeonLayer } from '../../rendering/dungeon-layer-description';
 import { doorIsOpen, dungeonDoorAt, dungeonDoors } from '../../engine/dungeon-doors';
 import type { DoorToggleRequest } from '../../engine/dungeon-doors';
 import type { ExploreClick, ExplorePoint } from '../../preview/preview';
-import { isDungeonGroundProp } from '../../rendering/dungeon-prop-layer';
 import {
+  orderedDungeonObjects,
+  dungeonOverlaps,
+  stepDungeonOrder,
+} from '../../engine/object-editor/dungeon-drawing-order';
+import { dungeonCapability } from '../../engine/object-editor/catalog';
+import {
+  afterNextRender,
+  ElementRef,
+  inject,
+  Injector,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -134,6 +144,86 @@ export class ObjectEditor {
   protected readonly selection = computed(() =>
     this.instances().find((item) => item.id === this.selected()),
   );
+  protected readonly ordered = computed(() => {
+    const map = this.map();
+    return orderedDungeonObjects(
+      dungeonInstances(map),
+      map.objectEdits?.version === 5 ? map.objectEdits.order : [],
+    );
+  });
+  protected readonly overlaps = computed(() => dungeonOverlaps(this.ordered(), this.instances()));
+  protected readonly layerId = signal('');
+  protected readonly layerInfo = computed(() => {
+    const overlap = this.overlaps().find((item) => item.id === this.layerId());
+    if (!overlap) return undefined;
+    const ids = [overlap.id, ...[...overlap.underneath].reverse()];
+    return ids.flatMap((id) => {
+      const item = this.ordered().find((item) => item.id === id);
+      const unit = this.instances().find((unit) => unit.members.includes(id));
+      return item && unit
+        ? [
+            {
+              id,
+              selectionId: unit.id,
+              label: dungeonCapability(item.prop.kind, 2)?.label ?? item.prop.kind,
+              position: item.prop,
+              area: authoredObjectArea(item.prop),
+              group: unit.groupId ? unit.label : undefined,
+            },
+          ]
+        : [];
+    });
+  });
+  protected readonly layerBadges = computed(() =>
+    this.overlaps().flatMap((overlap) => {
+      const item = this.ordered().find((item) => item.id === overlap.id);
+      const names = describeDungeonLayer(this.ordered(), overlap.underneath);
+      return item
+        ? [
+            {
+              id: overlap.id,
+              text: names.text,
+              bounds: authoredObjectArea(item.prop),
+              label: `${dungeonCapability(item.prop.kind, 2)?.label ?? item.prop.kind}: ${names.description} · column ${item.prop.x + 1}, row ${item.prop.y + 1}`,
+            },
+          ]
+        : [];
+    }),
+  );
+  protected readonly revealedBounds = signal<ReturnType<typeof authoredObjectArea> | undefined>(
+    undefined,
+  );
+  protected inspectLayers(id: string): void {
+    this.cancel();
+    this.layerId.set(id);
+    this.revealedBounds.set(undefined);
+    afterNextRender(() => this.layerDetails()?.nativeElement.focus(), { injector: this.injector });
+  }
+  protected revealLayer(id: string): void {
+    const item = this.layerInfo()?.find((item) => item.id === id);
+    if (!item || this.disabled()) return;
+    this.cancel();
+    this.selected.set(item.selectionId);
+    this.revealedBounds.set(item.area);
+    this.message.set(`${item.label} selected. Its outline shows its position beneath the artwork.`);
+  }
+  protected canOrder(direction: 'forward' | 'backward'): boolean {
+    const item = this.selection();
+    if (!item || item.lock || this.placement()) return false;
+    // Pass the explicit current order: defaults would otherwise sort surfaces again.
+    const current = this.ordered().map((item) => item.id);
+    const step = stepDungeonOrder(this.ordered(), current, this.instances(), item.id, direction);
+    return step.some((id, i) => id !== current[i]);
+  }
+  protected order(direction: 'forward' | 'backward'): void {
+    if (!this.active() || !this.canOrder(direction)) return;
+    const id = this.selected();
+    this.keepSelection = true;
+    this.changed.emit({ source: this.map(), command: { kind: 'order', id, direction } });
+    this.message.set(
+      'Drawing order changed. Movement blocking is unchanged. Undo restores the previous order.',
+    );
+  }
   protected readonly palette = computed(() =>
     DUNGEON_PALETTE.filter((item) =>
       `${item.label} ${item.category}`.toLowerCase().includes(this.query().trim().toLowerCase()),
@@ -230,19 +320,28 @@ export class ObjectEditor {
         : 'Select an object or a complete addition. Walls, doors and architectural markers stay fixed.';
   });
   private readonly preview = viewChild.required(Preview);
+  private readonly layerDetails = viewChild<ElementRef<HTMLElement>>('layerDetails');
+  private readonly injector = inject(Injector);
   private grab: { x: number; y: number } | undefined;
   private palettePointer:
     { id: number; x: number; y: number; kind: PropKind; dragging: boolean } | undefined;
   private suppressClick = false;
+  private keepSelection = false;
+  private previousMap?: DungeonDocument;
 
   constructor() {
     effect(() => this.editingChanged.emit(this.isEditing()));
     effect(() => {
-      this.map();
+      const map = this.map();
       this.readOnly();
       untracked(() => {
+        if (this.previousMap?.layout !== map.layout) this.layerId.set('');
+        this.previousMap = map;
         this.cancel();
-        this.selected.set('');
+        if (!this.keepSelection || !this.instances().some((item) => item.id === this.selected()))
+          this.selected.set('');
+        this.keepSelection = false;
+        this.revealedBounds.set(undefined);
       });
     });
     effect(() => {
@@ -259,6 +358,7 @@ export class ObjectEditor {
   }
   protected select(id: string): void {
     this.cancel();
+    this.revealedBounds.set(undefined);
     this.selected.set(id);
     const item = this.selection();
     this.message.set(item ? `${item.label} selected.` : '');
@@ -291,11 +391,7 @@ export class ObjectEditor {
         this.setTarget(event.point);
         return;
       }
-      // Dungeon draws ground first, then objects; reverse for the visible hit target.
-      const items = dungeonInstances(this.map()),
-        ground = items.filter((p) => isDungeonGroundProp(p.prop)),
-        objects = items.filter((p) => !isDungeonGroundProp(p.prop));
-      const hit = [...ground, ...objects].reverse().find(({ prop }) => {
+      const hit = [...this.ordered()].reverse().find(({ prop }) => {
         const b = authoredObjectArea(prop);
         return (
           event.point.x >= b.x &&

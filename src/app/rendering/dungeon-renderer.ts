@@ -1,3 +1,4 @@
+import { orderedDungeonObjects } from '../engine/object-editor/dungeon-drawing-order';
 import { drawDungeonDoors } from './dungeon-doors';
 import { drawDungeonProp, isDungeonGroundProp } from './dungeon-prop-layer';
 import type { DungeonDrawing } from '../engine/object-editor/document';
@@ -260,13 +261,17 @@ export function renderDungeon(
   drawDungeonRitualFloor(ctx, map);
   drawStudySurface(ctx, map);
   walls(ctx, map.layout);
-  for (const prop of map.decoration.props.filter(isDungeonGroundProp)) {
-    drawDungeonProp(ctx, prop, map);
-  }
+  const items =
+    map.objectEdits === 'resolved'
+      ? map.instances
+      : map.decoration.props.map((prop, i) => ({ id: `base-${i}`, prop }));
+  const ordered = orderedDungeonObjects(items, map.objectEdits === 'resolved' ? map.order : []);
+  // Keep architecture above the untouched ground prefix, exactly as in historical maps.
+  const firstObject = ordered.findIndex(({ prop }) => !isDungeonGroundProp(prop));
+  const split = firstObject < 0 ? ordered.length : firstObject;
+  for (const item of ordered.slice(0, split)) drawDungeonProp(ctx, item.prop, map);
   architecture(ctx, map);
-  for (const prop of map.decoration.props.filter((prop) => !isDungeonGroundProp(prop))) {
-    drawDungeonProp(ctx, prop, map);
-  }
+  for (const item of ordered.slice(split)) drawDungeonProp(ctx, item.prop, map);
   for (const prop of map.decoration.props.filter((prop) => prop.kind === 'sconce')) {
     const x = prop.x + 0.5;
     const y = prop.y - 0.07;

@@ -1,3 +1,10 @@
+import { isDungeonSurface } from './dungeon-occupancy';
+import { dungeonSelections } from './dungeon-selection';
+import {
+  hasCustomDungeonOrder,
+  orderedDungeonObjects,
+  stepDungeonOrder,
+} from './dungeon-drawing-order';
 import { withDoorStates } from '../dungeon-doors';
 import { groupRotation } from './group-rotation';
 import { QUARTER_TURNS } from '../prop-footprint';
@@ -8,7 +15,7 @@ import { isBlockingProp, isTilePosition } from '../model';
 import type { Point, Prop, PropKind, QuarterTurn } from '../model';
 import { dungeonCapability } from './catalog';
 import { dungeonBase, dungeonInstances } from './document';
-import type { DungeonDocument, ObjectEditsV4 } from './document';
+import type { DungeonDocument, ObjectEditsV4, ObjectEditsV5 } from './document';
 import { dungeonTargetsError } from './dungeon-rules';
 
 export const MAX_AUTHORED_OBJECTS = 120;
@@ -22,6 +29,7 @@ export type ObjectCommand =
   | { readonly kind: 'move'; readonly id: string; readonly target: Point }
   | { readonly kind: 'add'; readonly propKind: PropKind; readonly target: Point }
   | { readonly kind: 'remove'; readonly id: string }
+  | { readonly kind: 'order'; readonly id: string; readonly direction: 'forward' | 'backward' }
   | { readonly kind: 'reset' };
 export type EditResult =
   | { readonly ok: true; readonly document: DungeonDocument }
@@ -36,7 +44,11 @@ export function proposeObjectCommand(
   const plain = withDoorStates(base, document.doorStates);
   if (command.kind === 'reset')
     return { ok: true, document: document.objectEdits ? plain : document };
-  if (command.kind !== 'remove' && !isTilePosition(command.target.x, command.target.y))
+  if (
+    command.kind !== 'remove' &&
+    command.kind !== 'order' &&
+    !isTilePosition(command.target.x, command.target.y)
+  )
     return { ok: false, error: 'Place the object inside the map.' };
   if (
     command.kind === 'move-group' &&
@@ -44,7 +56,7 @@ export function proposeObjectCommand(
     !QUARTER_TURNS.includes(command.rotation)
   )
     return { ok: false, error: 'Choose a quarter-turn rotation.' };
-  let edits: ObjectEditsV4 = document.objectEdits
+  const common: ObjectEditsV4 = document.objectEdits
     ? {
         ...document.objectEdits,
         version: 4,
@@ -64,7 +76,21 @@ export function proposeObjectCommand(
         added: [],
         removed: [],
       };
-  if (command.kind === 'move-group') {
+  let edits: ObjectEditsV4 | ObjectEditsV5 =
+    document.objectEdits?.version === 5
+      ? { ...common, version: 5, order: document.objectEdits.order }
+      : common;
+  if (command.kind === 'order') {
+    const units = dungeonSelections(document);
+    const unit = units.find((unit) => unit.id === command.id);
+    if (!unit || unit.lock) return { ok: false, error: 'Choose an editable object or addition.' };
+    const items = dungeonInstances(document);
+    const previous = edits.version === 5 ? edits.order : [];
+    const order = stepDungeonOrder(items, previous, units, command.id, command.direction);
+    const current = orderedDungeonObjects(items, previous);
+    if (order.every((id, i) => current[i]?.id === id)) return { ok: true, document };
+    edits = { ...edits, version: 5, order };
+  } else if (command.kind === 'move-group') {
     const group = dungeonGroups(base).find((group) => group.id === command.id);
     if (!group) return { ok: false, error: 'That addition is not on this map.' };
     const current = edits.groups.find((move) => move.id === group.id) ?? {
@@ -120,15 +146,9 @@ export function proposeObjectCommand(
           ? [...edits.removed, command.id].sort()
           : edits.removed,
       };
-      const next =
-        edits.moves.length || edits.added.length || edits.removed.length || edits.groups.length
-          ? { ...plain, objectEdits: edits }
-          : plain;
-      return { ok: true, document: next };
-    }
-    if (item.prop.x === command.target.x && item.prop.y === command.target.y)
+    } else if (item.prop.x === command.target.x && item.prop.y === command.target.y)
       return { ok: true, document };
-    if (command.id.startsWith('base-')) {
+    else if (command.id.startsWith('base-')) {
       const original = base.decoration.props[Number(command.id.slice(5))];
       if (!original) return { ok: false, error: 'That object is no longer available.' };
       edits = {
@@ -150,8 +170,30 @@ export function proposeObjectCommand(
         ),
       };
   }
+  if (edits.version === 5) {
+    const items = dungeonInstances({ ...plain, objectEdits: edits });
+    const ids = new Set(items.map((item) => item.id));
+    const retained = edits.order.filter((id) => ids.has(id));
+    const newItems = items.filter((item) => !retained.includes(item.id));
+    // Newly inserted surfaces start underneath; new physical objects start above.
+    const order = edits.order.length
+      ? [
+          ...newItems.filter((item) => isDungeonSurface(item.prop.kind)).map((item) => item.id),
+          ...retained,
+          ...newItems.filter((item) => !isDungeonSurface(item.prop.kind)).map((item) => item.id),
+        ]
+      : [];
+    edits = {
+      ...edits,
+      order: command.kind !== 'order' || hasCustomDungeonOrder(items, order) ? order : [],
+    };
+  }
   const next: DungeonDocument =
-    edits.moves.length || edits.added.length || edits.removed.length || edits.groups.length
+    edits.moves.length ||
+    edits.added.length ||
+    edits.removed.length ||
+    edits.groups.length ||
+    (edits.version === 5 && edits.order.length)
       ? { ...plain, objectEdits: edits }
       : plain;
   return { ok: true, document: next };
@@ -165,7 +207,11 @@ export function applyObjectCommand(document: DungeonDocument, command: ObjectCom
 }
 
 export function authoredPlacementError(document: DungeonDocument): string | undefined {
-  if (document.objectEdits?.version === 3 || document.objectEdits?.version === 4)
+  if (
+    document.objectEdits?.version === 3 ||
+    document.objectEdits?.version === 4 ||
+    document.objectEdits?.version === 5
+  )
     return layeredDungeonError(dungeonBase(document), document, dungeonInstances(document));
   if (document.objectEdits?.version === 2)
     return authoredDungeonError(dungeonBase(document), document, dungeonInstances(document));
