@@ -21,7 +21,10 @@ export interface ObjectEditsV2 extends Omit<ObjectEditsV1, 'version'> {
   readonly version: 2;
   readonly groups: readonly GroupMove[];
 }
-export type ObjectEdits = ObjectEditsV1 | ObjectEditsV2;
+export interface ObjectEditsV3 extends Omit<ObjectEditsV2, 'version'> {
+  readonly version: 3;
+}
+export type ObjectEdits = ObjectEditsV1 | ObjectEditsV2 | ObjectEditsV3;
 /** The ordinary map fields are the frozen base, never the resolved arrangement. */
 export interface AuthoredDungeon extends Omit<Dungeon, 'objectEdits'> {
   readonly objectEdits: ObjectEdits;
@@ -41,8 +44,12 @@ export function dungeonBase(document: DungeonDocument): Dungeon {
 }
 
 export function dungeonInstances(document: DungeonDocument): readonly AddedObject[] {
-  const groups = document.objectEdits?.version === 2 ? dungeonGroups(dungeonBase(document)) : [];
-  const groupMoves = document.objectEdits?.version === 2 ? document.objectEdits.groups : [];
+  const groups =
+    document.objectEdits && document.objectEdits.version !== 1
+      ? dungeonGroups(dungeonBase(document))
+      : [];
+  const groupMoves =
+    document.objectEdits && document.objectEdits.version !== 1 ? document.objectEdits.groups : [];
   const removed = new Set(document.objectEdits?.removed);
   const moves = new Map(document.objectEdits?.moves.map((move) => [move.id, move]));
   return [
@@ -69,11 +76,11 @@ export function resolveDungeon(document: DungeonDocument): DungeonDrawing {
   if (!document.objectEdits) return document;
   const items = dungeonInstances(document);
   const study =
-    document.objectEdits.version === 2
+    document.objectEdits.version !== 1
       ? dungeonGroups(dungeonBase(document)).find((group) => group.id === 'study')
       : undefined;
   const studyMove =
-    document.objectEdits.version === 2
+    document.objectEdits.version !== 1
       ? document.objectEdits.groups.find((move) => move.id === 'study')
       : undefined;
   return {

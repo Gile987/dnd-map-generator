@@ -40,7 +40,8 @@ export function currentDungeonGroups(
   base: Dungeon,
   document: DungeonDocument,
 ): readonly DungeonGroup[] {
-  const moves = document.objectEdits?.version === 2 ? document.objectEdits.groups : [];
+  const moves =
+    document.objectEdits && document.objectEdits.version !== 1 ? document.objectEdits.groups : [];
   return dungeonGroups(base).map((group) =>
     translatedGroup(
       group,

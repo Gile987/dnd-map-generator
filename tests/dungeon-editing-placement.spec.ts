@@ -75,6 +75,127 @@ async function openDocument(page: Page, document: DungeonDocument) {
   await page.getByRole('button', { name: 'Edit objects', exact: true }).click();
 }
 
+test('objects layer over rugs, topmost selection works, and moving the rug leaves the barrel in place through undo and saved reopen', async ({
+  page,
+}) => {
+  const generated = generateDungeon({
+    seed: 'mosslit-sanctum',
+    roomCount: 6,
+    density: 'Balanced',
+    preset: 'Mosslit',
+  });
+  if (!generated.ok) throw Error(generated.error);
+  const base = generated.map,
+    rug = dungeonInstances(base).find((item) => item.prop.kind === 'rug');
+  if (!rug) throw Error('Missing rug');
+  let prepared: DungeonDocument = base;
+  for (const item of dungeonInstances(base))
+    if (item.id !== rug.id && !individualObjectLock(base, item.id, item.prop)) {
+      const result = applyObjectCommand(prepared, { kind: 'remove', id: item.id });
+      if (!result.ok) throw Error(result.error);
+      prepared = result.document;
+    }
+  await openDocument(page, prepared);
+  await page.getByRole('button', { name: 'Add object', exact: true }).click();
+  await page.getByRole('button', { name: 'Add Barrel', exact: true }).click();
+  await position(page, rug.prop);
+  await page.getByRole('button', { name: 'Place object', exact: true }).click();
+  const layered = await snapshot(page, 'Barrel on rug'),
+    image = await png(page);
+  const select = page.getByRole('combobox', { name: 'Objects on this map', exact: true });
+  const point = await screenPoint(page, { x: rug.prop.x + 0.5, y: rug.prop.y + 0.5 });
+  await page.mouse.click(point.x, point.y);
+  await expect(select).toHaveValue('added-1');
+  await page
+    .locator('forge-object-editor')
+    .screenshot({ path: 'artifacts/editor-movement/barrel-on-rug.png' });
+  const command = validCommand(
+    layered,
+    (target) => ({ kind: 'move', id: rug.id, target }),
+    rug.prop,
+  );
+  if (command.kind !== 'move') throw Error('Missing rug move');
+  await select.selectOption(rug.id);
+  await position(page, command.target);
+  await page.getByRole('button', { name: 'Place object', exact: true }).click();
+  expect(
+    dungeonInstances(await snapshot(page, 'Rug moved independently')).find(
+      (item) => item.id === 'added-1',
+    )?.prop,
+  ).toMatchObject({ x: rug.prop.x, y: rug.prop.y });
+  await page.getByRole('button', { name: 'Undo map change', exact: true }).click();
+  await ready(page);
+  expect(await png(page)).toEqual(image);
+  await page.reload();
+  await page
+    .locator('.saved-item')
+    .filter({ has: page.locator('.saved-name').getByText('Barrel on rug', { exact: true }) })
+    .getByRole('button', { name: 'Open', exact: true })
+    .click();
+  await ready(page);
+  expect(await png(page)).toEqual(image);
+});
+
+test('a barrel can occupy empty ritual floor, refuses physical components, and remains independent when the site moves', async ({
+  page,
+}) => {
+  const generated = generateDungeon({
+    seed: 'mosslit-sanctum',
+    roomCount: 6,
+    density: 'Balanced',
+    preset: 'Mosslit',
+    ritual: true,
+  });
+  if (!generated.ok) throw Error(generated.error);
+  const base = generated.map,
+    group = dungeonGroups(base).find((g) => g.id === 'ritual');
+  if (!group) throw Error('Missing ritual');
+  let prepared: DungeonDocument = base;
+  for (const item of dungeonInstances(base))
+    if (!individualObjectLock(base, item.id, item.prop)) {
+      const result = applyObjectCommand(prepared, { kind: 'remove', id: item.id });
+      if (!result.ok) throw Error(result.error);
+      prepared = result.document;
+    }
+  const target: Point = { x: group.area.x + 2, y: group.area.y + 2 };
+  const candle = dungeonInstances(base).find((item) => item.prop.kind === 'ritual_candles');
+  if (!candle) throw Error('Missing ritual candle');
+  await openDocument(page, prepared);
+  await page.getByRole('button', { name: 'Add object', exact: true }).click();
+  await page.getByRole('button', { name: 'Add Barrel', exact: true }).click();
+  await position(page, candle.prop);
+  await expect(page.getByRole('button', { name: 'Place object', exact: true })).toBeDisabled();
+  await expect(page.locator('.placement-status')).toContainText('cannot overlap');
+  await position(page, target);
+  await page.getByRole('button', { name: 'Place object', exact: true }).click();
+  const layered = await snapshot(page, 'Barrel inside ritual'),
+    image = await png(page);
+  const point = await screenPoint(page, { x: target.x + 0.5, y: target.y + 0.5 });
+  await page.mouse.click(point.x, point.y);
+  const select = page.getByRole('combobox', { name: 'Objects on this map', exact: true });
+  await expect(select).toHaveValue('added-1');
+  await page
+    .locator('forge-object-editor')
+    .screenshot({ path: 'artifacts/editor-movement/barrel-in-ritual.png' });
+  const command = validCommand(
+    layered,
+    (destination) => ({ kind: 'move-group', id: 'ritual', target: destination }),
+    group.area,
+  );
+  if (command.kind !== 'move-group') throw Error('Missing group move');
+  await select.selectOption('group-ritual');
+  await position(page, command.target);
+  await page.getByRole('button', { name: 'Place object', exact: true }).click();
+  expect(
+    dungeonInstances(await snapshot(page, 'Ritual moved independently')).find(
+      (item) => item.id === 'added-1',
+    )?.prop,
+  ).toMatchObject({ x: target.x, y: target.y });
+  await page.getByRole('button', { name: 'Undo map change', exact: true }).click();
+  await ready(page);
+  expect(await png(page)).toEqual(image);
+});
+
 test('the screenshot-style barrel can move into open passage floor and another wall; refusals explain actual obstacles', async ({
   page,
 }) => {

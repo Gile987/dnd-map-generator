@@ -37,7 +37,7 @@ function saved() {
 test('the current format preserves laboratories while pre-laboratory vocabularies stay frozen', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('20.0.0');
+  expect(record.saveFormatVersion).toBe('21.0.0');
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 14; v++) {

@@ -776,7 +776,7 @@ test('unknown authored versions stay recoverable and block later mutations inste
     id: 'future-edited',
     map: {
       ...original.map,
-      objectEdits: { version: 3, nextId: 2, moves: [], removed: [], added: [] },
+      objectEdits: { version: 4, nextId: 2, moves: [], removed: [], added: [] },
     },
   };
   const raw = JSON.stringify([original, future]);
