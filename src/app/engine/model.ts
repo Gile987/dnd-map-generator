@@ -309,6 +309,8 @@ export interface Dungeon {
 }
 
 export interface ForestClearing {
+  /** Authored documents are deliberately excluded from generator inputs. */
+  readonly objectEdits?: never;
   readonly type: 'forest';
   readonly version: string;
   readonly seed: string;

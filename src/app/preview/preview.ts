@@ -4,6 +4,7 @@ import { drawEditorProp } from '../rendering/editor-prop';
 import { isEditableMap, resolveEditorMap } from '../engine/object-editor/editor-view';
 import { drawDungeonRitualFloor } from '../rendering/ritual-props';
 import { drawStudySurface } from '../rendering/study-surface';
+import { drawForestCampAsh } from '../rendering/forest-surface';
 import { viewportTransform, inversePoint } from './viewport-transform';
 import type { ReservedArea } from '../engine/feature-reservation';
 import { drawProp } from '../rendering/props';
@@ -131,7 +132,7 @@ export class Preview {
       );
     }
     return (
-      'Forest clearing for seed ' +
+      (m.objectEdits ? 'Customized forest clearing for seed ' : 'Forest clearing for seed ') +
       m.seed +
       ', ' +
       m.decoration.character +
@@ -484,6 +485,8 @@ export class Preview {
           drawDungeonRitualFloor(context, ghost.drawing);
         if (ghost.drawing?.type === 'dungeon' && ghost.groupId === 'study')
           drawStudySurface(context, ghost.drawing);
+        if (ghost.drawing?.type === 'forest' && ghost.groupId === 'camp')
+          drawForestCampAsh(context, ghost.drawing);
         for (const prop of ghost.props) {
           const map = this.map();
           if (isEditableMap(map))

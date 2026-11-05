@@ -75,7 +75,7 @@
   @if (paletteOpen()) {
   <section
     id="object-catalog"
-    [attr.aria-label]="map().type === 'dungeon' ? 'Dungeon object catalog' : 'Courtyard object catalog'"
+    [attr.aria-label]="map().type === 'dungeon' ? 'Dungeon object catalog' : map().type === 'forest' ? 'Forest object catalog' : 'Courtyard object catalog'"
     class="catalog"
   >
     <label
@@ -89,10 +89,13 @@
     <p>
       Drag an item onto the map, or choose it and tap a destination. @if (map().type === 'dungeon')
       { Rugs cover a 3 × 3 area; the other catalog objects occupy one square. Objects can sit on
-      rugs, moss, and empty addition floor. } @else { Catalog objects occupy one square. Moss, low
-      rubble, ferns and vines can share ground with other objects. Use any open ground, including
-      the gathering space and approaches, while keeping walking routes connected. } Surfaces move
-      independently.
+      rugs, moss, and empty addition floor. } @else if (map().type === 'forest') { Catalog objects
+      occupy one square. Bushes, ferns, mushrooms and flowers can share ground with other objects
+      and grow outside the clearing. Trees stay fixed. Solid objects need walkable ground and must
+      keep the two path entrances connected. Empty addition outlines do not reserve ground. } @else
+      { Catalog objects occupy one square. Moss, low rubble, ferns and vines can share ground with
+      other objects. Use any open ground, including the gathering space and approaches, while
+      keeping walking routes connected. } Surfaces move independently.
     </p>
     <div class="object-cards">
       @for (item of palette(); track item.kind) {
@@ -104,7 +107,13 @@
         (lostpointercapture)="paletteCancel($event)"
         [attr.aria-label]="'Add ' + item.label"
       >
-        <img [forgeObjectArtwork]="item.kind" alt="" width="48" height="48" />
+        <img
+          [forgeObjectArtwork]="item.kind"
+          [forestCharacter]="forestCharacter()"
+          alt=""
+          width="48"
+          height="48"
+        />
         <span
           ><strong>{{item.label}}</strong
           ><small
@@ -181,8 +190,8 @@
   @if (selection(); as item) {
   <p id="object-selection-description" class="selection-label">
     <strong>{{item.label}}</strong> · @if (item.lock) { {{item.lock}} } @else if (item.groupId) {
-    Move the complete addition. Its objects keep their arrangement. @if (map().type === 'courtyard')
-    { Only the objects need clear ground; empty space inside the outline is not reserved. } @else {
+    Move the complete addition. Its objects keep their arrangement. @if (map().type !== 'dungeon') {
+    Only the objects need clear ground; empty space inside the outline is not reserved. } @else {
     The outline includes reserved space. } } @else { Drag on the map, or choose a destination below.
     }
   </p>

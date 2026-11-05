@@ -3,21 +3,15 @@ import { orderedObjects } from './drawing-order';
 import { WAGON_PROP_KINDS } from '../model';
 import type { RuinedCourtyard, Prop, QuarterTurn } from '../model';
 import { propBounds } from '../prop-footprint';
-import { transformedGroup, transformedGroupProp } from './group-rotation';
-import type { ObjectGroup, ObjectGroupTransform } from './object-group';
-import type { AddedObject, ObjectMove } from './document';
+import { transformedGroup } from './group-rotation';
+import type { ObjectGroup } from './object-group';
+import type { AddedObject } from './document';
+import { arrangementInstances, arrangementArtTurns } from './arrangement';
+import type { ArrangementEdits } from './arrangement';
 
 export const COURTYARD_GROUP_IDS = ['fountain', 'wagon'] as const;
 export type CourtyardGroupId = (typeof COURTYARD_GROUP_IDS)[number];
-export interface CourtyardEditsV1 {
-  readonly version: 1;
-  readonly nextId: number;
-  readonly moves: readonly ObjectMove[];
-  readonly removed: readonly string[];
-  readonly added: readonly AddedObject[];
-  readonly groups: readonly ObjectGroupTransform<CourtyardGroupId>[];
-  readonly order: readonly string[];
-}
+export type CourtyardEditsV1 = ArrangementEdits<CourtyardGroupId>;
 export interface AuthoredCourtyard extends Omit<RuinedCourtyard, 'objectEdits'> {
   readonly objectEdits: CourtyardEditsV1;
 }
@@ -76,39 +70,17 @@ export function currentCourtyardGroups(
   );
 }
 export function courtyardInstances(map: CourtyardDocument): readonly AddedObject[] {
-  const groups = courtyardGroups(courtyardBase(map));
-  const removed = new Set(map.objectEdits?.removed);
-  const moves = new Map(map.objectEdits?.moves.map((move) => [move.id, move]));
-  return [
-    ...map.decoration.props.map((prop, i) => {
-      const id = `base-${i}`,
-        move = moves.get(id);
-      const group = groups.find((group) => group.members.includes(id));
-      const transform = group && map.objectEdits?.groups.find((move) => move.id === group.id);
-      return {
-        id,
-        prop:
-          group && transform
-            ? transformedGroupProp(prop, group, transform)
-            : move
-              ? { ...prop, x: move.x, y: move.y }
-              : prop,
-      };
-    }),
-    ...(map.objectEdits?.added ?? []),
-  ].filter((item) => !removed.has(item.id));
+  return arrangementInstances(
+    map.decoration.props,
+    map.objectEdits,
+    courtyardGroups(courtyardBase(map)),
+  );
 }
 export function resolveCourtyard(map: CourtyardDocument): CourtyardDrawing {
   if (!map.objectEdits) return map;
   const items = courtyardInstances(map),
     groups = courtyardGroups(courtyardBase(map));
-  const artTurns = new Map<Prop, QuarterTurn>();
-  for (const move of map.objectEdits.groups) {
-    const group = groups.find((group) => group.id === move.id);
-    for (const item of items)
-      if (group?.members.includes(item.id) && !item.prop.footprint)
-        artTurns.set(item.prop, move.rotation);
-  }
+  const artTurns = arrangementArtTurns(items, groups, map.objectEdits);
   return {
     ...courtyardBase(map),
     objectEdits: 'resolved',

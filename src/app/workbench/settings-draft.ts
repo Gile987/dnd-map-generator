@@ -1,3 +1,4 @@
+import type { ForestDocument } from '../engine/object-editor/forest-document';
 import type { CourtyardDocument } from '../engine/object-editor/courtyard-document';
 import type { Tower, TowerSettings, TowerStairStyle } from '../engine/tower';
 import { validateTowerSettings, towerStairStyle } from '../engine/tower';
@@ -10,7 +11,6 @@ import type {
   DungeonLandmark,
   DungeonFurniture,
   ForestCharacter,
-  ForestClearing,
   ForestSettings,
   ForestScene,
   ForestLandmark,
@@ -112,7 +112,7 @@ export function dungeonDraftForMap(map: DungeonDocument): DungeonDraft {
   };
 }
 
-export function forestDraftForMap(map: ForestClearing): ForestDraft {
+export function forestDraftForMap(map: ForestDocument): ForestDraft {
   return {
     type: 'forest',
     ...(map.decoration.fallenTree ? { fallenTree: true } : {}),

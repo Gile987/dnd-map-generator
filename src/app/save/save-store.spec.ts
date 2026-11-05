@@ -1,3 +1,4 @@
+import { acceptForest, forestEditorFixture } from '../../../scripts/forest-editor-test-support';
 import { validCommand } from '../../../scripts/editor-test-support';
 import {
   courtyardEditorFixture,
@@ -860,6 +861,56 @@ test('unknown Courtyard editing versions remain recoverable and prevent later li
   await expect(
     store.add(original.map, 'Do not discard courtyard edits', thumbnail),
   ).rejects.toThrow();
+  expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
+  expect(storage.setItem).not.toHaveBeenCalled();
+});
+
+test('Forest edits survive failed writes, retry, cross-store reads and exported backups', async () => {
+  const storage = stubStorage(),
+    store = createStore(),
+    before = store.saved(),
+    disk = storage.values.get(SAVE_STORAGE_KEY);
+  const edited = acceptForest(forestEditorFixture(), {
+    kind: 'add',
+    propKind: 'flower',
+    target: { x: 1, y: 1 },
+  });
+  storage.setItem.mockImplementationOnce(() => {
+    throw new DOMException('Full', 'QuotaExceededError');
+  });
+  await expect(store.add(edited, 'Edited forest', thumbnail)).rejects.toThrow('could not write');
+  expect(store.saved()).toBe(before);
+  expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(disk);
+  const saved = await store.add(edited, 'Edited forest', thumbnail);
+  expect(
+    createStore()
+      .saved()
+      .find((entry) => entry.id === saved.id)?.map,
+  ).toEqual(edited);
+  expect(parseBundle(store.exportMap(saved.id).json)).toMatchObject({
+    ok: true,
+    maps: [{ map: edited }],
+  });
+});
+
+test('unknown Forest editing versions remain recoverable and prevent later library mutation', async () => {
+  const map = acceptForest(forestEditorFixture(), {
+    kind: 'add',
+    propKind: 'flower',
+    target: { x: 1, y: 1 },
+  });
+  const future = {
+    ...original,
+    id: 'future-forest',
+    map: { ...map, objectEdits: { ...map.objectEdits, version: 2 } },
+  };
+  const raw = JSON.stringify([original, future]),
+    storage = stubStorage(raw),
+    store = createStore();
+  expect(store.saved()).toEqual([original]);
+  expect(store.canWrite()).toBe(false);
+  expect(store.recoveryData()).toBe(raw);
+  await expect(store.add(original.map, 'Do not discard forest edits', thumbnail)).rejects.toThrow();
   expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
   expect(storage.setItem).not.toHaveBeenCalled();
 });

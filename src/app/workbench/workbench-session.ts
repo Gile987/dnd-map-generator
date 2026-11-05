@@ -1,3 +1,6 @@
+import { forestBase } from '../engine/object-editor/forest-document';
+import type { ForestDocument } from '../engine/object-editor/forest-document';
+import { isEditableMap } from '../engine/object-editor/editor-view';
 import { courtyardBase } from '../engine/object-editor/courtyard-document';
 import type { CourtyardDocument } from '../engine/object-editor/courtyard-document';
 import { applyEditorCommand } from '../engine/object-editor/editor-commands';
@@ -34,7 +37,7 @@ import {
   shuffleCourtyardDetails,
 } from '../engine/courtyard-generate';
 import { DEFAULT_FOREST_CHARACTER, DEFAULT_PRESET } from '../engine/model';
-import type { DungeonDocument, ForestClearing, MapDocument, MapType } from '../engine/model';
+import type { DungeonDocument, MapDocument, MapType } from '../engine/model';
 import {
   towerDraftForMap,
   dungeonDraftForMap,
@@ -76,14 +79,14 @@ interface SessionState {
   readonly type: MapType;
   readonly maps: {
     readonly dungeon: DungeonDocument;
-    readonly forest: ForestClearing;
+    readonly forest: ForestDocument;
     readonly courtyard: CourtyardDocument;
     readonly tower: Tower;
   };
   readonly drafts: SettingsDrafts;
   readonly histories: {
     readonly dungeon: ShuffleHistory<DungeonDocument>;
-    readonly forest: ShuffleHistory<ForestClearing>;
+    readonly forest: ShuffleHistory<ForestDocument>;
     readonly courtyard: ShuffleHistory<CourtyardDocument>;
     readonly tower: ShuffleHistory<Tower>;
   };
@@ -367,11 +370,7 @@ export class WorkbenchSession {
 
   editObjects(source: MapDocument, command: ObjectCommand): MapEditResult {
     const current = this.currentMap();
-    if (
-      (current.type !== 'dungeon' && current.type !== 'courtyard') ||
-      current !== source ||
-      this.comparison().selected !== 'current'
-    )
+    if (!isEditableMap(current) || current !== source || this.comparison().selected !== 'current')
       return { ok: false, error: 'The displayed map changed. Select the object again.' };
     const result = applyEditorCommand(current, command);
     if (result.ok && result.document !== current) this.accept(result.document, false);
@@ -393,8 +392,7 @@ export class WorkbenchSession {
 
   shuffle(): boolean {
     const current = this.currentMap();
-    if ((current.type === 'dungeon' || current.type === 'courtyard') && current.objectEdits)
-      return false;
+    if (isEditableMap(current) && current.objectEdits) return false;
     const next =
       current.type === 'tower'
         ? shuffleTowerDetails(current)
@@ -402,7 +400,7 @@ export class WorkbenchSession {
           ? shuffleCourtyardDetails(courtyardBase(current))
           : current.type === 'dungeon'
             ? withDoorStates(shuffleDetails(dungeonBase(current)), current.doorStates)
-            : shuffleForestDetails(current);
+            : shuffleForestDetails(forestBase(current));
     if (next === current) return false;
     this.accept(next, false);
     return true;
@@ -466,11 +464,7 @@ export class WorkbenchSession {
   generate(replaceCustomizations = false): ApplySettingsResult {
     const current = this.currentMap();
     if (!this.pending()) return { ok: true, layoutChanged: false };
-    if (
-      (current.type === 'dungeon' || current.type === 'courtyard') &&
-      current.objectEdits &&
-      !replaceCustomizations
-    )
+    if (isEditableMap(current) && current.objectEdits && !replaceCustomizations)
       return {
         ok: false,
         error:
@@ -506,7 +500,7 @@ export class WorkbenchSession {
         };
     } else if (parsed.type === 'forest') {
       const settings = parsed.settings;
-      let forest = state.maps.forest;
+      let forest = forestBase(state.maps.forest);
       if (layoutChanged) {
         const result = generateForestClearing(settings);
         if (!result.ok) return result;
@@ -657,7 +651,7 @@ export class WorkbenchSession {
         error: 'That study could not fit. Try another seed or decoration density.',
       };
     const preserveHistory =
-      ((current.type === 'dungeon' || current.type === 'courtyard') && !!current.objectEdits) ||
+      (isEditableMap(current) && !!current.objectEdits) ||
       (current.type === 'dungeon' && !!current.doorStates);
     this.accept(next, true, preserveHistory);
     return { ok: true, layoutChanged };
@@ -702,9 +696,10 @@ export class WorkbenchSession {
                 }
               : {
                   ...state.histories,
-                  forest: resetDraft
-                    ? { past: [], future: [] }
-                    : recordShuffle(state.histories.forest, state.maps.forest),
+                  forest:
+                    resetDraft && !preserveHistory
+                      ? { past: [], future: [] }
+                      : recordShuffle(state.histories.forest, state.maps.forest),
                 },
     }));
   }

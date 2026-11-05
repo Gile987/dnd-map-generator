@@ -15,7 +15,8 @@ test.each(ALL_FOREST_CHARACTERS)(
     const old = parsed.maps.find(
       (record) => record.map.type === 'forest' && record.map.decoration.character === character,
     )?.map;
-    if (!old || old.type !== 'forest') throw new Error('Missing historical forest');
+    if (!old || old.type !== 'forest' || !!old.objectEdits)
+      throw new Error('Missing historical forest');
     const map = { ...old, decoration: { ...old.decoration, forestSurface: 1 as const } };
     const patches = forestSurfacePatches(map);
     const first = patches.find((p) => p.kind !== 'ash');

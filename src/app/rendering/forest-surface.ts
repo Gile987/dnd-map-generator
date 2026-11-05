@@ -1,5 +1,6 @@
+import type { ForestDrawing } from '../engine/object-editor/forest-document';
 import { HEIGHT, WIDTH, indexOf, isWalkable } from '../engine/model';
-import type { ForestCharacter, ForestClearing, Point } from '../engine/model';
+import type { ForestCharacter, Point } from '../engine/model';
 import { campReservations } from '../engine/forest-camp';
 import { propCells } from '../engine/prop-footprint';
 import { circleReserve } from '../engine/forest-landmark';
@@ -13,13 +14,18 @@ interface SurfacePatch extends Point {
 }
 
 /** Flat, derived artwork only. Tile placement and all engine RNG streams stay unchanged. */
-export function forestSurfacePatches(map: ForestClearing): readonly SurfacePatch[] {
+export function forestSurfacePatches(map: ForestDrawing): readonly SurfacePatch[] {
   if (map.decoration.forestSurface !== 1) return [];
   const route = new Set(map.layout.route);
   const occupied = new Set(
     map.decoration.props.flatMap((p) => propCells(p).map((cell) => indexOf(cell.x, cell.y))),
   );
-  const camp = campReservations(map.decoration.props);
+  const camp =
+    map.objectEdits === 'resolved'
+      ? map.campArea
+        ? [{ area: map.campArea }]
+        : []
+      : campReservations(map.decoration.props);
   const stones = map.decoration.props.filter((p) => p.kind === 'standing_stone');
   const circle =
     stones.length === 6
@@ -33,7 +39,7 @@ export function forestSurfacePatches(map: ForestClearing): readonly SurfacePatch
       ? map.decoration.props.find((p) => p.kind === 'fire_ring')
       : undefined;
   const ashRandom = new Random(deriveSeed(map.surfaceSeed, 'camp-ash', 1, map.decoration.revision));
-  const wind = ashRandom.int(0, 3);
+  const wind = (ashRandom.int(0, 3) + (map.objectEdits === 'resolved' ? map.campTurn : 0)) % 4;
   const ashOffsets = [
     [1, 0],
     [0, 1],
@@ -52,8 +58,8 @@ export function forestSurfacePatches(map: ForestClearing): readonly SurfacePatch
         point = { x, y };
       if (
         !isWalkable(map.layout, x, y) ||
-        route.has(tile) ||
-        (circle && circleReserve(circle, point))
+        (map.objectEdits !== 'resolved' &&
+          (route.has(tile) || (circle && circleReserve(circle, point))))
       )
         continue;
       const seed = deriveSeed(
@@ -81,7 +87,13 @@ export function forestSurfacePatches(map: ForestClearing): readonly SurfacePatch
         });
         continue;
       }
-      if (occupied.has(tile) || camp.some((reserve) => areaContains(reserve.area, point))) continue;
+      if (
+        route.has(tile) ||
+        (circle && circleReserve(circle, point)) ||
+        occupied.has(tile) ||
+        camp.some((reserve) => areaContains(reserve.area, point))
+      )
+        continue;
       // Keep drifts off the contour's inner stroke and the entire carved path.
       if (
         (
@@ -119,8 +131,22 @@ const leafColors: Readonly<Record<ForestCharacter, readonly string[]>> = {
   Fey: ['#dab4d5a0', '#c1cfeda0', '#e2c8b590'],
 };
 
-export function drawForestSurface(ctx: DrawingContext, map: ForestClearing): void {
+export function drawForestSurface(ctx: DrawingContext, map: ForestDrawing): void {
+  drawSurfacePatches(ctx, map);
+}
+
+/** Only the camp-owned ash belongs in a staged group preview. */
+export function drawForestCampAsh(ctx: DrawingContext, map: ForestDrawing): void {
+  drawSurfacePatches(ctx, map, 'ash');
+}
+
+function drawSurfacePatches(
+  ctx: DrawingContext,
+  map: ForestDrawing,
+  kind?: SurfacePatch['kind'],
+): void {
   for (const patch of forestSurfacePatches(map)) {
+    if (kind && patch.kind !== kind) continue;
     const random = new Random(patch.seed);
     ctx.save();
     ctx.translate(patch.x, patch.y);

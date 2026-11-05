@@ -92,7 +92,7 @@ test('format 24 introduces authored order and later formats retain it; malformed
     '2026-11-03T12:00:00Z',
   );
   expect(parseSavedMap(saved)?.map).toEqual(covered);
-  expect(saved.saveFormatVersion).toBe('25.0.0');
+  expect(saved.saveFormatVersion).toBe('26.0.0');
   expect(saveVocabulary('23.0.0')?.objectEditVersions).toEqual([1, 2, 3, 4]);
   expect(saveVocabulary('24.0.0')?.objectEditVersions).toEqual([1, 2, 3, 4, 5]);
   for (let v = 1; v <= 23; v++)
