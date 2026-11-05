@@ -58,7 +58,7 @@ test('laboratory drafts apply without rebuilding floors and survive shuffling, b
   const saved = await snapshot(page, 'Laboratory');
   expect(saved.map.layout).toEqual(before.map.layout);
   expect(saved.map.surfaceSeed).toBe(before.map.surfaceSeed);
-  expect(saved.saveFormatVersion).toBe('24.0.0');
+  expect(saved.saveFormatVersion).toBe('25.0.0');
   const cauldron = saved.map.decoration.props.find((p) => p.kind === 'cauldron');
   expect(cauldron).toBeDefined();
   const accepted = await png(page);
@@ -87,7 +87,7 @@ test('laboratory drafts apply without rebuilding floors and survive shuffling, b
   const backup = await backupPending,
     backupBytes = await readFile(await backup.path());
   expect(JSON.parse(backupBytes.toString())).toMatchObject({
-    saveFormatVersion: '24.0.0',
+    saveFormatVersion: '25.0.0',
     maps: expect.arrayContaining([expect.objectContaining({ name: 'Laboratory', map: saved.map })]),
   });
   await page.evaluate(() => localStorage.clear());

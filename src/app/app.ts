@@ -166,7 +166,7 @@ export class App {
     this.error.set(result.ok ? '' : result.error);
     if (result.ok)
       this.status.set(
-        'Dungeon objects updated. Undo restores the previous arrangement. Save to keep your changes.',
+        'Map objects updated. Undo restores the previous arrangement. Save to keep your changes.',
       );
   }
 

@@ -1,3 +1,4 @@
+import { isEditableMap } from '../../engine/object-editor/editor-view';
 import type { DoorToggleRequest } from '../../engine/dungeon-doors';
 import { ObjectEditor } from '../object-editor/object-editor';
 import type { ObjectEditRequest } from '../object-editor/object-editor';
@@ -37,15 +38,15 @@ export class MapPanel {
   // The parent reads this from a host binding before required inputs are bound.
   // Check the default mode first; map() is safe once editing can be enabled.
   readonly objectEditing = computed(
-    () => this.editorMode() && this.map().type === 'dungeon' && this.candidate() === 'current',
+    () => this.editorMode() && isEditableMap(this.map()) && this.candidate() === 'current',
   );
   readonly history = input({ undo: 0, redo: 0, limit: 20 });
   readonly historyRequested = output<'undo' | 'redo'>();
   readonly objectEditRequested = output<ObjectEditRequest>();
   readonly doorToggleRequested = output<DoorToggleRequest>();
-  protected readonly dungeon = computed(() => {
+  protected readonly editable = computed(() => {
     const map = this.map();
-    return map.type === 'dungeon' ? map : undefined;
+    return isEditableMap(map) ? map : undefined;
   });
   readonly map = input.required<MapDocument>();
   readonly grid = input(true);
@@ -112,7 +113,7 @@ export class MapPanel {
       return {
         seed: map.seed,
         rooms: '4 open approaches',
-        details: `Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
+        details: `${map.objectEdits ? 'Customized · ' : ''}Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
         type: 'RUINED COURTYARD',
       };
     if (map.type === 'dungeon') {

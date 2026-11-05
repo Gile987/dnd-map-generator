@@ -1,3 +1,4 @@
+import type { CourtyardDocument, AuthoredCourtyard } from './courtyard-document';
 import type { DoorStates } from '../dungeon-doors';
 import { groupRotation, transformedGroup, transformedGroupProp } from './group-rotation';
 import type { GroupTransform } from './group-rotation';
@@ -47,7 +48,8 @@ export interface DoorDungeon extends Omit<Dungeon, 'doorStates'> {
   readonly doorStates: DoorStates;
 }
 export type DungeonDocument = Dungeon | DoorDungeon | AuthoredDungeon;
-export type MapDocument = GeneratedMap | DoorDungeon | AuthoredDungeon;
+export type MapDocument = GeneratedMap | DoorDungeon | AuthoredDungeon | AuthoredCourtyard;
+export type EditableMapDocument = DungeonDocument | CourtyardDocument;
 export interface GroupArtworkTransform {
   readonly base: Dungeon;
   readonly group: DungeonGroup;

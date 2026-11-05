@@ -1,3 +1,4 @@
+import { parseCourtyardEdits } from '../engine/object-editor/parse-courtyard-edits';
 import { parseDoorStates, withDoorStates } from '../engine/dungeon-doors';
 import { parseDungeonEdits } from '../engine/object-editor/parse-edits';
 import type { MapDocument } from '../engine/model';
@@ -26,6 +27,7 @@ import { validateCourtyard } from '../engine/courtyard-validation';
 import { isDetailRevision } from '../engine/decoration-revision';
 
 export interface SaveVocabulary {
+  readonly courtyardEditVersions?: readonly number[];
   readonly doorStateVersions?: readonly number[];
   readonly objectEditVersions?: readonly number[];
   readonly towerStairStyles?: readonly string[];
@@ -460,6 +462,19 @@ export function parseSavedMapBody(
     return states ? withDoorStates(parsed, states) : undefined;
   }
   if (isObject(map) && 'objectEdits' in map) {
+    if (map['type'] === 'courtyard') {
+      if (
+        !isObject(map['objectEdits']) ||
+        typeof map['objectEdits']['version'] !== 'number' ||
+        !vocabulary.courtyardEditVersions?.includes(map['objectEdits']['version'])
+      )
+        return undefined;
+      const { objectEdits, ...base } = map;
+      const parsed = parseSavedMapBody(base, vocabulary);
+      return parsed?.type === 'courtyard' && !parsed.objectEdits
+        ? parseCourtyardEdits(parsed, objectEdits)
+        : undefined;
+    }
     if (
       map['type'] !== 'dungeon' ||
       !isObject(map['objectEdits']) ||

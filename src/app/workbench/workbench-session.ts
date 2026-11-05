@@ -1,5 +1,8 @@
+import { courtyardBase } from '../engine/object-editor/courtyard-document';
+import type { CourtyardDocument } from '../engine/object-editor/courtyard-document';
+import { applyEditorCommand } from '../engine/object-editor/editor-commands';
+import type { MapEditResult } from '../engine/object-editor/editor-commands';
 import { toggleDungeonDoor, withDoorStates } from '../engine/dungeon-doors';
-import { applyObjectCommand } from '../engine/object-editor/commands';
 import type { ObjectCommand, EditResult } from '../engine/object-editor/commands';
 import { dungeonBase } from '../engine/object-editor/document';
 import type { Tower } from '../engine/tower';
@@ -31,13 +34,7 @@ import {
   shuffleCourtyardDetails,
 } from '../engine/courtyard-generate';
 import { DEFAULT_FOREST_CHARACTER, DEFAULT_PRESET } from '../engine/model';
-import type {
-  DungeonDocument,
-  ForestClearing,
-  MapDocument,
-  MapType,
-  RuinedCourtyard,
-} from '../engine/model';
+import type { DungeonDocument, ForestClearing, MapDocument, MapType } from '../engine/model';
 import {
   towerDraftForMap,
   dungeonDraftForMap,
@@ -80,14 +77,14 @@ interface SessionState {
   readonly maps: {
     readonly dungeon: DungeonDocument;
     readonly forest: ForestClearing;
-    readonly courtyard: RuinedCourtyard;
+    readonly courtyard: CourtyardDocument;
     readonly tower: Tower;
   };
   readonly drafts: SettingsDrafts;
   readonly histories: {
     readonly dungeon: ShuffleHistory<DungeonDocument>;
     readonly forest: ShuffleHistory<ForestClearing>;
-    readonly courtyard: ShuffleHistory<RuinedCourtyard>;
+    readonly courtyard: ShuffleHistory<CourtyardDocument>;
     readonly tower: ShuffleHistory<Tower>;
   };
 }
@@ -368,15 +365,15 @@ export class WorkbenchSession {
     }));
   }
 
-  editObjects(source: MapDocument, command: ObjectCommand): EditResult {
+  editObjects(source: MapDocument, command: ObjectCommand): MapEditResult {
     const current = this.currentMap();
     if (
-      current.type !== 'dungeon' ||
+      (current.type !== 'dungeon' && current.type !== 'courtyard') ||
       current !== source ||
       this.comparison().selected !== 'current'
     )
       return { ok: false, error: 'The displayed map changed. Select the object again.' };
-    const result = applyObjectCommand(current, command);
+    const result = applyEditorCommand(current, command);
     if (result.ok && result.document !== current) this.accept(result.document, false);
     return result;
   }
@@ -396,12 +393,13 @@ export class WorkbenchSession {
 
   shuffle(): boolean {
     const current = this.currentMap();
-    if (current.type === 'dungeon' && current.objectEdits) return false;
+    if ((current.type === 'dungeon' || current.type === 'courtyard') && current.objectEdits)
+      return false;
     const next =
       current.type === 'tower'
         ? shuffleTowerDetails(current)
         : current.type === 'courtyard'
-          ? shuffleCourtyardDetails(current)
+          ? shuffleCourtyardDetails(courtyardBase(current))
           : current.type === 'dungeon'
             ? withDoorStates(shuffleDetails(dungeonBase(current)), current.doorStates)
             : shuffleForestDetails(current);
@@ -468,7 +466,11 @@ export class WorkbenchSession {
   generate(replaceCustomizations = false): ApplySettingsResult {
     const current = this.currentMap();
     if (!this.pending()) return { ok: true, layoutChanged: false };
-    if (current.type === 'dungeon' && current.objectEdits && !replaceCustomizations)
+    if (
+      (current.type === 'dungeon' || current.type === 'courtyard') &&
+      current.objectEdits &&
+      !replaceCustomizations
+    )
       return {
         ok: false,
         error:
@@ -491,7 +493,7 @@ export class WorkbenchSession {
         if (!result.ok) return result;
         next = result.map;
       } else {
-        next = changeCourtyardAppearance(state.maps.courtyard, parsed.settings);
+        next = changeCourtyardAppearance(courtyardBase(state.maps.courtyard), parsed.settings);
       }
       if (
         next.decoration.fountain !== parsed.settings.fountain ||
@@ -655,7 +657,8 @@ export class WorkbenchSession {
         error: 'That study could not fit. Try another seed or decoration density.',
       };
     const preserveHistory =
-      current.type === 'dungeon' && (!!current.objectEdits || !!current.doorStates);
+      ((current.type === 'dungeon' || current.type === 'courtyard') && !!current.objectEdits) ||
+      (current.type === 'dungeon' && !!current.doorStates);
     this.accept(next, true, preserveHistory);
     return { ok: true, layoutChanged };
   }
@@ -684,9 +687,10 @@ export class WorkbenchSession {
           : map.type === 'courtyard'
             ? {
                 ...state.histories,
-                courtyard: resetDraft
-                  ? { past: [], future: [] }
-                  : recordShuffle(state.histories.courtyard, state.maps.courtyard),
+                courtyard:
+                  resetDraft && !preserveHistory
+                    ? { past: [], future: [] }
+                    : recordShuffle(state.histories.courtyard, state.maps.courtyard),
               }
             : map.type === 'dungeon'
               ? {

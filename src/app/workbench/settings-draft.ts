@@ -1,3 +1,4 @@
+import type { CourtyardDocument } from '../engine/object-editor/courtyard-document';
 import type { Tower, TowerSettings, TowerStairStyle } from '../engine/tower';
 import { validateTowerSettings, towerStairStyle } from '../engine/tower';
 import type {
@@ -14,7 +15,6 @@ import type {
   ForestScene,
   ForestLandmark,
   CourtyardSettings,
-  RuinedCourtyard,
 } from '../engine/model';
 import { ROOM_MAX, ROOM_MIN } from '../engine/model';
 import { validateForestSettings } from '../engine/forest-validation';
@@ -193,7 +193,7 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
   return error ? { ok: false, error } : { ok: true, type: 'dungeon', settings };
 }
 
-export function courtyardDraftForMap(map: RuinedCourtyard): CourtyardDraft {
+export function courtyardDraftForMap(map: CourtyardDocument): CourtyardDraft {
   return {
     type: 'courtyard',
     wagon: Boolean(map.decoration.wagon),

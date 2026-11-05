@@ -1,12 +1,13 @@
 import { HEIGHT, WIDTH, indexOf } from '../engine/model';
-import type { RuinedCourtyard } from '../engine/model';
+import type { CourtyardDrawing } from '../engine/object-editor/courtyard-document';
+import { orderedObjects } from '../engine/object-editor/drawing-order';
 import { Random, deriveSeed } from '../engine/random';
 import type { DrawingContext } from './drawing-context';
 import type { RenderOptions } from './render-options';
 import { drawGrid, path } from './drawing-primitives';
-import { drawProp } from './props';
+import { drawEditorProp } from './editor-prop';
 
-function ground(ctx: DrawingContext, map: RuinedCourtyard): void {
+function ground(ctx: DrawingContext, map: CourtyardDrawing): void {
   const b = map.layout.bounds;
   for (let y = 0; y < HEIGHT; y++)
     for (let x = 0; x < WIDTH; x++) {
@@ -92,7 +93,7 @@ function ground(ctx: DrawingContext, map: RuinedCourtyard): void {
     }
 }
 
-function walls(ctx: DrawingContext, map: RuinedCourtyard): void {
+function walls(ctx: DrawingContext, map: CourtyardDrawing): void {
   const solid = (x: number, y: number) =>
     x >= 0 && y >= 0 && x < WIDTH && y < HEIGHT && !map.layout.tiles[indexOf(x, y)];
   for (let y = 0; y < HEIGHT; y++)
@@ -158,15 +159,26 @@ function walls(ctx: DrawingContext, map: RuinedCourtyard): void {
 
 export function renderCourtyard(
   ctx: DrawingContext,
-  map: RuinedCourtyard,
+  map: CourtyardDrawing,
   options: RenderOptions,
 ): void {
   ctx.save();
   ctx.setTransform(options.pixelsPerTile, 0, 0, options.pixelsPerTile, 0, 0);
   ground(ctx, map);
-  for (const prop of map.decoration.props.filter((p) => !p.blocking)) drawProp(ctx, prop);
+  const items =
+    map.objectEdits === 'resolved'
+      ? map.instances
+      : map.decoration.props.map((prop, i) => ({ id: `base-${i}`, prop }));
+  const defaults = [
+    ...items.filter((item) => !item.prop.blocking),
+    ...items.filter((item) => item.prop.blocking),
+  ];
+  const ordered = orderedObjects(defaults, map.objectEdits === 'resolved' ? map.order : []);
+  const firstBlocking = ordered.findIndex((item) => item.prop.blocking),
+    split = firstBlocking < 0 ? ordered.length : firstBlocking;
+  for (const item of ordered.slice(0, split)) drawEditorProp(ctx, item.prop, map);
   walls(ctx, map);
-  for (const prop of map.decoration.props.filter((p) => p.blocking)) drawProp(ctx, prop);
+  for (const item of ordered.slice(split)) drawEditorProp(ctx, item.prop, map);
   if (options.grid) drawGrid(ctx, '#233b2b30', options.gridOpacity);
   ctx.restore();
 }

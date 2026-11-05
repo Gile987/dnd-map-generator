@@ -35,8 +35,8 @@
   }
   <span
     >{{ readOnly() ? 'Pinned is read-only. Switch to Current to edit.' : map().objectEdits ?
-    'Customized dungeon · save to keep your changes' : 'Generate a map, then make it yours.'
-    }}</span
+    'Customized ' + map().type + ' · save to keep your changes' : 'Generate a map, then make it
+    yours.' }}</span
   >
 </div>
 @if (editing() && !readOnly()) {
@@ -73,7 +73,11 @@
     </button>
   </div>
   @if (paletteOpen()) {
-  <section id="object-catalog" aria-label="Dungeon object catalog" class="catalog">
+  <section
+    id="object-catalog"
+    [attr.aria-label]="map().type === 'dungeon' ? 'Dungeon object catalog' : 'Courtyard object catalog'"
+    class="catalog"
+  >
     <label
       >Find an object<input
         type="search"
@@ -83,9 +87,12 @@
         [disabled]="disabled()"
     /></label>
     <p>
-      Drag an item onto the map, or choose it and tap a destination. Rugs cover a 3 × 3 area; the
-      other catalog objects occupy one square. Objects can sit on rugs, moss, and empty addition
-      floor. Surfaces move independently.
+      Drag an item onto the map, or choose it and tap a destination. @if (map().type === 'dungeon')
+      { Rugs cover a 3 × 3 area; the other catalog objects occupy one square. Objects can sit on
+      rugs, moss, and empty addition floor. } @else { Catalog objects occupy one square. Moss, low
+      rubble, ferns and vines can share ground with other objects. Use any open ground, including
+      the gathering space and approaches, while keeping walking routes connected. } Surfaces move
+      independently.
     </p>
     <div class="object-cards">
       @for (item of palette(); track item.kind) {
@@ -119,9 +126,9 @@
   [grid]="grid()"
   [focused]="focused() && !editing()"
   [editMode]="active()"
-  [exploreHint]="!editing() && !disabled() && !readOnly() ? 'Click or tap a door to open or close it. Door controls below the map provide keyboard access.' : ''"
+  [exploreHint]="map().type === 'dungeon' && !editing() && !disabled() && !readOnly() ? 'Click or tap a door to open or close it. Door controls below the map provide keyboard access.' : ''"
   [exploreTarget]="doorTarget()"
-  [exploreClickable]="!editing() && !disabled() && !readOnly()"
+  [exploreClickable]="map().type === 'dungeon' && !editing() && !disabled() && !readOnly()"
   (exploreHover)="doorHover($event)"
   (exploreClick)="doorClick($event)"
   [selectedBounds]="revealedBounds() ?? (editing() ? selection()?.area : undefined)"
@@ -173,9 +180,11 @@
 <div class="editor-inspector">
   @if (selection(); as item) {
   <p id="object-selection-description" class="selection-label">
-    <strong>{{item.label}}</strong> · {{item.lock || (item.groupId ? 'Move the complete addition.
-    Its objects keep their arrangement; the outline includes reserved space.' : 'Drag on the map, or
-    choose a destination below.')}}
+    <strong>{{item.label}}</strong> · @if (item.lock) { {{item.lock}} } @else if (item.groupId) {
+    Move the complete addition. Its objects keep their arrangement. @if (map().type === 'courtyard')
+    { Only the objects need clear ground; empty space inside the outline is not reserved. } @else {
+    The outline includes reserved space. } } @else { Drag on the map, or choose a destination below.
+    }
   </p>
   <div class="position-controls layer-order" role="group" aria-label="Drawing order">
     <button
@@ -194,7 +203,7 @@
     </button>
     <span>Steps past overlapping objects. Additions stay together. Save to keep the order.</span>
   </div>
-  } @if ((selection() && !selection()?.lock) || placement()) { @if (selection()?.groupId) {
+  } @if ((selection() && !selection()?.lock) || placement()) { @if (selection()?.rotatable) {
   <div class="position-controls rotation-controls" role="group" aria-label="Addition rotation">
     <button
       type="button"
@@ -284,7 +293,7 @@
   </p>
   <p class="editor-message" role="status" aria-live="polite">{{message()}}</p>
 </div>
-} @if (!editing()) {
+} @if (!editing() && map().type === 'dungeon') {
 <details class="door-controls">
   <summary>Doors · {{openDoorCount()}} open / {{doors().length}} total</summary>
   <p id="door-hint">

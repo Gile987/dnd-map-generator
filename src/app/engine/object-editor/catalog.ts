@@ -3,7 +3,7 @@ import type { DungeonPropKind, PropKind } from '../model';
 
 export interface ObjectCapability {
   readonly label: string;
-  readonly category: 'Storage' | 'Stonework' | 'Ground' | 'Protected';
+  readonly category: 'Storage' | 'Stonework' | 'Ground' | 'Vegetation' | 'Protected';
   readonly editable: boolean;
   readonly reason?: string;
 }

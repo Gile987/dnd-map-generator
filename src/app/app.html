@@ -130,7 +130,21 @@
     </p>
   </div>
 
+  @defer (on immediate) {
   <forge-library [map]="map()" [disabled]="busy() !== null" (open)="openSaved($event)" />
+  } @placeholder {
+  <section class="library-deferred" aria-labelledby="library-title" aria-busy="true">
+    <h2 id="library-title" tabindex="-1">Map library</h2>
+    <p role="status">Loading your library…</p>
+  </section>
+  } @error {
+  <section class="library-deferred" aria-labelledby="library-title">
+    <h2 id="library-title" tabindex="-1">Map library</h2>
+    <p role="alert">
+      The library could not load. Refresh to retry. Your displayed map can still be exported.
+    </p>
+  </section>
+  }
 </main>
 
 <footer>

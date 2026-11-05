@@ -1,6 +1,5 @@
+import type { ObjectSelection } from './object-selection';
 import { groupRotation } from './group-rotation';
-import type { Point, Prop, QuarterTurn } from '../model';
-import type { ReservedArea } from '../feature-reservation';
 import { authoredObjectArea } from './object-geometry';
 import { dungeonBase, dungeonInstances } from './document';
 import type { DungeonDocument } from './document';
@@ -8,18 +7,7 @@ import { currentDungeonGroups, individualObjectLock } from './dungeon-authoring-
 import { dungeonCapability } from './catalog';
 import type { DungeonGroupId } from './dungeon-groups';
 
-export interface DungeonSelection {
-  readonly id: string;
-  readonly groupId?: DungeonGroupId;
-  readonly rotation?: QuarterTurn;
-  readonly label: string;
-  readonly position: Point;
-  readonly area: ReservedArea;
-  readonly props: readonly Prop[];
-  readonly members: readonly string[];
-  readonly removable: boolean;
-  readonly lock?: string;
-}
+export type DungeonSelection = ObjectSelection<DungeonGroupId>;
 export function dungeonSelections(document: DungeonDocument): readonly DungeonSelection[] {
   const base = dungeonBase(document),
     items = dungeonInstances(document),
