@@ -41,7 +41,7 @@ export function exportFilename(map: MapDocument, showSecrets = false, towerFloor
     return `encounter-${seed}-${preset}${map.decoration.ritual ? '-ritual-site' : ''}${map.decoration.furniture === 'dining-table' ? '-dining-table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? '-abandoned-camp' : '';
-  return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}${map.decoration.fallenTree ? '-fallen-ancient-tree' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+  return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}${map.decoration.fallenTree ? '-fallen-ancient-tree' : ''}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
 }
 
 export function configuredExportFilename(
@@ -63,7 +63,7 @@ export function configuredExportFilename(
       : `-${preset.id}-${width}x${height}-${preset.pixelsPerTile}px`;
   return exportFilename(map, showSecrets, towerFloor).replace(
     /\.png$/,
-    `${target}-${suffix}${(map.type === 'dungeon' || map.type === 'courtyard') && showLayerIndicators ? '-layers' : ''}.png`,
+    `${target}-${suffix}${map.type !== 'tower' && showLayerIndicators ? '-layers' : ''}.png`,
   );
 }
 

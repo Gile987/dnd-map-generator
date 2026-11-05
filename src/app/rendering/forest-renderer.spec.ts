@@ -35,7 +35,8 @@ describe('forest renderer determinism', () => {
     );
     if (!parsed.ok) throw new Error(parsed.error);
     const map = parsed.maps.find((entry) => entry.map.seed === seed)?.map;
-    if (!map || map.type !== 'forest') throw new Error(`Legacy forest ${seed} is missing`);
+    if (!map || map.type !== 'forest' || !!map.objectEdits)
+      throw new Error(`Legacy forest ${seed} is missing`);
     const canvas = createCanvas(EXPORT_WIDTH, EXPORT_HEIGHT);
     const ctx = canvas.getContext('2d');
     renderForest(ctx, map, { grid, pixelsPerTile: PIXELS_PER_TILE });

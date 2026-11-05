@@ -34,7 +34,7 @@ function saved() {
 test('format 18 preserves a complete tree and freezes earlier vocabularies', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('25.0.0');
+  expect(record.saveFormatVersion).toBe('26.0.0');
   expect(parseSavedMap({ ...record, saveFormatVersion: '18.0.0' })?.map).toBe(record.map);
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
@@ -54,7 +54,7 @@ test('historical Forest models retain absent tree metadata through loading and b
   expect(parsed.maps.length).toBeGreaterThan(0);
   for (const record of parsed.maps) {
     const map = record.map;
-    if (map.type !== 'forest') throw new Error('Expected forest');
+    if (map.type !== 'forest' || !!map.objectEdits) throw new Error('Expected forest');
     expect(map.decoration).not.toHaveProperty('fallenTree');
     expect(parseSavedMap(record)?.map).toBe(map);
     const changed = changeForestAppearance(map, { ...map.decoration, fallenTree: true });
@@ -69,7 +69,7 @@ test('historical Forest models retain absent tree metadata through loading and b
 test('malformed or incomplete tree scenes and footprints are rejected while valid records remain readable', () => {
   const record = saved(),
     map = record.map;
-  if (map.type !== 'forest') throw new Error('Expected forest');
+  if (map.type !== 'forest' || !!map.objectEdits) throw new Error('Expected forest');
   const body = map.decoration.props.find((p) => p.kind === 'fallen_trunk');
   if (!body) throw new Error('Missing trunk');
   const candidates: unknown[] = [];

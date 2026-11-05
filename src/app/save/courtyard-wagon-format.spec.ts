@@ -31,7 +31,7 @@ function saved() {
 test('format 17 round-trips a complete wagon and freezes all earlier vocabularies', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('25.0.0');
+  expect(record.saveFormatVersion).toBe('26.0.0');
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 16; v++) {

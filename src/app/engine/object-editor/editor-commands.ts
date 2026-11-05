@@ -1,3 +1,4 @@
+import { applyForestCommand, proposeForestCommand } from './forest-commands';
 import { applyObjectCommand, proposeObjectCommand } from './commands';
 import { applyCourtyardCommand, proposeCourtyardCommand } from './courtyard-commands';
 import type { ObjectCommand, ObjectEditResult } from './object-command';
@@ -10,7 +11,9 @@ export function applyEditorCommand(
 ): MapEditResult {
   return map.type === 'dungeon'
     ? applyObjectCommand(map, command)
-    : applyCourtyardCommand(map, command);
+    : map.type === 'forest'
+      ? applyForestCommand(map, command)
+      : applyCourtyardCommand(map, command);
 }
 export function proposeEditorCommand(
   map: EditableMapDocument,
@@ -18,5 +21,7 @@ export function proposeEditorCommand(
 ): MapEditResult {
   return map.type === 'dungeon'
     ? proposeObjectCommand(map, command)
-    : proposeCourtyardCommand(map, command);
+    : map.type === 'forest'
+      ? proposeForestCommand(map, command)
+      : proposeCourtyardCommand(map, command);
 }

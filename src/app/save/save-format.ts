@@ -4,7 +4,7 @@ import type { MapDocument } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '25.0.0';
+export const SAVE_FORMAT_VERSION = '26.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -239,8 +239,12 @@ const FORMAT_25_VOCABULARY: SaveVocabulary = {
   courtyardEditVersions: [1],
 };
 
+const FORMAT_26_VOCABULARY: SaveVocabulary = { ...FORMAT_25_VOCABULARY, forestEditVersions: [1] };
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '26.0.0':
+      return FORMAT_26_VOCABULARY;
     case '25.0.0':
       return FORMAT_25_VOCABULARY;
     case '24.0.0':
@@ -432,7 +436,7 @@ export function mapSummary(map: MapDocument): string {
     return `${map.objectEdits ? 'Customized · ' : ''}${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? ' · Abandoned camp' : '';
-  return `${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene}${map.decoration.fallenTree ? ' · Fallen ancient tree' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
+  return `${map.objectEdits ? 'Customized · ' : ''}${map.decoration.character}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene}${map.decoration.fallenTree ? ' · Fallen ancient tree' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
 }
 
 export function uniqueById(

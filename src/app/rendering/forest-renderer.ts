@@ -1,38 +1,15 @@
-import { HEIGHT, WIDTH, indexOf, isForestPropKind, isWalkable } from '../engine/model';
-import type {
-  ForestCharacter,
-  ForestClearing,
-  ForestLayout,
-  ForestPropKind,
-} from '../engine/model';
+import type { ForestDrawing } from '../engine/object-editor/forest-document';
+import { forestDrawsBelowObjects } from '../engine/object-editor/forest-catalog';
+import { orderedObjects } from '../engine/object-editor/drawing-order';
+import { drawEditorProp } from './editor-prop';
+import { HEIGHT, WIDTH, indexOf, isWalkable } from '../engine/model';
+import type { ForestCharacter, ForestLayout } from '../engine/model';
 import { Random, deriveSeed } from '../engine/random';
-import { drawProp } from './props';
-import { FOREST_PALETTES } from './forest-palette';
 import type { DrawingContext } from './drawing-context';
 import type { RenderOptions } from './render-options';
 import { boundaryLoops, traceBoundaries } from './boundaries';
 import { drawGrid } from './drawing-primitives';
 import { drawForestSurface } from './forest-surface';
-
-const PROP_LAYERS: Readonly<Record<ForestPropKind, 'ground' | 'object'>> = {
-  tree: 'object',
-  boulder: 'object',
-  fern: 'ground',
-  mushroom: 'ground',
-  bush: 'ground',
-  log: 'object',
-  stump: 'object',
-  flower: 'ground',
-  tent: 'object',
-  bedroll: 'ground',
-  fire_ring: 'ground',
-  supply_bundle: 'object',
-  standing_stone: 'object',
-  fallen_trunk: 'object',
-  fallen_roots: 'object',
-  fallen_branch: 'ground',
-  fallen_fungi: 'ground',
-};
 
 interface ForestAtmosphere {
   readonly background: string;
@@ -108,7 +85,7 @@ const atmospheres: Readonly<Record<ForestCharacter, ForestAtmosphere>> = {
   },
 };
 
-function forestFloor(ctx: DrawingContext, map: ForestClearing, atmo: ForestAtmosphere): void {
+function forestFloor(ctx: DrawingContext, map: ForestDrawing, atmo: ForestAtmosphere): void {
   const routeSet = new Set(map.layout.route);
   const [pr, pg, pb] = atmo.path;
   const [gr, gg, gb] = atmo.grass;
@@ -232,11 +209,10 @@ function clearingEdges(
 
 export function renderForest(
   ctx: DrawingContext,
-  map: ForestClearing,
+  map: ForestDrawing,
   options: RenderOptions,
 ): void {
   const atmo = atmospheres[map.decoration.character];
-  const palette = FOREST_PALETTES[map.decoration.character];
   ctx.save();
   ctx.setTransform(options.pixelsPerTile, 0, 0, options.pixelsPerTile, 0, 0);
 
@@ -258,15 +234,14 @@ export function renderForest(
   drawForestSurface(ctx, map);
   clearingEdges(ctx, map.layout, atmo.contour);
 
-  const underProps = map.decoration.props.filter(
-    (prop) => isForestPropKind(prop.kind) && PROP_LAYERS[prop.kind] === 'ground',
-  );
-  for (const prop of underProps) drawProp(ctx, prop, palette);
-
-  const overProps = map.decoration.props.filter(
-    (prop) => isForestPropKind(prop.kind) && PROP_LAYERS[prop.kind] === 'object',
-  );
-  for (const prop of overProps) drawProp(ctx, prop, palette);
+  const items =
+    map.objectEdits === 'resolved'
+      ? orderedObjects(map.instances, map.order)
+      : [
+          ...map.decoration.props.filter((prop) => forestDrawsBelowObjects(prop.kind)),
+          ...map.decoration.props.filter((prop) => !forestDrawsBelowObjects(prop.kind)),
+        ].map((prop, i) => ({ id: 'draw-' + i, prop }));
+  for (const item of items) drawEditorProp(ctx, item.prop, map);
 
   if (options.grid) drawGrid(ctx, atmo.grid, options.gridOpacity);
   ctx.restore();

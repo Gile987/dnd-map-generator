@@ -1,3 +1,4 @@
+import type { ForestCharacter } from '../../engine/model';
 import { describeObjectLayer } from '../../rendering/dungeon-layer-description';
 import { doorIsOpen, dungeonDoorAt, dungeonDoors } from '../../engine/dungeon-doors';
 import type { DoorToggleRequest } from '../../engine/dungeon-doors';
@@ -239,6 +240,10 @@ export class ObjectEditor {
       'Drawing order changed. Movement blocking is unchanged. Undo restores the previous order.',
     );
   }
+  protected readonly forestCharacter = computed<ForestCharacter | undefined>(() => {
+    const map = this.map();
+    return map.type === 'forest' ? map.decoration.character : undefined;
+  });
   protected readonly palette = computed(() =>
     editorPalette(this.map()).filter((item) =>
       `${item.label} ${item.category}`.toLowerCase().includes(this.query().trim().toLowerCase()),
@@ -330,7 +335,9 @@ export class ObjectEditor {
         ? 'Valid position. Drop or choose Place object. Escape cancels.'
         : this.map().type === 'courtyard'
           ? 'Select an object or a complete addition. Use any open ground; standing walls stay fixed.'
-          : 'Select an object or a complete addition. Walls, doors and architectural markers stay fixed.';
+          : this.map().type === 'forest'
+            ? 'Select an object or a complete addition. Trees stay fixed; solid objects need walkable ground and connected path entrances.'
+            : 'Select an object or a complete addition. Walls, doors and architectural markers stay fixed.';
   });
   private readonly preview = viewChild.required(Preview);
   private readonly layerDetails = viewChild<ElementRef<HTMLElement>>('layerDetails');

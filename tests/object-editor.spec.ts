@@ -195,7 +195,12 @@ test('catalog insertion, invalid placement and cancellation keep accepted object
   expect((await snapshot(page, 'Restored insertion')).map).toEqual(accepted.map);
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
   await settled(page);
-  await expect(page.getByRole('button', { name: 'Edit objects', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit objects', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Explore', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('.placement-status')).toHaveCount(0);
   await page.getByRole('radio', { name: 'Dungeon', exact: true }).check();
   await settled(page);
   expect((await snapshot(page, 'Returned')).map).toEqual(accepted.map);

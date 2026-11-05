@@ -23,7 +23,8 @@ function legacy(character: ForestCharacter): ForestClearing {
   const map = parsed.maps.find(
     (record) => record.map.type === 'forest' && record.map.decoration.character === character,
   )?.map;
-  if (!map || map.type !== 'forest') throw new Error('Missing captured forest');
+  if (!map || map.type !== 'forest' || !!map.objectEdits)
+    throw new Error('Missing captured forest');
   return map;
 }
 

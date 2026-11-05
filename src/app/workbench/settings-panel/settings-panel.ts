@@ -1,3 +1,4 @@
+import { isEditableMap } from '../../engine/object-editor/editor-view';
 import { TOWER_STAIR_STYLES } from '../../engine/tower';
 import { LANDMARK_CATALOG, landmarkIdsFor } from '../../engine/landmark-catalog';
 import {
@@ -59,7 +60,7 @@ export class SettingsPanel {
   readonly map = input.required<MapDocument>();
   protected readonly customized = computed(() => {
     const map = this.map();
-    return (map.type === 'dungeon' || map.type === 'courtyard') && !!map.objectEdits;
+    return isEditableMap(map) && !!map.objectEdits;
   });
   readonly draft = input.required<SettingsDraft>();
   readonly pending = input.required<boolean>();

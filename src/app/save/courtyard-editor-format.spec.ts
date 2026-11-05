@@ -35,7 +35,7 @@ test('format 25 explicitly supports Courtyard edits while canonical generators a
     'court-edited',
     '2026-11-03T12:00:00Z',
   );
-  expect(saved.saveFormatVersion).toBe('25.0.0');
+  expect(saved.saveFormatVersion).toBe('26.0.0');
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   for (let v = 1; v <= 24; v++) {

@@ -1,3 +1,4 @@
+import { resolveForest } from '../engine/object-editor/forest-document';
 import { resolveCourtyard } from '../engine/object-editor/courtyard-document';
 import { drawObjectLayerIndicators } from './dungeon-layer-indicators';
 import { resolveDungeon } from '../engine/object-editor/document';
@@ -18,7 +19,9 @@ export function renderMap(ctx: DrawingContext, map: MapDocument, options: Render
       if (options.showLayerIndicators) drawObjectLayerIndicators(ctx, map, options.pixelsPerTile);
       return;
     case 'forest':
-      return renderForest(ctx, map, options);
+      renderForest(ctx, resolveForest(map), options);
+      if (options.showLayerIndicators) drawObjectLayerIndicators(ctx, map, options.pixelsPerTile);
+      return;
     case 'courtyard':
       renderCourtyard(ctx, resolveCourtyard(map), options);
       if (options.showLayerIndicators) drawObjectLayerIndicators(ctx, map, options.pixelsPerTile);

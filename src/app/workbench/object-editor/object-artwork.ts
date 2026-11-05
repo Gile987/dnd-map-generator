@@ -1,11 +1,13 @@
+import { FOREST_PALETTES } from '../../rendering/forest-palette';
 import { Directive, computed, input } from '@angular/core';
-import type { PropKind } from '../../engine/model';
+import type { PropKind, ForestCharacter } from '../../engine/model';
 import { isBlockingProp } from '../../engine/model';
 import { drawProp } from '../../rendering/props';
 
 @Directive({ selector: 'img[forgeObjectArtwork]', host: { '[src]': 'source()' } })
 export class ObjectArtwork {
   readonly kind = input.required<PropKind>({ alias: 'forgeObjectArtwork' });
+  readonly forestCharacter = input<ForestCharacter | undefined>();
   protected readonly source = computed(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 80;
@@ -18,13 +20,18 @@ export class ObjectArtwork {
     ctx.translate(40, 40);
     ctx.scale(scale, scale);
     ctx.translate(-0.5, -0.5);
-    drawProp(ctx, {
-      kind: this.kind(),
-      x: 0,
-      y: 0,
-      blocking: isBlockingProp(this.kind()),
-      variation: 0.5,
-    });
+    const character = this.forestCharacter();
+    drawProp(
+      ctx,
+      {
+        kind: this.kind(),
+        x: 0,
+        y: 0,
+        blocking: isBlockingProp(this.kind()),
+        variation: 0.5,
+      },
+      character ? FOREST_PALETTES[character] : undefined,
+    );
     return canvas.toDataURL();
   });
 }
