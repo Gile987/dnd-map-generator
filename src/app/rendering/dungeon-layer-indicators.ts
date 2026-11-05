@@ -1,27 +1,23 @@
-import { describeDungeonLayer } from './dungeon-layer-description';
+import { describeObjectLayer } from './dungeon-layer-description';
 import { placeLayerLabels } from './layer-label-layout';
 import { WIDTH, HEIGHT } from '../engine/model';
-import { dungeonInstances } from '../engine/object-editor/document';
-import type { DungeonDocument } from '../engine/model';
-import { dungeonSelections } from '../engine/object-editor/dungeon-selection';
+import type { EditableMapDocument } from '../engine/model';
 import {
-  dungeonOverlaps,
-  orderedDungeonObjects,
-} from '../engine/object-editor/dungeon-drawing-order';
+  editorOrderedObjects,
+  editorOverlaps,
+  editorObjectLabel,
+} from '../engine/object-editor/editor-view';
 import { authoredObjectArea } from '../engine/object-editor/object-geometry';
 import type { DrawingContext } from './drawing-context';
 
 /** Export-only annotations. Preview controls and library thumbnails stay separate. */
-export function drawDungeonLayerIndicators(
+export function drawObjectLayerIndicators(
   ctx: DrawingContext,
-  map: DungeonDocument,
+  map: EditableMapDocument,
   pixelsPerTile: number,
 ): void {
-  const items = orderedDungeonObjects(
-    dungeonInstances(map),
-    map.objectEdits?.version === 5 ? map.objectEdits.order : [],
-  );
-  const overlaps = dungeonOverlaps(items, dungeonSelections(map));
+  const items = editorOrderedObjects(map),
+    overlaps = editorOverlaps(map);
   ctx.save();
   // Measure annotation fonts at the actual output resolution. Some rasterizers
   // round subpixel font metrics before applying a canvas transform.
@@ -41,7 +37,10 @@ export function drawDungeonLayerIndicators(
   ctx.font = `bold ${0.2 * pixelsPerTile}px sans-serif`;
   ctx.textAlign = 'center';
   const descriptions = new Map(
-    overlaps.map((overlap) => [overlap.id, describeDungeonLayer(items, overlap.underneath).text]),
+    overlaps.map((overlap) => [
+      overlap.id,
+      describeObjectLayer(items, overlap.underneath, (kind) => editorObjectLabel(map, kind)).text,
+    ]),
   );
   const labelWidth = Math.max(
     1.72 * pixelsPerTile,

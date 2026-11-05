@@ -114,12 +114,12 @@
     }
   </ul>
 </div>
-} @if (dungeon(); as dungeonMap) { @defer (on immediate) {
+} @if (editable(); as editableMap) { @defer (on immediate) {
 <forge-object-editor
   (editingChanged)="editorMode.set($event)"
   [history]="history()"
   (historyRequested)="historyRequested.emit($event)"
-  [map]="dungeonMap"
+  [map]="editableMap"
   [grid]="grid()"
   [focused]="focused()"
   [disabled]="disabled()"

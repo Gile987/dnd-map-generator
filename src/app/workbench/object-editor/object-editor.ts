@@ -1,13 +1,18 @@
-import { describeDungeonLayer } from '../../rendering/dungeon-layer-description';
+import { describeObjectLayer } from '../../rendering/dungeon-layer-description';
 import { doorIsOpen, dungeonDoorAt, dungeonDoors } from '../../engine/dungeon-doors';
 import type { DoorToggleRequest } from '../../engine/dungeon-doors';
 import type { ExploreClick, ExplorePoint } from '../../preview/preview';
 import {
-  orderedDungeonObjects,
-  dungeonOverlaps,
-  stepDungeonOrder,
-} from '../../engine/object-editor/dungeon-drawing-order';
-import { dungeonCapability } from '../../engine/object-editor/catalog';
+  editorInstances,
+  editorSelections,
+  editorOrderedObjects,
+  editorOverlaps,
+  editorOrderStep,
+  editorObjectLabel,
+  editorPalette,
+  resolveEditorMap,
+} from '../../engine/object-editor/editor-view';
+import type { EditorSelection } from '../../engine/object-editor/editor-view';
 import {
   afterNextRender,
   ElementRef,
@@ -24,14 +29,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { isBlockingProp } from '../../engine/model';
-import type { DungeonDocument, MapDocument, Point, PropKind } from '../../engine/model';
-import { DUNGEON_PALETTE_V2 as DUNGEON_PALETTE } from '../../engine/object-editor/catalog';
+import type { EditableMapDocument, MapDocument, Point, PropKind } from '../../engine/model';
 import { quarterTurn } from '../../engine/object-editor/group-rotation';
-import { applyObjectCommand, proposeObjectCommand } from '../../engine/object-editor/commands';
+import {
+  applyEditorCommand,
+  proposeEditorCommand,
+} from '../../engine/object-editor/editor-commands';
 import type { ObjectCommand } from '../../engine/object-editor/commands';
-import { dungeonInstances, resolveDungeon } from '../../engine/object-editor/document';
-import { dungeonSelections } from '../../engine/object-editor/dungeon-selection';
-import type { DungeonSelection } from '../../engine/object-editor/dungeon-selection';
 import { areaContains } from '../../engine/feature-reservation';
 import { authoredObjectArea } from '../../engine/object-editor/object-geometry';
 import { Preview } from '../../preview/preview';
@@ -43,7 +47,7 @@ export interface ObjectEditRequest {
   readonly command: ObjectCommand;
 }
 interface Placement {
-  readonly source: DungeonDocument;
+  readonly source: EditableMapDocument;
   readonly command: Extract<ObjectCommand, { readonly target: Point }>;
 }
 
@@ -62,7 +66,7 @@ interface Placement {
   },
 })
 export class ObjectEditor {
-  readonly map = input.required<DungeonDocument>();
+  readonly map = input.required<EditableMapDocument>();
   readonly grid = input(true);
   readonly focused = input(false);
   readonly disabled = input(false);
@@ -72,21 +76,30 @@ export class ObjectEditor {
   readonly editingChanged = output<boolean>();
   readonly history = input({ undo: 0, redo: 0, limit: 20 });
   readonly historyRequested = output<'undo' | 'redo'>();
-  protected readonly doors = computed(() => dungeonDoors(this.map().layout));
-  protected readonly openDoorCount = computed(() => this.map().doorStates?.open.length ?? 0);
+  private readonly doorMap = computed(() => {
+    const map = this.map();
+    return map.type === 'dungeon' ? map : undefined;
+  });
+  protected readonly doors = computed(() => {
+    const map = this.doorMap();
+    return map ? dungeonDoors(map.layout) : [];
+  });
+  protected readonly openDoorCount = computed(() => this.doorMap()?.doorStates?.open.length ?? 0);
   protected readonly chosenDoorId = signal('');
   protected readonly chosenDoor = computed(
     () => this.doors().find((door) => door.id === this.chosenDoorId()) ?? this.doors()[0],
   );
   protected readonly chosenDoorOpen = computed(() => {
-    const door = this.chosenDoor();
-    return !!door && doorIsOpen(this.map(), door.id);
+    const door = this.chosenDoor(),
+      map = this.doorMap();
+    return !!door && !!map && doorIsOpen(map, door.id);
   });
   private readonly hoveredDoor = signal<{ source: MapDocument; id: string } | undefined>(undefined);
   protected readonly doorTarget = computed(() => {
     const hover = this.hoveredDoor(),
-      map = this.map();
+      map = this.doorMap();
     if (
+      !map ||
       this.editing() ||
       this.disabled() ||
       this.readOnly() ||
@@ -106,29 +119,35 @@ export class ObjectEditor {
     };
   });
   protected doorHover(event: ExplorePoint): void {
+    const map = this.doorMap();
     const id =
+      map &&
       !this.editing() &&
       !this.disabled() &&
       !this.readOnly() &&
-      event.source === this.map() &&
+      event.source === map &&
       event.point
-        ? dungeonDoorAt(this.map().layout, event.point, event.padding)
+        ? dungeonDoorAt(map.layout, event.point, event.padding)
         : undefined;
     this.hoveredDoor.set(id ? { source: event.source, id } : undefined);
   }
   protected doorClick(event: ExploreClick): void {
-    if (this.editing() || this.disabled() || this.readOnly() || event.source !== this.map()) return;
-    const id = dungeonDoorAt(this.map().layout, event.point, event.padding);
-    if (id && id === dungeonDoorAt(this.map().layout, event.start, event.padding))
-      this.doorToggleRequested.emit({ source: event.source, id });
+    const map = this.doorMap();
+    if (!map || this.editing() || this.disabled() || this.readOnly() || event.source !== map)
+      return;
+    const id = dungeonDoorAt(map.layout, event.point, event.padding);
+    if (id && id === dungeonDoorAt(map.layout, event.start, event.padding))
+      this.doorToggleRequested.emit({ source: map, id });
   }
   protected toggleChosenDoor(): void {
-    const door = this.chosenDoor();
-    if (door && !this.editing() && !this.disabled() && !this.readOnly())
-      this.doorToggleRequested.emit({ source: this.map(), id: door.id });
+    const door = this.chosenDoor(),
+      map = this.doorMap();
+    if (map && door && !this.editing() && !this.disabled() && !this.readOnly())
+      this.doorToggleRequested.emit({ source: map, id: door.id });
   }
   protected isDoorOpen(id: string): boolean {
-    return doorIsOpen(this.map(), id);
+    const map = this.doorMap();
+    return !!map && doorIsOpen(map, id);
   }
   protected readonly editing = signal(false);
   readonly isEditing = computed(() => this.editing() && !this.readOnly());
@@ -140,18 +159,12 @@ export class ObjectEditor {
   protected readonly selected = signal('');
   protected readonly placement = signal<Placement | undefined>(undefined);
   protected readonly message = signal('');
-  protected readonly instances = computed(() => dungeonSelections(this.map()));
+  protected readonly instances = computed(() => editorSelections(this.map()));
   protected readonly selection = computed(() =>
     this.instances().find((item) => item.id === this.selected()),
   );
-  protected readonly ordered = computed(() => {
-    const map = this.map();
-    return orderedDungeonObjects(
-      dungeonInstances(map),
-      map.objectEdits?.version === 5 ? map.objectEdits.order : [],
-    );
-  });
-  protected readonly overlaps = computed(() => dungeonOverlaps(this.ordered(), this.instances()));
+  protected readonly ordered = computed(() => editorOrderedObjects(this.map()));
+  protected readonly overlaps = computed(() => editorOverlaps(this.map()));
   protected readonly layerId = signal('');
   protected readonly layerInfo = computed(() => {
     const overlap = this.overlaps().find((item) => item.id === this.layerId());
@@ -165,7 +178,7 @@ export class ObjectEditor {
             {
               id,
               selectionId: unit.id,
-              label: dungeonCapability(item.prop.kind, 2)?.label ?? item.prop.kind,
+              label: editorObjectLabel(this.map(), item.prop.kind),
               position: item.prop,
               area: authoredObjectArea(item.prop),
               group: unit.groupId ? unit.label : undefined,
@@ -177,14 +190,16 @@ export class ObjectEditor {
   protected readonly layerBadges = computed(() =>
     this.overlaps().flatMap((overlap) => {
       const item = this.ordered().find((item) => item.id === overlap.id);
-      const names = describeDungeonLayer(this.ordered(), overlap.underneath);
+      const names = describeObjectLayer(this.ordered(), overlap.underneath, (kind) =>
+        editorObjectLabel(this.map(), kind),
+      );
       return item
         ? [
             {
               id: overlap.id,
               text: names.text,
               bounds: authoredObjectArea(item.prop),
-              label: `${dungeonCapability(item.prop.kind, 2)?.label ?? item.prop.kind}: ${names.description} · column ${item.prop.x + 1}, row ${item.prop.y + 1}`,
+              label: `${editorObjectLabel(this.map(), item.prop.kind)}: ${names.description} · column ${item.prop.x + 1}, row ${item.prop.y + 1}`,
             },
           ]
         : [];
@@ -212,7 +227,7 @@ export class ObjectEditor {
     if (!item || item.lock || this.placement()) return false;
     // Pass the explicit current order: defaults would otherwise sort surfaces again.
     const current = this.ordered().map((item) => item.id);
-    const step = stepDungeonOrder(this.ordered(), current, this.instances(), item.id, direction);
+    const step = editorOrderStep(this.map(), item.id, direction);
     return step.some((id, i) => id !== current[i]);
   }
   protected order(direction: 'forward' | 'backward'): void {
@@ -225,13 +240,13 @@ export class ObjectEditor {
     );
   }
   protected readonly palette = computed(() =>
-    DUNGEON_PALETTE.filter((item) =>
+    editorPalette(this.map()).filter((item) =>
       `${item.label} ${item.category}`.toLowerCase().includes(this.query().trim().toLowerCase()),
     ),
   );
   protected readonly verdict = computed(() => {
     const placement = this.placement();
-    return placement ? applyObjectCommand(placement.source, placement.command) : undefined;
+    return placement ? applyEditorCommand(placement.source, placement.command) : undefined;
   });
   protected readonly ghost = computed(() => {
     const placement = this.placement(),
@@ -239,17 +254,13 @@ export class ObjectEditor {
     if (!placement) return undefined;
     const command = placement.command;
     if (command.kind === 'move-group') {
-      const proposal = proposeObjectCommand(placement.source, command);
+      const proposal = proposeEditorCommand(placement.source, command);
       if (!proposal.ok) return undefined;
-      const group = dungeonSelections(proposal.document).find(
-        (item) => item.groupId === command.id,
-      );
+      const group = editorSelections(proposal.document).find((item) => item.groupId === command.id);
       if (!group) return undefined;
-      const drawing = resolveDungeon(proposal.document);
+      const drawing = resolveEditorMap(proposal.document);
       const items =
-        drawing.objectEdits === 'resolved'
-          ? drawing.instances
-          : dungeonInstances(proposal.document);
+        drawing.objectEdits === 'resolved' ? drawing.instances : editorInstances(proposal.document);
       return {
         props: items.filter((item) => group.members.includes(item.id)).map((item) => item.prop),
         bounds: group.area,
@@ -262,7 +273,7 @@ export class ObjectEditor {
     }
     const prop =
       command.kind === 'move'
-        ? dungeonInstances(placement.source).find((p) => p.id === command.id)?.prop
+        ? editorInstances(placement.source).find((p) => p.id === command.id)?.prop
         : {
             kind: command.propKind,
             x: 0,
@@ -287,7 +298,7 @@ export class ObjectEditor {
   });
   protected rotate(direction: -1 | 1): void {
     const item = this.selection();
-    if (!this.active() || !item?.groupId || item.lock) return;
+    if (!this.active() || !item?.groupId || !item.rotatable || item.lock) return;
     this.grab = undefined;
     this.placement.set({
       source: this.map(),
@@ -317,7 +328,9 @@ export class ObjectEditor {
       ? verdict.error
       : this.placement()
         ? 'Valid position. Drop or choose Place object. Escape cancels.'
-        : 'Select an object or a complete addition. Walls, doors and architectural markers stay fixed.';
+        : this.map().type === 'courtyard'
+          ? 'Select an object or a complete addition. Use any open ground; standing walls stay fixed.'
+          : 'Select an object or a complete addition. Walls, doors and architectural markers stay fixed.';
   });
   private readonly preview = viewChild.required(Preview);
   private readonly layerDetails = viewChild<ElementRef<HTMLElement>>('layerDetails');
@@ -327,7 +340,7 @@ export class ObjectEditor {
     { id: number; x: number; y: number; kind: PropKind; dragging: boolean } | undefined;
   private suppressClick = false;
   private keepSelection = false;
-  private previousMap?: DungeonDocument;
+  private previousMap?: EditableMapDocument;
 
   constructor() {
     effect(() => this.editingChanged.emit(this.isEditing()));
@@ -336,6 +349,11 @@ export class ObjectEditor {
       this.readOnly();
       untracked(() => {
         if (this.previousMap?.layout !== map.layout) this.layerId.set('');
+        if (this.previousMap && this.previousMap.type !== map.type) {
+          this.editing.set(false);
+          this.paletteOpen.set(false);
+          this.query.set('');
+        }
         this.previousMap = map;
         this.cancel();
         if (!this.keepSelection || !this.instances().some((item) => item.id === this.selected()))
@@ -435,7 +453,7 @@ export class ObjectEditor {
       : { x: Math.floor(point.x), y: Math.floor(point.y) };
     this.placement.set({ ...placement, command: { ...placement.command, target } });
   }
-  private moveCommand(item: DungeonSelection | undefined, target: Point): Placement['command'] {
+  private moveCommand(item: EditorSelection | undefined, target: Point): Placement['command'] {
     return item?.groupId
       ? { kind: 'move-group', id: item.groupId, target: { x: target.x, y: target.y } }
       : { kind: 'move', id: item?.id ?? '', target: { x: target.x, y: target.y } };

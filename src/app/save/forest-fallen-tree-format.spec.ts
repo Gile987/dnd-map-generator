@@ -34,7 +34,7 @@ function saved() {
 test('format 18 preserves a complete tree and freezes earlier vocabularies', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('24.0.0');
+  expect(record.saveFormatVersion).toBe('25.0.0');
   expect(parseSavedMap({ ...record, saveFormatVersion: '18.0.0' })?.map).toBe(record.map);
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });

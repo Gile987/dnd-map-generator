@@ -1,4 +1,8 @@
 import { validCommand } from '../../../scripts/editor-test-support';
+import {
+  courtyardEditorFixture,
+  acceptCourtyard,
+} from '../../../scripts/courtyard-editor-test-support';
 import { applyObjectCommand } from '../engine/object-editor/commands';
 import '@angular/compiler';
 import { Injector } from '@angular/core';
@@ -804,6 +808,58 @@ test('future door states remain recoverable and cannot be silently discarded by 
   expect(store.canWrite()).toBe(false);
   expect(store.recoveryData()).toBe(raw);
   await expect(store.add(original.map, 'Do not discard doors', thumbnail)).rejects.toThrow();
+  expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
+  expect(storage.setItem).not.toHaveBeenCalled();
+});
+
+test('Courtyard edits survive failed writes, retry, cross-store reads and exported backups', async () => {
+  const storage = stubStorage(),
+    store = createStore(),
+    before = store.saved(),
+    disk = storage.values.get(SAVE_STORAGE_KEY);
+  const edited = acceptCourtyard(courtyardEditorFixture(), {
+    kind: 'add',
+    propKind: 'moss',
+    target: { x: 1, y: 1 },
+  });
+  storage.setItem.mockImplementationOnce(() => {
+    throw new DOMException('Full', 'QuotaExceededError');
+  });
+  await expect(store.add(edited, 'Edited courtyard', thumbnail)).rejects.toThrow('could not write');
+  expect(store.saved()).toBe(before);
+  expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(disk);
+  const saved = await store.add(edited, 'Edited courtyard', thumbnail);
+  expect(
+    createStore()
+      .saved()
+      .find((entry) => entry.id === saved.id)?.map,
+  ).toEqual(edited);
+  expect(parseBundle(store.exportMap(saved.id).json)).toMatchObject({
+    ok: true,
+    maps: [{ map: edited }],
+  });
+});
+
+test('unknown Courtyard editing versions remain recoverable and prevent later library mutation', async () => {
+  const map = acceptCourtyard(courtyardEditorFixture(), {
+    kind: 'add',
+    propKind: 'moss',
+    target: { x: 1, y: 1 },
+  });
+  const future = {
+    ...original,
+    id: 'future-courtyard',
+    map: { ...map, objectEdits: { ...map.objectEdits, version: 2 } },
+  };
+  const raw = JSON.stringify([original, future]),
+    storage = stubStorage(raw),
+    store = createStore();
+  expect(store.saved()).toEqual([original]);
+  expect(store.canWrite()).toBe(false);
+  expect(store.recoveryData()).toBe(raw);
+  await expect(
+    store.add(original.map, 'Do not discard courtyard edits', thumbnail),
+  ).rejects.toThrow();
   expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
   expect(storage.setItem).not.toHaveBeenCalled();
 });

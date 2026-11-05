@@ -140,6 +140,7 @@ export interface CourtyardLayout {
 }
 
 export interface RuinedCourtyard {
+  readonly objectEdits?: never;
   readonly type: 'courtyard';
   readonly version: string;
   readonly seed: string;
@@ -318,7 +319,7 @@ export interface ForestClearing {
 
 export type GeneratedMap = Dungeon | ForestClearing | RuinedCourtyard | Tower;
 
-export type { MapDocument, DungeonDocument } from './object-editor/document';
+export type { MapDocument, DungeonDocument, EditableMapDocument } from './object-editor/document';
 
 export type GenerationResult =
   { readonly ok: true; readonly map: Dungeon } | { readonly ok: false; readonly error: string };

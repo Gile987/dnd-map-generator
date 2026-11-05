@@ -59,7 +59,7 @@ export class SettingsPanel {
   readonly map = input.required<MapDocument>();
   protected readonly customized = computed(() => {
     const map = this.map();
-    return map.type === 'dungeon' && !!map.objectEdits;
+    return (map.type === 'dungeon' || map.type === 'courtyard') && !!map.objectEdits;
   });
   readonly draft = input.required<SettingsDraft>();
   readonly pending = input.required<boolean>();

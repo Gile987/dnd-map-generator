@@ -1,17 +1,20 @@
 import type { Point, Prop, QuarterTurn } from '../model';
 import type { ReservedArea } from '../feature-reservation';
 import { propBounds } from '../prop-footprint';
-import type { DungeonGroup, GroupMove } from './dungeon-groups';
+import type { ObjectGroup } from './object-group';
+import type { DungeonGroupId } from './dungeon-groups';
+type GroupPosition = Point & { readonly rotation?: QuarterTurn };
 
-export interface GroupTransform extends GroupMove {
+export interface GroupTransform extends Point {
+  readonly id: DungeonGroupId;
   /** Clockwise quarter turns relative to the immutable generated arrangement. */
   readonly rotation: QuarterTurn;
 }
 export function quarterTurn(value: number): QuarterTurn {
   return (((value % 4) + 4) % 4) as QuarterTurn;
 }
-export function groupRotation(move?: GroupMove | GroupTransform): QuarterTurn {
-  return move && 'rotation' in move ? move.rotation : 0;
+export function groupRotation(move?: GroupPosition): QuarterTurn {
+  return move?.rotation ?? 0;
 }
 /** Rotate continuous local coordinates inside a rectangle, anchored at its top left. */
 export function rotateGroupPoint(point: Point, area: ReservedArea, rotation: QuarterTurn): Point {
@@ -26,10 +29,10 @@ export function rotateGroupPoint(point: Point, area: ReservedArea, rotation: Qua
       return { x: point.y, y: area.width - point.x };
   }
 }
-export function transformedGroup(
-  group: DungeonGroup,
-  move?: GroupMove | GroupTransform,
-): DungeonGroup {
+export function transformedGroup<Group extends ObjectGroup>(
+  group: Group,
+  move?: GroupPosition,
+): Group {
   const rotation = groupRotation(move),
     sideways = rotation % 2 === 1;
   return {
@@ -42,11 +45,7 @@ export function transformedGroup(
     },
   };
 }
-export function transformedGroupProp(
-  prop: Prop,
-  group: DungeonGroup,
-  move: GroupMove | GroupTransform,
-): Prop {
+export function transformedGroupProp(prop: Prop, group: ObjectGroup, move: GroupPosition): Prop {
   const rotation = groupRotation(move),
     bounds = propBounds(prop);
   const corners = [

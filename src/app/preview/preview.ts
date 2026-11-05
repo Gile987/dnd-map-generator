@@ -1,11 +1,11 @@
 import { placeLayerLabels } from '../rendering/layer-label-layout';
-import type { DungeonDrawing } from '../engine/object-editor/document';
-import type { DungeonGroupId } from '../engine/object-editor/dungeon-groups';
+import type { EditorDrawing } from '../rendering/editor-prop';
+import { drawEditorProp } from '../rendering/editor-prop';
+import { isEditableMap, resolveEditorMap } from '../engine/object-editor/editor-view';
 import { drawDungeonRitualFloor } from '../rendering/ritual-props';
 import { drawStudySurface } from '../rendering/study-surface';
 import { viewportTransform, inversePoint } from './viewport-transform';
 import type { ReservedArea } from '../engine/feature-reservation';
-import { drawDungeonProp } from '../rendering/dungeon-prop-layer';
 import { drawProp } from '../rendering/props';
 import { LANDMARK_CATALOG } from '../engine/landmark-catalog';
 import {
@@ -80,8 +80,8 @@ export class Preview {
   readonly selectedBounds = input<ReservedArea>();
   readonly ghost = input<{
     readonly props: readonly Prop[];
-    readonly drawing?: DungeonDrawing;
-    readonly groupId?: DungeonGroupId;
+    readonly drawing?: EditorDrawing;
+    readonly groupId?: string;
     readonly placementAction?: 'place' | 'drop';
     readonly bounds: ReservedArea;
     readonly valid: boolean;
@@ -104,7 +104,7 @@ export class Preview {
     if (m.type === 'tower')
       return `Tower map for seed ${m.seed}. ${m.layout.floors.length} numbered floors. Matching stair letters connect floors.${m.decoration.laboratoryFloor !== undefined && (this.showSecrets() || !m.layout.floors.find((f) => f.number === m.decoration.laboratoryFloor)?.secret) ? ' An alchemist’s laboratory occupies floor ' + m.decoration.laboratoryFloor + '. Its cauldron, desk and bookshelf each block one square.' : ''}${m.decoration.observatoryFloor !== undefined && (this.showSecrets() || !m.layout.floors.find((f) => f.number === m.decoration.observatoryFloor)?.secret) ? ' An observatory occupies floor ' + m.decoration.observatoryFloor + '. Its telescope, chart table and cabinet each block one square.' : ''}${m.layout.portalFloor !== null ? (this.showSecrets() ? ' One portal pair leads to a secret floor.' : ' Secret chamber and portal omitted from the image.') : ''} ${navigation}`;
     if (m.type === 'courtyard')
-      return `Ruined courtyard map for seed ${m.seed}. Four broad openings connect walkable grass to a paved interior. Standing walls and columns block movement; flat rubble is passable. A six-by-six gathering space stays clear.${m.decoration.fountain ? ' A dry fountain blocks three by three tiles, with a clear tile around it.' : ''}${m.decoration.wagon ? ' A collapsed wagon blocks three by two squares, or two by three when rotated. A spilled crate blocks one square; its detached wheel and loose goods are passable.' : ''} ${navigation}`;
+      return `${m.objectEdits ? 'Customized ruined courtyard' : 'Ruined courtyard'} map for seed ${m.seed}. Four broad openings connect walkable grass to a paved interior. Standing walls and columns block movement; flat rubble is passable. A six-by-six gathering space stays clear.${m.decoration.fountain ? ' A dry fountain blocks three by three tiles, with a clear tile around it.' : ''}${m.decoration.wagon ? ' A collapsed wagon blocks three by two squares, or two by three when rotated. A spilled crate blocks one square; its detached wheel and loose goods are passable.' : ''} ${navigation}`;
     if (m.type === 'dungeon') {
       return (
         (m.objectEdits ? 'Customized dungeon map for seed ' : 'Dungeon map for seed ') +
@@ -480,12 +480,14 @@ export class Preview {
       if (ghost && Number.isFinite(ghost.bounds.x) && Number.isFinite(ghost.bounds.y)) {
         const bounds = ghost.bounds;
         context.globalAlpha = 0.7;
-        if (ghost.drawing && ghost.groupId === 'ritual')
+        if (ghost.drawing?.type === 'dungeon' && ghost.groupId === 'ritual')
           drawDungeonRitualFloor(context, ghost.drawing);
-        if (ghost.drawing && ghost.groupId === 'study') drawStudySurface(context, ghost.drawing);
+        if (ghost.drawing?.type === 'dungeon' && ghost.groupId === 'study')
+          drawStudySurface(context, ghost.drawing);
         for (const prop of ghost.props) {
           const map = this.map();
-          if (map.type === 'dungeon') drawDungeonProp(context, prop, ghost.drawing ?? map);
+          if (isEditableMap(map))
+            drawEditorProp(context, prop, ghost.drawing ?? resolveEditorMap(map));
           else drawProp(context, prop);
         }
         context.globalAlpha = 1;

@@ -76,7 +76,7 @@
         floors stay in place.' }} } @else { {{ secrets() ? 'GM image: shows portal markers on this
         floor.' : 'Player image: omits portal markers.' }} }
       </p>
-      } @if (map.type === 'dungeon') {
+      } @if (map.type === 'dungeon' || map.type === 'courtyard') {
       <label class="grid-option"
         ><input type="checkbox" [checked]="layers()" (change)="changeLayers($event)" />Show layer
         indicators</label

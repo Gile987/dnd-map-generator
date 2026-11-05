@@ -34,7 +34,7 @@ export function exportFilename(map: MapDocument, showSecrets = false, towerFloor
     return `encounter-${seed}-tower-${scope}${map.layout.stairStyle ? '-' + map.layout.stairStyle : ''}${laboratory}${observatory}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}${map.layout.portalFloor !== null ? (showSecrets ? '-gm-secrets' : '-player') : ''}.png`;
   }
   if (type === 'courtyard')
-    return `encounter-${seed}-courtyard${map.decoration.fountain ? '-dry-fountain' : ''}${map.decoration.wagon ? '-collapsed-wagon' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+    return `encounter-${seed}-courtyard${map.decoration.fountain ? '-dry-fountain' : ''}${map.decoration.wagon ? '-collapsed-wagon' : ''}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   if (type === 'dungeon') {
     const preset = map.decoration.preset.toLowerCase();
     const scene = map.decoration.scene === 'Forgotten study' ? '-forgotten-study' : '';
@@ -63,7 +63,7 @@ export function configuredExportFilename(
       : `-${preset.id}-${width}x${height}-${preset.pixelsPerTile}px`;
   return exportFilename(map, showSecrets, towerFloor).replace(
     /\.png$/,
-    `${target}-${suffix}${map.type === 'dungeon' && showLayerIndicators ? '-layers' : ''}.png`,
+    `${target}-${suffix}${(map.type === 'dungeon' || map.type === 'courtyard') && showLayerIndicators ? '-layers' : ''}.png`,
   );
 }
 

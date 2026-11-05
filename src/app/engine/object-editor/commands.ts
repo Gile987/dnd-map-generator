@@ -1,3 +1,5 @@
+import { MAX_AUTHORED_OBJECTS } from './object-command';
+import type { ObjectCommand, ObjectEditResult } from './object-command';
 import { isDungeonSurface } from './dungeon-occupancy';
 import { dungeonSelections } from './dungeon-selection';
 import {
@@ -12,28 +14,15 @@ import { layeredDungeonError } from './dungeon-layering-rules';
 import { authoredDungeonError, individualObjectLock } from './dungeon-authoring-rules';
 import { dungeonGroups } from './dungeon-groups';
 import { isBlockingProp, isTilePosition } from '../model';
-import type { Point, Prop, PropKind, QuarterTurn } from '../model';
+import type { Prop } from '../model';
 import { dungeonCapability } from './catalog';
 import { dungeonBase, dungeonInstances } from './document';
 import type { DungeonDocument, ObjectEditsV4, ObjectEditsV5 } from './document';
 import { dungeonTargetsError } from './dungeon-rules';
 
-export const MAX_AUTHORED_OBJECTS = 120;
-export type ObjectCommand =
-  | {
-      readonly kind: 'move-group';
-      readonly id: string;
-      readonly target: Point;
-      readonly rotation?: QuarterTurn;
-    }
-  | { readonly kind: 'move'; readonly id: string; readonly target: Point }
-  | { readonly kind: 'add'; readonly propKind: PropKind; readonly target: Point }
-  | { readonly kind: 'remove'; readonly id: string }
-  | { readonly kind: 'order'; readonly id: string; readonly direction: 'forward' | 'backward' }
-  | { readonly kind: 'reset' };
-export type EditResult =
-  | { readonly ok: true; readonly document: DungeonDocument }
-  | { readonly ok: false; readonly error: string };
+export { MAX_AUTHORED_OBJECTS } from './object-command';
+export type { ObjectCommand } from './object-command';
+export type EditResult = ObjectEditResult<DungeonDocument>;
 
 /** Unvalidated candidate for placement previews. Only applyObjectCommand commits it. */
 export function proposeObjectCommand(

@@ -461,6 +461,7 @@ footer {
   .section-navigation,
   aside[forge-settings-panel],
   forge-library,
+  .library-deferred,
   footer,
   .legend,
   .export-action > span {
@@ -516,4 +517,10 @@ footer {
     flex: 0 0 auto;
     min-height: auto;
   }
+}
+
+.library-deferred {
+  grid-column: 1 / -1;
+  color: #c9d4c4;
+  padding: 1rem;
 }
