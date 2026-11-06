@@ -1,5 +1,11 @@
 import { expect, test } from 'vitest';
-import { areaAround, areaContains, areasOverlap } from './feature-reservation';
+import {
+  areaAround,
+  areaContains,
+  areasOverlap,
+  shapeContains,
+  shapesOverlap,
+} from './feature-reservation';
 import { generateForestClearing } from './forest-generate';
 import { placeStoneCircle } from './forest-landmark';
 import type { Prop } from './model';
@@ -47,4 +53,28 @@ test('landmarks protect an arbitrary feature and its empty space without knowing
       { area: { x: 0, y: 0, width: 40, height: 30 }, props: [] },
     ]),
   ).toBeUndefined();
+});
+
+test('continuous footprints permit empty corners and touching edges while rejecting real intersections in either order', () => {
+  const circle = { kind: 'circle' as const, x: 0, y: 0, radius: 1 };
+  for (const [rectangle, overlaps] of [
+    [{ kind: 'rectangle' as const, x: 0.8, y: 0.8, width: 1, height: 1 }, false],
+    [{ kind: 'rectangle' as const, x: 1, y: -0.5, width: 1, height: 1 }, false],
+    [{ kind: 'rectangle' as const, x: 0.5, y: 0.5, width: 1, height: 1 }, true],
+    [{ kind: 'rectangle' as const, x: -2, y: -2, width: 4, height: 4 }, true],
+  ] as const) {
+    expect(shapesOverlap(circle, rectangle)).toBe(overlaps);
+    expect(shapesOverlap(rectangle, circle)).toBe(overlaps);
+  }
+  expect(shapesOverlap(circle, { ...circle, x: 2 })).toBe(false);
+  expect(shapesOverlap(circle, { ...circle, x: 1.9 })).toBe(true);
+  expect(shapesOverlap(circle, { ...circle, radius: 0.1 })).toBe(true);
+  expect(
+    shapesOverlap(
+      { kind: 'rectangle', x: 0, y: 0, width: 1, height: 1 },
+      { kind: 'rectangle', x: 1, y: 0, width: 1, height: 1 },
+    ),
+  ).toBe(false);
+  expect(shapeContains(circle, { x: 0.9, y: 0.9 })).toBe(false);
+  expect(shapeContains(circle, { x: 0, y: 0.9 })).toBe(true);
 });

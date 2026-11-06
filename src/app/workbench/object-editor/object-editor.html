@@ -11,7 +11,8 @@
     type="button"
     [attr.aria-pressed]="editing()"
     (click)="setEditing(true)"
-    [disabled]="disabled() || readOnly()"
+    [disabled]="disabled() || readOnly() || towerHiddenConnections()"
+    [attr.aria-describedby]="readOnly() || towerHiddenConnections() ? 'object-editor-state' : null"
   >
     Edit objects
   </button>
@@ -33,13 +34,32 @@
     Redo
   </button>
   }
-  <span
-    >{{ readOnly() ? 'Pinned is read-only. Switch to Current to edit.' : map().objectEdits ?
-    'Customized ' + map().type + ' · save to keep your changes' : 'Generate a map, then make it
-    yours.' }}</span
+  <span id="object-editor-state" [class.edit-requirement]="towerHiddenConnections() && !readOnly()"
+    >{{ readOnly() ? 'Pinned is read-only. Switch to Current to edit.' : towerHiddenConnections() ?
+    'Enable Show secrets above the map to edit objects.' : map().objectEdits ? 'Customized ' +
+    map().type + ' · save to keep your changes' : 'Generate a map, then make it yours.' }}</span
   >
 </div>
-@if (editing() && !readOnly()) {
+@if (editing() && !readOnly() && towerFloor(); as floor) {
+<div class="tower-edit-floor position-controls">
+  <label
+    >Editing floor
+    <select (change)="changeFloor($event)" [disabled]="disabled()">
+      @for (f of towerFloors(); track f.number) {
+      <option [value]="f.number" [selected]="f.number === floor.number">
+        Floor {{f.number}} · {{f.title}}{{f.secret ? ' (secret)' : ''}}
+      </option>
+      }
+    </select></label
+  >
+  <button type="button" (click)="focusFloor()" [disabled]="disabled()">Focus floor</button>
+  <p>
+    Objects stay on floor {{floor.number}}. The blue outline marks this floor. Column and Row use
+    sheet coordinates. Select stairs on the map or in the object list to move them; their routes and
+    labels follow. Outlines follow the stair body and its route labels. Keep connections clear.
+  </p>
+</div>
+} @if (editing() && !readOnly()) {
 <div class="editor-tools" [attr.aria-busy]="disabled()">
   <div class="editor-actions">
     <button
@@ -75,7 +95,7 @@
   @if (paletteOpen()) {
   <section
     id="object-catalog"
-    [attr.aria-label]="map().type === 'dungeon' ? 'Dungeon object catalog' : map().type === 'forest' ? 'Forest object catalog' : 'Courtyard object catalog'"
+    [attr.aria-label]="map().type === 'dungeon' ? 'Dungeon object catalog' : map().type === 'forest' ? 'Forest object catalog' : map().type === 'tower' ? 'Tower object catalog' : 'Courtyard object catalog'"
     class="catalog"
   >
     <label
@@ -89,13 +109,17 @@
     <p>
       Drag an item onto the map, or choose it and tap a destination. @if (map().type === 'dungeon')
       { Rugs cover a 3 × 3 area; the other catalog objects occupy one square. Objects can sit on
-      rugs, moss, and empty addition floor. } @else if (map().type === 'forest') { Catalog objects
-      occupy one square. Bushes, ferns, mushrooms and flowers can share ground with other objects
-      and grow outside the clearing. Trees stay fixed. Solid objects need walkable ground and must
-      keep the two path entrances connected. Empty addition outlines do not reserve ground. } @else
-      { Catalog objects occupy one square. Moss, low rubble, ferns and vines can share ground with
-      other objects. Use any open ground, including the gathering space and approaches, while
-      keeping walking routes connected. } Surfaces move independently.
+      rugs, moss, and empty addition floor. } @else if (map().type === 'tower') { Catalog objects
+      occupy one square. Moss and bedrolls can share floor with objects. Choose the floor for new
+      objects; existing objects stay on their original floor. Stairs are movable from the object
+      list or directly on the map. Portals stay fixed; connection labels must stay clear. } @else if
+      (map().type === 'forest') { Catalog objects occupy one square. Bushes, ferns, mushrooms and
+      flowers can share ground with other objects and grow outside the clearing. Trees stay fixed.
+      Solid objects need walkable ground and must keep the two path entrances connected. Empty
+      addition outlines do not reserve ground. } @else { Catalog objects occupy one square. Moss,
+      low rubble, ferns and vines can share ground with other objects. Use any open ground,
+      including the gathering space and approaches, while keeping walking routes connected. }
+      Surfaces move independently.
     </p>
     <div class="object-cards">
       @for (item of palette(); track item.kind) {
@@ -133,6 +157,8 @@
 <forge-preview
   [map]="map()"
   [grid]="grid()"
+  [showSecrets]="showSecrets()"
+  [editingBounds]="floorBounds()"
   [focused]="focused() && !editing()"
   [editMode]="active()"
   [exploreHint]="map().type === 'dungeon' && !editing() && !disabled() && !readOnly() ? 'Click or tap a door to open or close it. Door controls below the map provide keyboard access.' : ''"
@@ -141,6 +167,7 @@
   (exploreHover)="doorHover($event)"
   (exploreClick)="doorClick($event)"
   [selectedBounds]="revealedBounds() ?? (editing() ? selection()?.area : undefined)"
+  [selectedFootprint]="editing() && !revealedBounds() ? selection()?.footprint : undefined"
   [layerBadges]="layerBadges()"
   [activeLayer]="layerId()"
   (layerInspect)="inspectLayers($event)"
@@ -189,12 +216,14 @@
 <div class="editor-inspector">
   @if (selection(); as item) {
   <p id="object-selection-description" class="selection-label">
-    <strong>{{item.label}}</strong> · @if (item.lock) { {{item.lock}} } @else if (item.groupId) {
-    Move the complete addition. Its objects keep their arrangement. @if (map().type !== 'dungeon') {
-    Only the objects need clear ground; empty space inside the outline is not reserved. } @else {
-    The outline includes reserved space. } } @else { Drag on the map, or choose a destination below.
-    }
+    <strong>{{item.label}}</strong> · @if (item.lock) { {{item.lock}} } @else if (item.architecture
+    === 'stairs') { Move this floor’s landing. Its route letters and destination floors stay linked;
+    its labels follow. } @else if (item.groupId) { Move the complete addition. Its objects keep
+    their arrangement. @if (map().type !== 'dungeon') { Only the objects need clear ground; empty
+    space inside the outline is not reserved. } @else { The outline includes reserved space. } }
+    @else { Drag on the map, or choose a destination below. }
   </p>
+  @if (!item.architecture) {
   <div class="position-controls layer-order" role="group" aria-label="Drawing order">
     <button
       type="button"
@@ -212,7 +241,7 @@
     </button>
     <span>Steps past overlapping objects. Additions stay together. Save to keep the order.</span>
   </div>
-  } @if ((selection() && !selection()?.lock) || placement()) { @if (selection()?.rotatable) {
+  } } @if ((selection() && !selection()?.lock) || placement()) { @if (selection()?.rotatable) {
   <div class="position-controls rotation-controls" role="group" aria-label="Addition rotation">
     <button
       type="button"
@@ -241,7 +270,7 @@
       >Column<input
         type="number"
         min="1"
-        max="40"
+        [max]="dimensions().width"
         step="1"
         [value]="(target()?.x ?? 0) + 1"
         (input)="coordinate('x', $event)"
@@ -252,7 +281,7 @@
       >Row<input
         type="number"
         min="1"
-        max="30"
+        [max]="dimensions().height"
         step="1"
         [value]="(target()?.y ?? 0) + 1"
         (input)="coordinate('y', $event)"

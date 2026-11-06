@@ -1,3 +1,7 @@
+import { drawFootprintOutline } from '../rendering/footprint-outline';
+import { drawTowerStaircase } from '../rendering/tower-renderer';
+import type { StairLanding } from '../engine/tower-landings';
+import type { TowerStairStyle } from '../engine/tower';
 import { placeLayerLabels } from '../rendering/layer-label-layout';
 import type { EditorDrawing } from '../rendering/editor-prop';
 import { drawEditorProp } from '../rendering/editor-prop';
@@ -5,8 +9,8 @@ import { isEditableMap, resolveEditorMap } from '../engine/object-editor/editor-
 import { drawDungeonRitualFloor } from '../rendering/ritual-props';
 import { drawStudySurface } from '../rendering/study-surface';
 import { drawForestCampAsh } from '../rendering/forest-surface';
-import { viewportTransform, inversePoint } from './viewport-transform';
-import type { ReservedArea } from '../engine/feature-reservation';
+import { viewportTransform, inversePoint, areaViewport } from './viewport-transform';
+import type { FootprintShape, ReservedArea } from '../engine/feature-reservation';
 import { drawProp } from '../rendering/props';
 import { LANDMARK_CATALOG } from '../engine/landmark-catalog';
 import {
@@ -79,12 +83,16 @@ export class Preview {
     readonly { id: string; text: string; width: number; label: string; x: number; y: number }[]
   >([]);
   readonly selectedBounds = input<ReservedArea>();
+  readonly selectedFootprint = input<readonly FootprintShape[]>();
+  readonly editingBounds = input<ReservedArea>();
   readonly ghost = input<{
     readonly props: readonly Prop[];
+    readonly staircase?: { readonly landing: StairLanding; readonly style: TowerStairStyle };
     readonly drawing?: EditorDrawing;
     readonly groupId?: string;
     readonly placementAction?: 'place' | 'drop';
     readonly bounds: ReservedArea;
+    readonly footprint?: readonly FootprintShape[];
     readonly valid: boolean;
     readonly reason?: string;
   }>();
@@ -188,7 +196,9 @@ export class Preview {
     effect(() => {
       this.layerBadges();
       this.selectedBounds();
+      this.editingBounds();
       this.ghost();
+      this.selectedFootprint();
       this.editMode();
       this.exploreTarget();
       untracked(() => this.paint());
@@ -206,6 +216,15 @@ export class Preview {
         destroyRef.onDestroy(() => observer.disconnect());
       },
     });
+  }
+
+  focusArea(area: ReservedArea): void {
+    this.cancelPointer();
+    const { width, height } = mapDimensions(this.map());
+    const view = areaViewport(this.width, this.height, width, height, area);
+    this.zoom.set(view.zoom);
+    this.pan = view.pan;
+    this.paint();
   }
 
   protected fit(): void {
@@ -470,13 +489,29 @@ export class Preview {
       context.save();
       context.translate(transform.x, transform.y);
       context.scale(transform.scale, transform.scale);
+      const editingBounds = this.editingBounds();
+      if (editingBounds && this.editMode()) {
+        context.save();
+        context.strokeStyle = '#8dd3df';
+        context.lineWidth = 2 / transform.scale;
+        context.setLineDash([0.22, 0.16]);
+        context.strokeRect(
+          editingBounds.x,
+          editingBounds.y,
+          editingBounds.width,
+          editingBounds.height,
+        );
+        context.restore();
+      }
       const selected = this.selectedBounds(),
         ghost = this.ghost();
       if (selected) {
         const bounds = selected;
         context.strokeStyle = '#f0d585';
         context.lineWidth = 2 / transform.scale;
-        context.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        const footprint = this.selectedFootprint();
+        if (footprint) drawFootprintOutline(context, footprint);
+        else context.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
       }
       if (ghost && Number.isFinite(ghost.bounds.x) && Number.isFinite(ghost.bounds.y)) {
         const bounds = ghost.bounds;
@@ -487,6 +522,8 @@ export class Preview {
           drawStudySurface(context, ghost.drawing);
         if (ghost.drawing?.type === 'forest' && ghost.groupId === 'camp')
           drawForestCampAsh(context, ghost.drawing);
+        if (ghost.staircase)
+          drawTowerStaircase(context, ghost.staircase.landing, ghost.staircase.style);
         for (const prop of ghost.props) {
           const map = this.map();
           if (isEditableMap(map))
@@ -495,10 +532,13 @@ export class Preview {
         }
         context.globalAlpha = 1;
         context.fillStyle = ghost.valid ? '#6fda9144' : '#ef787855';
-        context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
         context.strokeStyle = ghost.valid ? '#8ceca2' : '#ffa39a';
         context.lineWidth = 2 / transform.scale;
-        context.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        if (ghost.footprint) drawFootprintOutline(context, ghost.footprint, true);
+        else {
+          context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+          context.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        }
       }
       context.restore();
     }

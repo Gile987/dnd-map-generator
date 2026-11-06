@@ -97,7 +97,7 @@ test('bounded door state rejects malformed, unknown, duplicate and future data; 
     'open-door',
     '2026-11-03T12:00:00Z',
   );
-  expect(saved.saveFormatVersion).toBe('26.0.0');
+  expect(saved.saveFormatVersion).toBe('28.0.0');
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   expect(parseSavedMap({ ...saved, saveFormatVersion: '22.0.0' })).toBeUndefined();

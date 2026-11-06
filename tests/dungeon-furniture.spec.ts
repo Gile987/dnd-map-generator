@@ -136,10 +136,10 @@ test('table footprints and orientations survive refresh and portable backups', a
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending,
     path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '26.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '28.0.0' });
   const fresh = await browser.newPage();
   try {
-    await fresh.goto('http://127.0.0.1:4200/');
+    await fresh.goto('http://128.0.0.1:4200/');
     await fresh.setInputFiles('.import-label input', path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();

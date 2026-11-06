@@ -17,7 +17,12 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
 ): ObjectEditResult<ArrangementDocument<Base, Id>> {
   const base = adapter.base(map);
   if (command.kind === 'reset') return { ok: true, document: map.objectEdits ? base : map };
-  if ('target' in command && !isTilePosition(command.target.x, command.target.y))
+  if (
+    'target' in command &&
+    !(adapter.validPosition
+      ? adapter.validPosition(base, command.target.x, command.target.y)
+      : isTilePosition(command.target.x, command.target.y))
+  )
     return { ok: false, error: 'Place the object inside the map.' };
   let edits: ArrangementEdits<Id> = map.objectEdits ?? {
     version: 1,
@@ -156,6 +161,6 @@ export function applyArrangementCommand<Base extends ArrangementBase, Id extends
 ): ObjectEditResult<ArrangementDocument<Base, Id>> {
   const result = proposeArrangementCommand(map, command, adapter);
   if (!result.ok || result.document === map) return result;
-  const error = adapter.placementError(result.document);
+  const error = adapter.commandError?.(map, command) ?? adapter.placementError(result.document);
   return error ? { ok: false, error } : result;
 }

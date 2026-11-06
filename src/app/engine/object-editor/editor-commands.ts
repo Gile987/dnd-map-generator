@@ -1,3 +1,4 @@
+import { applyTowerCommand, proposeTowerCommand } from './tower-commands';
 import { applyForestCommand, proposeForestCommand } from './forest-commands';
 import { applyObjectCommand, proposeObjectCommand } from './commands';
 import { applyCourtyardCommand, proposeCourtyardCommand } from './courtyard-commands';
@@ -13,7 +14,9 @@ export function applyEditorCommand(
     ? applyObjectCommand(map, command)
     : map.type === 'forest'
       ? applyForestCommand(map, command)
-      : applyCourtyardCommand(map, command);
+      : map.type === 'tower'
+        ? applyTowerCommand(map, command)
+        : applyCourtyardCommand(map, command);
 }
 export function proposeEditorCommand(
   map: EditableMapDocument,
@@ -23,5 +26,7 @@ export function proposeEditorCommand(
     ? proposeObjectCommand(map, command)
     : map.type === 'forest'
       ? proposeForestCommand(map, command)
-      : proposeCourtyardCommand(map, command);
+      : map.type === 'tower'
+        ? proposeTowerCommand(map, command)
+        : proposeCourtyardCommand(map, command);
 }

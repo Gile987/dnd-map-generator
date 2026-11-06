@@ -120,6 +120,7 @@
   [history]="history()"
   (historyRequested)="historyRequested.emit($event)"
   [map]="editableMap"
+  [showSecrets]="showSecrets()"
   [grid]="grid()"
   [focused]="focused()"
   [disabled]="disabled()"
@@ -130,7 +131,7 @@
 } @loading {
 <p role="status">Opening map workspace…</p>
 } @error { @defer (on immediate) {
-<forge-preview [map]="map()" [grid]="grid()" [focused]="focused()" />
+<forge-preview [map]="map()" [grid]="grid()" [focused]="focused()" [showSecrets]="showSecrets()" />
 } @error {
 <p role="status">The preview could not load. Your map can still be saved and exported.</p>
 }

@@ -1,3 +1,8 @@
+import { towerStairFootprint } from '../../engine/tower-connection-geometry';
+import { editableTowerStairs, towerStairBounds } from '../../engine/object-editor/tower-stairs';
+import { towerStairStyle } from '../../engine/tower';
+import { towerFloorAt, towerFloorTitle } from '../../engine/tower';
+import { mapDimensions } from '../../engine/model';
 import type { ForestCharacter } from '../../engine/model';
 import { describeObjectLayer } from '../../rendering/dungeon-layer-description';
 import { doorIsOpen, dungeonDoorAt, dungeonDoors } from '../../engine/dungeon-doors';
@@ -6,7 +11,8 @@ import type { ExploreClick, ExplorePoint } from '../../preview/preview';
 import {
   editorInstances,
   editorSelections,
-  editorOrderedObjects,
+  editorVisibleSelections,
+  editorVisibleObjects,
   editorOverlaps,
   editorOrderStep,
   editorObjectLabel,
@@ -37,7 +43,7 @@ import {
   proposeEditorCommand,
 } from '../../engine/object-editor/editor-commands';
 import type { ObjectCommand } from '../../engine/object-editor/commands';
-import { areaContains } from '../../engine/feature-reservation';
+import { areaContains, shapeContains } from '../../engine/feature-reservation';
 import { authoredObjectArea } from '../../engine/object-editor/object-geometry';
 import { Preview } from '../../preview/preview';
 import type { EditPointer } from '../../preview/preview';
@@ -69,6 +75,43 @@ interface Placement {
 export class ObjectEditor {
   readonly map = input.required<EditableMapDocument>();
   readonly grid = input(true);
+  readonly showSecrets = input(false);
+  protected readonly dimensions = computed(() => mapDimensions(this.map()));
+  protected readonly towerHiddenConnections = computed(() => {
+    const map = this.map();
+    return map.type === 'tower' && map.layout.portalFloor !== null && !this.showSecrets();
+  });
+  protected readonly towerFloors = computed(() => {
+    const map = this.map();
+    return map.type === 'tower'
+      ? map.layout.floors
+          .filter((f) => !f.secret || this.showSecrets())
+          .map((f) => ({ ...f, title: towerFloorTitle(map, f) }))
+      : [];
+  });
+  private readonly floorNumber = signal(1);
+  protected readonly towerFloor = computed(
+    () => this.towerFloors().find((f) => f.number === this.floorNumber()) ?? this.towerFloors()[0],
+  );
+  protected readonly floorBounds = computed(() => (this.active() ? this.towerFloor() : undefined));
+  protected changeFloor(event: Event): void {
+    if (!(event.target instanceof HTMLSelectElement) || !this.active()) return;
+    const number = Number(event.target.value);
+    const floor = this.towerFloors().find((f) => f.number === number);
+    if (!floor) return;
+    this.cancel();
+    this.selected.set('');
+    this.layerId.set('');
+    this.revealedBounds.set(undefined);
+    this.floorNumber.set(floor.number);
+  }
+  protected focusFloor(): void {
+    const floor = this.towerFloor();
+    if (floor && !this.disabled()) {
+      this.cancel();
+      this.preview().focusArea(floor);
+    }
+  }
   readonly focused = input(false);
   readonly disabled = input(false);
   readonly readOnly = input(false);
@@ -143,7 +186,14 @@ export class ObjectEditor {
   protected toggleChosenDoor(): void {
     const door = this.chosenDoor(),
       map = this.doorMap();
-    if (map && door && !this.editing() && !this.disabled() && !this.readOnly())
+    if (
+      map &&
+      door &&
+      !this.editing() &&
+      !this.disabled() &&
+      !this.readOnly() &&
+      !this.towerHiddenConnections()
+    )
       this.doorToggleRequested.emit({ source: map, id: door.id });
   }
   protected isDoorOpen(id: string): boolean {
@@ -151,7 +201,9 @@ export class ObjectEditor {
     return !!map && doorIsOpen(map, id);
   }
   protected readonly editing = signal(false);
-  readonly isEditing = computed(() => this.editing() && !this.readOnly());
+  readonly isEditing = computed(
+    () => this.editing() && !this.readOnly() && !this.towerHiddenConnections(),
+  );
   protected readonly active = computed(
     () => this.editing() && !this.disabled() && !this.readOnly(),
   );
@@ -160,12 +212,22 @@ export class ObjectEditor {
   protected readonly selected = signal('');
   protected readonly placement = signal<Placement | undefined>(undefined);
   protected readonly message = signal('');
-  protected readonly instances = computed(() => editorSelections(this.map()));
-  protected readonly selection = computed(() =>
-    this.instances().find((item) => item.id === this.selected()),
+  protected readonly allInstances = computed(() =>
+    editorVisibleSelections(this.map(), this.showSecrets()),
   );
-  protected readonly ordered = computed(() => editorOrderedObjects(this.map()));
-  protected readonly overlaps = computed(() => editorOverlaps(this.map()));
+  protected readonly instances = computed(() => {
+    const map = this.map();
+    return this.allInstances().filter(
+      (item) =>
+        map.type !== 'tower' ||
+        towerFloorAt(map, item.position)?.number === this.towerFloor()?.number,
+    );
+  });
+  protected readonly selection = computed(() =>
+    this.allInstances().find((item) => item.id === this.selected()),
+  );
+  protected readonly ordered = computed(() => editorVisibleObjects(this.map(), this.showSecrets()));
+  protected readonly overlaps = computed(() => editorOverlaps(this.map(), this.showSecrets()));
   protected readonly layerId = signal('');
   protected readonly layerInfo = computed(() => {
     const overlap = this.overlaps().find((item) => item.id === this.layerId());
@@ -173,7 +235,7 @@ export class ObjectEditor {
     const ids = [overlap.id, ...[...overlap.underneath].reverse()];
     return ids.flatMap((id) => {
       const item = this.ordered().find((item) => item.id === id);
-      const unit = this.instances().find((unit) => unit.members.includes(id));
+      const unit = this.allInstances().find((unit) => unit.members.includes(id));
       return item && unit
         ? [
             {
@@ -220,6 +282,11 @@ export class ObjectEditor {
     if (!item || this.disabled()) return;
     this.cancel();
     this.selected.set(item.selectionId);
+    const map = this.map();
+    if (map.type === 'tower') {
+      const floor = towerFloorAt(map, item.position);
+      if (floor) this.floorNumber.set(floor.number);
+    }
     this.revealedBounds.set(item.area);
     this.message.set(`${item.label} selected. Its outline shows its position beneath the artwork.`);
   }
@@ -258,6 +325,20 @@ export class ObjectEditor {
       verdict = this.verdict();
     if (!placement) return undefined;
     const command = placement.command;
+    if (command.kind === 'move' && placement.source.type === 'tower') {
+      const stair = editableTowerStairs(placement.source).find((s) => s.id === command.id);
+      if (stair) {
+        const moved = { ...stair, x: command.target.x, y: command.target.y };
+        return {
+          props: [],
+          staircase: { landing: moved, style: towerStairStyle(placement.source) },
+          bounds: towerStairBounds(placement.source, moved),
+          footprint: towerStairFootprint(moved, towerStairStyle(placement.source)),
+          valid: !!verdict?.ok,
+          reason: verdict && !verdict.ok ? verdict.error : undefined,
+        };
+      }
+    }
     if (command.kind === 'move-group') {
       const proposal = proposeEditorCommand(placement.source, command);
       if (!proposal.ok) return undefined;
@@ -325,6 +406,8 @@ export class ObjectEditor {
   protected readonly hint = computed(() => {
     const verdict = this.verdict();
     const selection = this.selection();
+    if (this.towerHiddenConnections())
+      return 'Enable Show secrets to edit Tower objects with every connection visible.';
     if (!verdict && selection)
       return selection.lock
         ? 'Choose an independent object from the list, or use Add object.'
@@ -337,7 +420,9 @@ export class ObjectEditor {
           ? 'Select an object or a complete addition. Use any open ground; standing walls stay fixed.'
           : this.map().type === 'forest'
             ? 'Select an object or a complete addition. Trees stay fixed; solid objects need walkable ground and connected path entrances.'
-            : 'Select an object or a complete addition. Walls, doors and architectural markers stay fixed.';
+            : this.map().type === 'tower'
+              ? 'Choose a floor and edit its objects. Select furniture, additions or staircases. Walls, portals and floor headings stay fixed.'
+              : 'Select an object or a complete addition. Walls, doors and architectural markers stay fixed.';
   });
   private readonly preview = viewChild.required(Preview);
   private readonly layerDetails = viewChild<ElementRef<HTMLElement>>('layerDetails');
@@ -348,22 +433,33 @@ export class ObjectEditor {
   private suppressClick = false;
   private keepSelection = false;
   private previousMap?: EditableMapDocument;
+  private previousSecrets = false;
 
   constructor() {
     effect(() => this.editingChanged.emit(this.isEditing()));
     effect(() => {
       const map = this.map();
       this.readOnly();
+      const secrets = this.showSecrets();
       untracked(() => {
+        if (this.previousSecrets !== secrets) {
+          this.layerId.set('');
+          this.message.set('');
+          this.paletteOpen.set(false);
+        }
+        this.previousSecrets = secrets;
         if (this.previousMap?.layout !== map.layout) this.layerId.set('');
         if (this.previousMap && this.previousMap.type !== map.type) {
           this.editing.set(false);
           this.paletteOpen.set(false);
           this.query.set('');
         }
+        if (this.towerHiddenConnections()) this.editing.set(false);
+        if (!this.towerFloors().some((f) => f.number === this.floorNumber()))
+          this.floorNumber.set(this.towerFloors()[0]?.number ?? 1);
         this.previousMap = map;
         this.cancel();
-        if (!this.keepSelection || !this.instances().some((item) => item.id === this.selected()))
+        if (!this.keepSelection || !this.allInstances().some((item) => item.id === this.selected()))
           this.selected.set('');
         this.keepSelection = false;
         this.revealedBounds.set(undefined);
@@ -375,7 +471,7 @@ export class ObjectEditor {
   }
 
   protected setEditing(value: boolean): void {
-    if (this.disabled() || this.readOnly()) return;
+    if (this.disabled() || this.readOnly() || (value && this.towerHiddenConnections())) return;
     this.cancel();
     this.editing.set(value);
     this.paletteOpen.set(false);
@@ -386,6 +482,11 @@ export class ObjectEditor {
     this.revealedBounds.set(undefined);
     this.selected.set(id);
     const item = this.selection();
+    const map = this.map();
+    if (item && map.type === 'tower') {
+      const floor = towerFloorAt(map, item.position);
+      if (floor) this.floorNumber.set(floor.number);
+    }
     this.message.set(item ? `${item.label} selected.` : '');
   }
   protected choose(kind: PropKind): void {
@@ -400,9 +501,15 @@ export class ObjectEditor {
   }
   private arm(kind: PropKind): void {
     this.selected.set('');
+    const floor = this.towerFloor();
     this.placement.set({
       source: this.map(),
-      command: { kind: 'add', propKind: kind, target: { x: 1, y: 1 } },
+      command: {
+        kind: 'add',
+        propKind: kind,
+        target: floor ? { x: floor.x + 7, y: floor.y + 6 } : { x: 1, y: 1 },
+        ...(floor ? { floor: floor.number } : {}),
+      },
     });
   }
   protected pointer(event: EditPointer): void {
@@ -425,9 +532,18 @@ export class ObjectEditor {
           event.point.y < b.y + b.height
         );
       });
-      const unit = hit
-        ? this.instances().find((item) => item.members.includes(hit.id))
-        : this.instances().find((item) => item.groupId && areaContains(item.area, event.point));
+      const stair = this.allInstances().find(
+        (item) =>
+          item.architecture === 'stairs' &&
+          item.footprint?.some((shape) => shapeContains(shape, event.point)),
+      );
+      const unit =
+        stair ??
+        (hit
+          ? this.allInstances().find((item) => item.members.includes(hit.id))
+          : this.allInstances().find(
+              (item) => item.groupId && areaContains(item.area, event.point),
+            ));
       if (!unit) {
         this.select('');
         return;

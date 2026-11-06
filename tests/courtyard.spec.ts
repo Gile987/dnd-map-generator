@@ -123,7 +123,7 @@ test('courtyard saves and backups reopen exact artwork and PNGs after a refresh'
   const backup = await backupPending;
   const backupBytes = await readFile(await backup.path());
   expect(JSON.parse(backupBytes.toString())).toMatchObject({
-    saveFormatVersion: '26.0.0',
+    saveFormatVersion: '28.0.0',
     maps: [{ map: saved.map }],
   });
   await page.reload();

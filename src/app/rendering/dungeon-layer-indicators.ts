@@ -1,9 +1,9 @@
 import { describeObjectLayer } from './dungeon-layer-description';
 import { placeLayerLabels } from './layer-label-layout';
-import { WIDTH, HEIGHT } from '../engine/model';
+import { mapDimensions } from '../engine/model';
 import type { EditableMapDocument } from '../engine/model';
 import {
-  editorOrderedObjects,
+  editorVisibleObjects,
   editorOverlaps,
   editorObjectLabel,
 } from '../engine/object-editor/editor-view';
@@ -15,9 +15,11 @@ export function drawObjectLayerIndicators(
   ctx: DrawingContext,
   map: EditableMapDocument,
   pixelsPerTile: number,
+  showSecrets = false,
 ): void {
-  const items = editorOrderedObjects(map),
-    overlaps = editorOverlaps(map);
+  const items = editorVisibleObjects(map, showSecrets),
+    overlaps = editorOverlaps(map, showSecrets);
+  const { width, height } = mapDimensions(map);
   ctx.save();
   // Measure annotation fonts at the actual output resolution. Some rasterizers
   // round subpixel font metrics before applying a canvas transform.
@@ -54,8 +56,8 @@ export function drawObjectLayerIndicators(
   });
   for (const label of placeLayerLabels(
     anchors,
-    WIDTH * pixelsPerTile,
-    HEIGHT * pixelsPerTile,
+    width * pixelsPerTile,
+    height * pixelsPerTile,
     labelWidth,
     0.34 * pixelsPerTile,
     0.1 * pixelsPerTile,

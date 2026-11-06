@@ -1,0 +1,122 @@
+[
+  {
+    "id": "3-separate",
+    "model": "9b197e50edf62f9259235856731bc4714eb12b8a60e5dba63ae0991f546fe8b0",
+    "modes": [
+      {
+        "grid": false,
+        "showSecrets": false,
+        "pixels": "dd5e19cf2206070fb12e91cf2b5ac573ecb6c1fb7f0262781ddce1f8e6ebacf0",
+        "text": "3b0b4a0b0624810d6c96dcda10422a2883866dd9ad121893b10da0ba7cccd301"
+      },
+      {
+        "grid": false,
+        "showSecrets": true,
+        "pixels": "227f4cd1015455ea6d66d10bbeccaecdadc6b192c718f157162f0213680416a3",
+        "text": "b899ea691ac086be5a6a72912a222c95439de4b5f77423aaffdb12a5bf770f7f"
+      },
+      {
+        "grid": true,
+        "showSecrets": false,
+        "pixels": "1c3b8b4378db846c0d5653e060f97b9d0b1dee33936aeee7a2bae38c5b6f133d",
+        "text": "3b0b4a0b0624810d6c96dcda10422a2883866dd9ad121893b10da0ba7cccd301"
+      },
+      {
+        "grid": true,
+        "showSecrets": true,
+        "pixels": "290ee0e08eadc9d1102362baca92829567663b5b00e01ce22752c7f478512389",
+        "text": "b899ea691ac086be5a6a72912a222c95439de4b5f77423aaffdb12a5bf770f7f"
+      }
+    ]
+  },
+  {
+    "id": "3-spiral",
+    "model": "2f139fa0f29aab857b7d05effb13b9ff92138f430751fd597a76ea3c99a784ef",
+    "modes": [
+      {
+        "grid": false,
+        "showSecrets": false,
+        "pixels": "b1d84cf77a2af48f0885ec93b639329b2bfe4ace07930129deab9156cc348270",
+        "text": "ea12cca66ba11b9fac5675b005fe1a0ea221dcbeed914b73b173da1b980d37e9"
+      },
+      {
+        "grid": false,
+        "showSecrets": true,
+        "pixels": "9bb9c405056f3d4ff7dcbde5ca1ea29c8d99f0fcab599f12bd5b864a5f0ab2c1",
+        "text": "a09954b0e4bf097bd12bd80122bd636a52eb379048a176590069ce693c13927a"
+      },
+      {
+        "grid": true,
+        "showSecrets": false,
+        "pixels": "4dfd346a6a6f08e29e85d51b2433744ea32ef675503eeca82afba3e54acf29d2",
+        "text": "ea12cca66ba11b9fac5675b005fe1a0ea221dcbeed914b73b173da1b980d37e9"
+      },
+      {
+        "grid": true,
+        "showSecrets": true,
+        "pixels": "9e0f0a9d4e6d72628f8b09fbf8234265ea12dd4471162b4fa711e195e32960aa",
+        "text": "a09954b0e4bf097bd12bd80122bd636a52eb379048a176590069ce693c13927a"
+      }
+    ]
+  },
+  {
+    "id": "8-separate",
+    "model": "bb0521cd15edbd7a3a9db2cfcbdd8a8c729307c6f5be0836cf7a59fa0906a50e",
+    "modes": [
+      {
+        "grid": false,
+        "showSecrets": false,
+        "pixels": "2b57750987b128f78f27a46a9a5cd2d3678a8996ef21129ba7c23f686d0149ec",
+        "text": "24b71f7abf37f01d24bf8715f64ab411dff8be115eb95a0a3ac7bc2abacb77e6"
+      },
+      {
+        "grid": false,
+        "showSecrets": true,
+        "pixels": "bc76a6c465e2442c6c110852893b6a6512e70fbb7940f46d8508ffd10e94745f",
+        "text": "d173931a98e4f3ed02b3f019c427bcaa8afdbcd95d36ec1615df5e44c128ff7d"
+      },
+      {
+        "grid": true,
+        "showSecrets": false,
+        "pixels": "e8e38f065d7866c35a219c95dfd2681642c146339a8bb6f1a8db8689c1322638",
+        "text": "24b71f7abf37f01d24bf8715f64ab411dff8be115eb95a0a3ac7bc2abacb77e6"
+      },
+      {
+        "grid": true,
+        "showSecrets": true,
+        "pixels": "b55d5e2752aa60bb9ef2bbc7525aee6a5ff9ddb03b10ec57a84a43574fca2df7",
+        "text": "d173931a98e4f3ed02b3f019c427bcaa8afdbcd95d36ec1615df5e44c128ff7d"
+      }
+    ]
+  },
+  {
+    "id": "8-spiral",
+    "model": "8bfa95234b928d201d86da260b6563b2bb5c51820ef5d3d2b1760a46c6c24b1c",
+    "modes": [
+      {
+        "grid": false,
+        "showSecrets": false,
+        "pixels": "ff351204adf4775e9724d0de07d642782c85a832e6b6a35478712b562995b0d5",
+        "text": "05120120a7a9d5b80bc8f5769c0416b911126307e2b81c01668873482822c37f"
+      },
+      {
+        "grid": false,
+        "showSecrets": true,
+        "pixels": "e9abd58758da9cd3b11195ae698eb17e4eb8e85a187d315049d6f7309541d643",
+        "text": "834a64a23f621d5c22bc70550975dfa5fd067accd673213a4130e6cb02fecb40"
+      },
+      {
+        "grid": true,
+        "showSecrets": false,
+        "pixels": "7640834a8de7dd8bf8c4afd048cba6228dc1b954988b4d8df5e647a7029662fb",
+        "text": "05120120a7a9d5b80bc8f5769c0416b911126307e2b81c01668873482822c37f"
+      },
+      {
+        "grid": true,
+        "showSecrets": true,
+        "pixels": "e88f94bf8e4b04879870115505de04c24a986ac7894de4fdc48983359e401b9c",
+        "text": "834a64a23f621d5c22bc70550975dfa5fd067accd673213a4130e6cb02fecb40"
+      }
+    ]
+  }
+]

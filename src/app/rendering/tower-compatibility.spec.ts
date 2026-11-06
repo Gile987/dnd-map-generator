@@ -49,7 +49,7 @@ test('frozen Tower-v1/v2 saves preserve original models, vector pixels and text 
   expect(parsed.maps).toHaveLength(3);
   for (const [i, saved] of parsed.maps.entries()) {
     const map = saved.map;
-    if (map.type !== 'tower') throw new Error('Expected tower');
+    if (map.type !== 'tower' || !!map.objectEdits) throw new Error('Expected tower');
     expect(map.version).toBe(sources[i]?.map.version);
     expect(map).toEqual(sources[i]?.map);
     expect(parseSavedMap(saved)?.map).toBe(map);

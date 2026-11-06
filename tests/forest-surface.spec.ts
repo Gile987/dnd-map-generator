@@ -96,7 +96,7 @@ test('new forest surface art survives refresh, backup/share import and VTT expor
   const before = await download(page, 'Quick export PNG');
   const backup = await download(page, 'Download backup');
   expect(JSON.parse(backup.bytes.toString())).toMatchObject({
-    saveFormatVersion: '26.0.0',
+    saveFormatVersion: '28.0.0',
     maps: [{ map: { decoration: { forestSurface: 1 } } }],
   });
   await page.reload();
@@ -106,7 +106,7 @@ test('new forest surface art survives refresh, backup/share import and VTT expor
   const shared = await download(page, 'Export this map');
   const fresh = await browser.newPage();
   try {
-    await fresh.goto('http://127.0.0.1:4200/');
+    await fresh.goto('http://128.0.0.1:4200/');
     await fresh.setInputFiles('.import-label input', shared.path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
