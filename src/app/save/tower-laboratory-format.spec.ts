@@ -37,7 +37,7 @@ function saved() {
 test('the current format preserves laboratories while pre-laboratory vocabularies stay frozen', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('26.0.0');
+  expect(record.saveFormatVersion).toBe('28.0.0');
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 14; v++) {
@@ -91,7 +91,7 @@ test('old tower snapshots acquire a laboratory only after an explicit appearance
     if (!parsed.ok) throw new Error(parsed.error);
     for (const record of parsed.maps) {
       const map = record.map;
-      if (map.type !== 'tower') throw new Error('Expected tower');
+      if (map.type !== 'tower' || map.objectEdits) throw new Error('Expected tower');
       expect(map.decoration).not.toHaveProperty('laboratoryFloor');
       const changed = changeTowerAppearance(map, {
         seed: map.seed,

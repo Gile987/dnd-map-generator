@@ -1,3 +1,4 @@
+import type { TowerDocument, AuthoredTower } from './tower-document';
 import type { ForestDocument, AuthoredForest } from './forest-document';
 import type { CourtyardDocument, AuthoredCourtyard } from './courtyard-document';
 import type { DoorStates } from '../dungeon-doors';
@@ -50,8 +51,9 @@ export interface DoorDungeon extends Omit<Dungeon, 'doorStates'> {
 }
 export type DungeonDocument = Dungeon | DoorDungeon | AuthoredDungeon;
 export type MapDocument =
-  GeneratedMap | DoorDungeon | AuthoredDungeon | AuthoredCourtyard | AuthoredForest;
-export type EditableMapDocument = DungeonDocument | CourtyardDocument | ForestDocument;
+  GeneratedMap | DoorDungeon | AuthoredDungeon | AuthoredCourtyard | AuthoredForest | AuthoredTower;
+export type EditableMapDocument =
+  DungeonDocument | CourtyardDocument | ForestDocument | TowerDocument;
 export interface GroupArtworkTransform {
   readonly base: Dungeon;
   readonly group: DungeonGroup;

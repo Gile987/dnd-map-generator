@@ -1,3 +1,5 @@
+import { towerBase } from '../engine/object-editor/tower-document';
+import type { TowerDocument } from '../engine/object-editor/tower-document';
 import { forestBase } from '../engine/object-editor/forest-document';
 import type { ForestDocument } from '../engine/object-editor/forest-document';
 import { isEditableMap } from '../engine/object-editor/editor-view';
@@ -8,7 +10,6 @@ import type { MapEditResult } from '../engine/object-editor/editor-commands';
 import { toggleDungeonDoor, withDoorStates } from '../engine/dungeon-doors';
 import type { ObjectCommand, EditResult } from '../engine/object-editor/commands';
 import { dungeonBase } from '../engine/object-editor/document';
-import type { Tower } from '../engine/tower';
 import {
   generateTower,
   changeTowerAppearance,
@@ -81,14 +82,14 @@ interface SessionState {
     readonly dungeon: DungeonDocument;
     readonly forest: ForestDocument;
     readonly courtyard: CourtyardDocument;
-    readonly tower: Tower;
+    readonly tower: TowerDocument;
   };
   readonly drafts: SettingsDrafts;
   readonly histories: {
     readonly dungeon: ShuffleHistory<DungeonDocument>;
     readonly forest: ShuffleHistory<ForestDocument>;
     readonly courtyard: ShuffleHistory<CourtyardDocument>;
-    readonly tower: ShuffleHistory<Tower>;
+    readonly tower: ShuffleHistory<TowerDocument>;
   };
 }
 
@@ -395,7 +396,7 @@ export class WorkbenchSession {
     if (isEditableMap(current) && current.objectEdits) return false;
     const next =
       current.type === 'tower'
-        ? shuffleTowerDetails(current)
+        ? shuffleTowerDetails(towerBase(current))
         : current.type === 'courtyard'
           ? shuffleCourtyardDetails(courtyardBase(current))
           : current.type === 'dungeon'
@@ -480,7 +481,7 @@ export class WorkbenchSession {
         const result = generateTower(parsed.settings);
         if (!result.ok) return result;
         next = result.map;
-      } else next = changeTowerAppearance(state.maps.tower, parsed.settings);
+      } else next = changeTowerAppearance(towerBase(state.maps.tower), parsed.settings);
     } else if (parsed.type === 'courtyard') {
       if (layoutChanged) {
         const result = generateCourtyard(parsed.settings);
@@ -674,9 +675,10 @@ export class WorkbenchSession {
         map.type === 'tower'
           ? {
               ...state.histories,
-              tower: resetDraft
-                ? { past: [], future: [] }
-                : recordShuffle(state.histories.tower, state.maps.tower),
+              tower:
+                resetDraft && !preserveHistory
+                  ? { past: [], future: [] }
+                  : recordShuffle(state.histories.tower, state.maps.tower),
             }
           : map.type === 'courtyard'
             ? {

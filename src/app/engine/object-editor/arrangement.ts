@@ -1,3 +1,4 @@
+import type { ObjectCommand } from './object-command';
 import type { Prop, PropKind, QuarterTurn } from '../model';
 import type { ObjectCapability } from './catalog';
 import type { ObjectMove, AddedObject } from './document';
@@ -25,6 +26,11 @@ export type AuthoredArrangement<Base, Id extends string> = Omit<Base, 'objectEdi
 };
 export type ArrangementDocument<Base, Id extends string> = Base | AuthoredArrangement<Base, Id>;
 export interface ArrangementAdapter<Base extends ArrangementBase, Id extends string> {
+  readonly validPosition?: (base: Base, x: number, y: number) => boolean;
+  readonly commandError?: (
+    map: ArrangementDocument<Base, Id>,
+    command: ObjectCommand,
+  ) => string | undefined;
   readonly base: (map: ArrangementDocument<Base, Id>) => Base;
   readonly groups: (base: Base) => readonly ObjectGroup<Id>[];
   readonly instances: (map: ArrangementDocument<Base, Id>) => readonly AddedObject[];

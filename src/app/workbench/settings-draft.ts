@@ -1,6 +1,7 @@
+import type { TowerDocument } from '../engine/object-editor/tower-document';
 import type { ForestDocument } from '../engine/object-editor/forest-document';
 import type { CourtyardDocument } from '../engine/object-editor/courtyard-document';
-import type { Tower, TowerSettings, TowerStairStyle } from '../engine/tower';
+import type { TowerSettings, TowerStairStyle } from '../engine/tower';
 import { validateTowerSettings, towerStairStyle } from '../engine/tower';
 import type {
   DecorationPreset,
@@ -65,7 +66,7 @@ export interface TowerDraft extends CommonDraft {
   readonly laboratoryFloor: string;
   readonly observatoryFloor: string;
 }
-export function towerDraftForMap(map: Tower): TowerDraft {
+export function towerDraftForMap(map: TowerDocument): TowerDraft {
   return {
     type: 'tower',
     stairStyle: towerStairStyle(map),

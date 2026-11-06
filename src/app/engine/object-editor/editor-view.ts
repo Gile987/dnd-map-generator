@@ -1,3 +1,7 @@
+import { towerFloorAt } from '../tower';
+import { towerCapability, TOWER_PALETTE } from './tower-catalog';
+import { towerInstances, resolveTower, orderedTowerObjects } from './tower-document';
+import { towerSelections } from './tower-rules';
 import { forestCapability, FOREST_PALETTE } from './forest-catalog';
 import { forestInstances, resolveForest, orderedForestObjects } from './forest-document';
 import { forestSelections } from './forest-rules';
@@ -22,14 +26,21 @@ export interface EditorSelection extends ObjectSelection {
   readonly rotatable: boolean;
 }
 export function isEditableMap(map: MapDocument): map is EditableMapDocument {
-  return map.type === 'dungeon' || map.type === 'courtyard' || map.type === 'forest';
+  return (
+    map.type === 'dungeon' ||
+    map.type === 'courtyard' ||
+    map.type === 'forest' ||
+    map.type === 'tower'
+  );
 }
 export function editorInstances(map: EditableMapDocument) {
   return map.type === 'dungeon'
     ? dungeonInstances(map)
     : map.type === 'forest'
       ? forestInstances(map)
-      : courtyardInstances(map);
+      : map.type === 'tower'
+        ? towerInstances(map)
+        : courtyardInstances(map);
 }
 export function editorSelections(map: EditableMapDocument): readonly EditorSelection[] {
   const selections =
@@ -37,7 +48,9 @@ export function editorSelections(map: EditableMapDocument): readonly EditorSelec
       ? dungeonSelections(map)
       : map.type === 'forest'
         ? forestSelections(map)
-        : courtyardSelections(map);
+        : map.type === 'tower'
+          ? towerSelections(map)
+          : courtyardSelections(map);
   return selections.map((item) => ({
     ...item,
     rotatable: !!item.groupId && item.groupId !== 'fountain',
@@ -48,7 +61,9 @@ export function editorPalette(map: EditableMapDocument) {
     ? DUNGEON_PALETTE_V2
     : map.type === 'forest'
       ? FOREST_PALETTE
-      : COURTYARD_PALETTE;
+      : map.type === 'tower'
+        ? TOWER_PALETTE
+        : COURTYARD_PALETTE;
 }
 export function editorObjectLabel(map: EditableMapDocument, kind: PropKind): string {
   return (
@@ -56,7 +71,9 @@ export function editorObjectLabel(map: EditableMapDocument, kind: PropKind): str
       ? dungeonCapability(kind, 2)
       : map.type === 'forest'
         ? forestCapability(kind)
-        : courtyardCapability(kind)
+        : map.type === 'tower'
+          ? towerCapability(kind)
+          : courtyardCapability(kind)
     )?.label ?? kind
   );
 }
@@ -68,10 +85,15 @@ export function editorOrderedObjects(map: EditableMapDocument) {
       )
     : map.type === 'forest'
       ? orderedForestObjects(map)
-      : orderedCourtyardObjects(map);
+      : map.type === 'tower'
+        ? orderedTowerObjects(map)
+        : orderedCourtyardObjects(map);
 }
-export function editorOverlaps(map: EditableMapDocument) {
-  return objectOverlaps(editorOrderedObjects(map), editorSelections(map));
+export function editorOverlaps(map: EditableMapDocument, showSecrets = false) {
+  return objectOverlaps(
+    editorVisibleObjects(map, showSecrets),
+    editorVisibleSelections(map, showSecrets),
+  );
 }
 export function editorOrderStep(
   map: EditableMapDocument,
@@ -85,5 +107,19 @@ export function resolveEditorMap(map: EditableMapDocument) {
     ? resolveDungeon(map)
     : map.type === 'forest'
       ? resolveForest(map)
-      : resolveCourtyard(map);
+      : map.type === 'tower'
+        ? resolveTower(map)
+        : resolveCourtyard(map);
+}
+
+/** Visibility is applied to both artwork and every discovery path, including layers. */
+export function editorVisibleObjects(map: EditableMapDocument, showSecrets = false) {
+  return editorOrderedObjects(map).filter(
+    (item) => map.type !== 'tower' || showSecrets || !towerFloorAt(map, item.prop)?.secret,
+  );
+}
+export function editorVisibleSelections(map: EditableMapDocument, showSecrets = false) {
+  return editorSelections(map).filter(
+    (item) => map.type !== 'tower' || showSecrets || !towerFloorAt(map, item.position)?.secret,
+  );
 }

@@ -35,7 +35,7 @@ function saved() {
 test('format 16 freezes observatory vocabulary while earlier readers and other map types reject it', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('26.0.0');
+  expect(record.saveFormatVersion).toBe('28.0.0');
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 15; v++) {
@@ -48,7 +48,7 @@ test('format 16 freezes observatory vocabulary while earlier readers and other m
 test('corrupt, incomplete, moved or conflicting observatory data is rejected and valid data remains recoverable', () => {
   const record = saved(),
     map = record.map;
-  if (map.type !== 'tower') throw new Error('Expected tower');
+  if (map.type !== 'tower' || !!map.objectEdits) throw new Error('Expected tower');
   const telescope = map.decoration.props.find((p) => p.kind === 'telescope');
   if (!telescope) throw new Error('Missing telescope');
   const candidates: unknown[] = [];
@@ -89,7 +89,7 @@ test('historical Tower models acquire an observatory only after an explicit appe
     if (!parsed.ok) throw new Error(parsed.error);
     for (const record of parsed.maps) {
       const map = record.map;
-      if (map.type !== 'tower') throw new Error('Expected tower');
+      if (map.type !== 'tower' || !!map.objectEdits) throw new Error('Expected tower');
       expect(map.decoration).not.toHaveProperty('observatoryFloor');
       const changed = changeTowerAppearance(map, {
         seed: map.seed,
@@ -111,7 +111,7 @@ test('historical Tower models acquire an observatory only after an explicit appe
 test('format-15 laboratories remain readable and observatory metadata is rejected on other map types', () => {
   const record = saved(),
     map = record.map;
-  if (map.type !== 'tower') throw new Error('Expected tower');
+  if (map.type !== 'tower' || !!map.objectEdits) throw new Error('Expected tower');
   const laboratory = changeTowerAppearance(map, {
     seed: map.seed,
     floorCount: 4,

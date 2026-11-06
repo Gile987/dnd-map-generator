@@ -1,3 +1,9 @@
+import {
+  towerStairFixture,
+  acceptTower,
+  towerEditorFixture,
+  validTowerCommand,
+} from '../../../scripts/tower-editor-test-support';
 import { acceptForest, forestEditorFixture } from '../../../scripts/forest-editor-test-support';
 import { validCommand } from '../../../scripts/editor-test-support';
 import {
@@ -911,6 +917,68 @@ test('unknown Forest editing versions remain recoverable and prevent later libra
   expect(store.canWrite()).toBe(false);
   expect(store.recoveryData()).toBe(raw);
   await expect(store.add(original.map, 'Do not discard forest edits', thumbnail)).rejects.toThrow();
+  expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
+  expect(storage.setItem).not.toHaveBeenCalled();
+});
+
+test.each(['objects', 'stairs'] as const)(
+  'Tower %s edits survive failed writes, retry, cross-store reads and exported backups',
+  async (mode) => {
+    const storage = stubStorage(),
+      store = createStore(),
+      before = store.saved(),
+      disk = storage.values.get(SAVE_STORAGE_KEY);
+    const edited =
+      mode === 'stairs'
+        ? towerStairFixture().moved
+        : acceptTower(
+            towerEditorFixture(),
+            validTowerCommand(towerEditorFixture(), 1, (target) => ({
+              kind: 'add',
+              propKind: 'moss',
+              target,
+            })),
+          );
+    storage.setItem.mockImplementationOnce(() => {
+      throw new DOMException('Full', 'QuotaExceededError');
+    });
+    await expect(store.add(edited, 'Edited tower', thumbnail)).rejects.toThrow('could not write');
+    expect(store.saved()).toBe(before);
+    expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(disk);
+    const saved = await store.add(edited, 'Edited tower', thumbnail);
+    expect(
+      createStore()
+        .saved()
+        .find((entry) => entry.id === saved.id)?.map,
+    ).toEqual(edited);
+    expect(parseBundle(store.exportMap(saved.id).json)).toMatchObject({
+      ok: true,
+      maps: [{ map: edited }],
+    });
+  },
+);
+
+test('unknown Tower editing versions remain recoverable and prevent later library mutation', async () => {
+  const map = acceptTower(
+    towerEditorFixture(),
+    validTowerCommand(towerEditorFixture(), 1, (target) => ({
+      kind: 'add',
+      propKind: 'moss',
+      target,
+    })),
+  );
+  const future = {
+    ...original,
+    id: 'future-tower',
+    map: { ...map, objectEdits: { ...map.objectEdits, version: 3 } },
+  };
+  const raw = JSON.stringify([original, future]),
+    storage = stubStorage(raw),
+    store = createStore();
+  expect(store.saved()).toEqual([original]);
+  expect(store.canWrite()).toBe(false);
+  expect(store.recoveryData()).toBe(raw);
+  await expect(store.add(original.map, 'Do not discard tower edits', thumbnail)).rejects.toThrow();
   expect(storage.values.get(SAVE_STORAGE_KEY)).toBe(raw);
   expect(storage.setItem).not.toHaveBeenCalled();
 });

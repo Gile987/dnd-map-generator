@@ -40,6 +40,8 @@ export interface TowerConnection {
   readonly arrival: Point;
 }
 export interface Tower {
+  /** Authored documents are excluded from canonical generator inputs. */
+  readonly objectEdits?: never;
   readonly type: 'tower';
   readonly version: string;
   readonly seed: string;
@@ -259,10 +261,21 @@ function towerLayout(
     ...(version === '3.0.0' ? { stairStyle } : {}),
   };
 }
-export function towerFloorAt(map: Tower, p: Point): TowerFloor | undefined {
+export function towerFloorAt(map: Pick<Tower, 'layout'>, p: Point): TowerFloor | undefined {
   return map.layout.floors.find(
     (f) => p.x >= f.x && p.y >= f.y && p.x < f.x + f.width && p.y < f.y + f.height,
   );
+}
+/** Display names follow accepted additions while stored floor purposes stay fixed. */
+export function towerFloorTitle(
+  map: Pick<Tower, 'decoration'>,
+  floor: Pick<TowerFloor, 'number' | 'purpose'>,
+): string {
+  return map.decoration.observatoryFloor === floor.number
+    ? 'Observatory'
+    : map.decoration.laboratoryFloor === floor.number
+      ? 'Alchemist’s laboratory'
+      : floor.purpose;
 }
 // Stairs, portals and their landings claim their tiles on every floor they touch.
 export function towerConnectionReserved(
@@ -499,6 +512,8 @@ export function isUsableTower(value: unknown): value is Tower {
   if (
     !object(value) ||
     value['type'] !== 'tower' ||
+    'objectEdits' in value ||
+    'doorStates' in value ||
     (value['version'] !== '1.0.0' &&
       value['version'] !== '2.0.0' &&
       value['version'] !== TOWER_GENERATOR_VERSION) ||

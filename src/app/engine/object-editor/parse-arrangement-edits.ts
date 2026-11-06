@@ -17,18 +17,22 @@ function keys(value: Record<string, unknown>, allowed: readonly string[]): boole
 }
 function position(
   value: Record<string, unknown>,
+  validPosition: (x: number, y: number) => boolean,
 ): value is Record<string, unknown> & { x: number; y: number } {
   return (
     typeof value['x'] === 'number' &&
     typeof value['y'] === 'number' &&
-    isTilePosition(value['x'], value['y'])
+    validPosition(value['x'], value['y'])
   );
 }
 export function parseArrangementEdits<Base extends ArrangementBase, Id extends string>(
   base: Base,
   value: unknown,
   adapter: ArrangementAdapter<Base, Id>,
+  options: { readonly allowEmpty?: boolean } = {},
 ): AuthoredArrangement<Base, Id> | undefined {
+  const validPosition = (x: number, y: number) =>
+    adapter.validPosition ? adapter.validPosition(base, x, y) : isTilePosition(x, y);
   if (
     !object(value) ||
     !keys(value, ['version', 'nextId', 'moves', 'removed', 'added', 'groups', 'order']) ||
@@ -64,7 +68,7 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
     if (
       !object(move) ||
       !keys(move, ['id', 'x', 'y']) ||
-      !position(move) ||
+      !position(move, validPosition) ||
       typeof move['id'] !== 'string' ||
       !/^base-(0|[1-9]\d*)$/.test(move['id']) ||
       seen.has(move['id'])
@@ -91,7 +95,7 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
     if (
       !object(prop) ||
       !keys(prop, ['kind', 'x', 'y', 'blocking', 'variation']) ||
-      !position(prop) ||
+      !position(prop, validPosition) ||
       typeof prop['kind'] !== 'string' ||
       !adapter.capability(prop['kind'] as PropKind)?.editable ||
       prop['blocking'] !== isBlockingProp(prop['kind'] as PropKind) ||
@@ -108,7 +112,11 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
   const available = adapter.groups(base),
     seenGroups = new Set<string>();
   for (const move of value['groups']) {
-    if (!object(move) || !keys(move, ['id', 'x', 'y', 'rotation']) || !position(move))
+    if (
+      !object(move) ||
+      !keys(move, ['id', 'x', 'y', 'rotation']) ||
+      !position(move, validPosition)
+    )
       return undefined;
     const group = available.find((group) => group.id === move['id']),
       rotation = QUARTER_TURNS.find((turn) => turn === move['rotation']);
@@ -149,7 +157,14 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
       .map((item) => item.id);
     if (expected.some((id, i) => actual[i] !== id)) return undefined;
   }
-  if (!moves.length && !removed.length && !added.length && !groups.length && !order.length)
+  if (
+    !options.allowEmpty &&
+    !moves.length &&
+    !removed.length &&
+    !added.length &&
+    !groups.length &&
+    !order.length
+  )
     return undefined;
   return adapter.placementError(result) ? undefined : result;
 }

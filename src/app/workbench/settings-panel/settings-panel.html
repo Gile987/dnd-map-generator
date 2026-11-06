@@ -344,7 +344,7 @@
     <button
       class="history-button"
       type="button"
-      [attr.aria-label]="map().type !== 'tower' ? 'Undo change' : 'Undo shuffle'"
+      aria-label="Undo change"
       [title]="'Undo change (' + shuffleHistory().undo + ' available)'"
       aria-describedby="shuffle-history-hint"
       [attr.aria-disabled]="disabled() || shuffleHistory().undo === 0"
@@ -355,7 +355,7 @@
     <button
       class="history-button"
       type="button"
-      [attr.aria-label]="map().type !== 'tower' ? 'Redo change' : 'Redo shuffle'"
+      aria-label="Redo change"
       [title]="'Redo change (' + shuffleHistory().redo + ' available)'"
       aria-describedby="shuffle-history-hint"
       [attr.aria-disabled]="disabled() || shuffleHistory().redo === 0"

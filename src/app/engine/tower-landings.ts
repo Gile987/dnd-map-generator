@@ -10,7 +10,7 @@ export interface StairLanding extends Point {
   readonly routes: readonly StairRoute[];
 }
 /** Several inter-floor links can share one physical staircase. */
-export function towerStairLandings(map: Tower): readonly StairLanding[] {
+export function towerStairLandings(map: Pick<Tower, 'layout'>): readonly StairLanding[] {
   const landings = new Map<string, { x: number; y: number; floor: number; routes: StairRoute[] }>();
   for (const c of map.layout.connections) {
     if (c.kind !== 'stairs') continue;
