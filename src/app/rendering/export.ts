@@ -33,8 +33,12 @@ export function exportFilename(map: MapDocument, showSecrets = false, towerFloor
     const laboratory = laboratoryVisible ? `-laboratory-floor-${laboratoryFloor}` : '';
     return `encounter-${seed}-tower-${scope}${map.layout.stairStyle ? '-' + map.layout.stairStyle : ''}${laboratory}${observatory}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}${map.layout.portalFloor !== null ? (showSecrets ? '-gm-secrets' : '-player') : ''}.png`;
   }
-  if (type === 'courtyard')
-    return `encounter-${seed}-courtyard${map.decoration.fountain ? '-dry-fountain' : ''}${map.decoration.wagon ? '-collapsed-wagon' : ''}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+  if (type === 'courtyard') {
+    // The original look keeps its historical filename; other looks append theirs.
+    const look =
+      map.decoration.character === 'Overgrown' ? '' : `-${map.decoration.character.toLowerCase()}`;
+    return `encounter-${seed}-courtyard${look}${map.decoration.fountain ? '-dry-fountain' : ''}${map.decoration.wagon ? '-collapsed-wagon' : ''}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+  }
   if (type === 'dungeon') {
     const preset = map.decoration.preset.toLowerCase();
     const scene = map.decoration.scene === 'Forgotten study' ? '-forgotten-study' : '';

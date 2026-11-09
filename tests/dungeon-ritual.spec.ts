@@ -134,7 +134,7 @@ test('ritual snapshots survive refresh and single-map sharing with exact PNGs an
     .getByRole('button', { name: 'Export this map', exact: true })
     .click();
   const path = await (await pending).path();
-  expect(JSON.parse(await readFile(path, 'utf8'))).toMatchObject({ saveFormatVersion: '28.0.0' });
+  expect(JSON.parse(await readFile(path, 'utf8'))).toMatchObject({ saveFormatVersion: '29.0.0' });
   const fresh = await browser.newPage();
   try {
     await fresh.goto('http://128.0.0.1:4200/');

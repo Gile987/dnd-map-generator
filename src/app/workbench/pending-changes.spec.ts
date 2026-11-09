@@ -115,6 +115,21 @@ test('courtyard fountain stays an appearance change and never invents a characte
   ]);
 });
 
+test('courtyard character rows use the displayed vocabulary and apply as appearance', () => {
+  const session = new WorkbenchSession();
+  session.selectMapType('courtyard');
+  session.updateDraft({ type: 'courtyard', changes: { character: 'Sunbleached' } });
+  expect(session.generationEffect()).toBe('appearance');
+  expect(pendingSettingChanges(session.map(), session.draft())).toEqual([
+    { label: 'Character', before: 'Overgrown ruin', after: 'Sunbleached ruin' },
+  ]);
+  const result = session.generate();
+  expect(result).toMatchObject({ ok: true, layoutChanged: false });
+  const map = session.map();
+  expect(map.type === 'courtyard' ? map.decoration.character : undefined).toBe('Sunbleached');
+  expect(pendingSettingChanges(session.map(), session.draft())).toEqual([]);
+});
+
 test.each(['6', '06', '0006'])(
   'valid room formatting %j does not invent a layout change',
   (rooms) => {

@@ -11,6 +11,7 @@ import {
   isTilePosition,
 } from './model';
 import type { CourtyardLayout, CourtyardSettings, Point, RuinedCourtyard, TileArea } from './model';
+import { ALL_COURTYARD_CHARACTERS } from './model';
 import { gridDistances } from './grid-traversal';
 import { isDetailRevision } from './decoration-revision';
 import { propCells, propFootprintError } from './prop-footprint';
@@ -61,6 +62,8 @@ export function validateCourtyardSettings(settings: CourtyardSettings): string |
   if (!settings.seed.trim() || settings.seed.trim().length > 64)
     return 'Enter a seed between 1 and 64 characters.';
   if (!ALL_DENSITIES.includes(settings.density)) return 'Choose a valid decoration density.';
+  if (!ALL_COURTYARD_CHARACTERS.includes(settings.character))
+    return 'Choose a valid courtyard character.';
   if (settings.wagon !== undefined && typeof settings.wagon !== 'boolean')
     return 'Choose whether to add a collapsed wagon.';
   if (typeof settings.fountain !== 'boolean') return 'Choose whether to add a dry fountain.';
@@ -127,6 +130,7 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
   const settingsError = validateCourtyardSettings({
     seed: map.seed,
     density: map.decoration.density,
+    character: map.decoration.character,
     fountain: map.decoration.fountain,
     wagon: map.decoration.wagon,
   });

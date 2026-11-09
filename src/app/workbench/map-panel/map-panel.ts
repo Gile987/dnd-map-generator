@@ -113,7 +113,7 @@ export class MapPanel {
       return {
         seed: map.seed,
         rooms: '4 open approaches',
-        details: `${map.objectEdits ? 'Customized · ' : ''}Overgrown ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
+        details: `${map.objectEdits ? 'Customized · ' : ''}${map.decoration.character} ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''} · ${map.decoration.density} r${map.decoration.revision}`,
         type: 'RUINED COURTYARD',
       };
     if (map.type === 'dungeon') {

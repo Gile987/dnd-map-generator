@@ -37,7 +37,11 @@ import {
   changeCourtyardAppearance,
   shuffleCourtyardDetails,
 } from '../engine/courtyard-generate';
-import { DEFAULT_FOREST_CHARACTER, DEFAULT_PRESET } from '../engine/model';
+import {
+  DEFAULT_COURTYARD_CHARACTER,
+  DEFAULT_FOREST_CHARACTER,
+  DEFAULT_PRESET,
+} from '../engine/model';
 import type { DungeonDocument, MapDocument, MapType } from '../engine/model';
 import {
   towerDraftForMap,
@@ -143,7 +147,12 @@ function initialState(): SessionState {
     character: DEFAULT_FOREST_CHARACTER,
   });
   if (!forest.ok) throw new Error(forest.error);
-  const courtyard = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: false });
+  const courtyard = generateCourtyard({
+    seed: 'ivy-court',
+    density: 'Balanced',
+    character: DEFAULT_COURTYARD_CHARACTER,
+    fountain: false,
+  });
   if (!courtyard.ok) throw new Error(courtyard.error);
   const tower = generateTower({
     seed: 'astral-watch',
@@ -255,6 +264,7 @@ export class WorkbenchSession {
       return (
         this.layoutPending() ||
         draft.density !== decoration.density ||
+        draft.character !== decoration.character ||
         draft.fountain !== decoration.fountain ||
         Boolean(draft.wagon) !== Boolean(decoration.wagon)
       );
@@ -598,6 +608,16 @@ export class WorkbenchSession {
       next.decoration.character !== parsed.settings.character
     ) {
       return { ok: false, error: 'That forest character could not be applied. Try another seed.' };
+    }
+    if (
+      next.type === 'courtyard' &&
+      parsed.type === 'courtyard' &&
+      next.decoration.character !== parsed.settings.character
+    ) {
+      return {
+        ok: false,
+        error: 'That courtyard character could not be applied. Try another seed.',
+      };
     }
     if (
       next.type === 'forest' &&

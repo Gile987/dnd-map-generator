@@ -8,6 +8,7 @@ import {
   parseSavedMap,
   serializeBundle,
   saveVocabulary,
+  SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap, mapUsesVocabulary } from './map-schema';
 
@@ -31,7 +32,7 @@ function record() {
 
 test('format 11 round-trips exact ritual models and freezes older vocabularies', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('28.0.0');
+  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   for (let version = 1; version <= 10; version++) {
@@ -112,7 +113,12 @@ test('ritual metadata cannot be attached to a forest or courtyard even when fals
     density: 'Balanced',
     character: 'Verdant',
   });
-  const courtyard = generateCourtyard({ seed: 'ritual', density: 'Balanced', fountain: false });
+  const courtyard = generateCourtyard({
+    character: 'Overgrown',
+    seed: 'ritual',
+    density: 'Balanced',
+    fountain: false,
+  });
   for (const result of [forest, courtyard]) {
     if (!result.ok) throw new Error(result.error);
     const saved = makeSavedMap(

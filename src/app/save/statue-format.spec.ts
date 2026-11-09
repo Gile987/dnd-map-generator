@@ -1,6 +1,12 @@
 import { expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
-import { makeSavedMap, parseSavedMap, parseBundle, serializeBundle } from './save-format';
+import {
+  makeSavedMap,
+  parseSavedMap,
+  parseBundle,
+  serializeBundle,
+  SAVE_FORMAT_VERSION,
+} from './save-format';
 
 function record() {
   const result = generateDungeon({
@@ -23,7 +29,7 @@ function record() {
 
 test('statue snapshots round-trip in current format and historical vocabularies reject new metadata and objects', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('28.0.0');
+  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)).toEqual(saved);
   const historical = {
     ...saved,

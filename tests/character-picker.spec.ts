@@ -144,19 +144,17 @@ test('native radio keyboard selection closes predictably and never submits the g
   await expect(page.locator('#settings-error')).not.toBeEmpty();
 });
 
-test('each map type keeps its character draft and Courtyard offers its single existing look', async ({
-  page,
-}) => {
+test('each map type keeps its character draft across map switches', async ({ page }) => {
   await page.goto('/');
   await selectCharacter(page, 'Crypt');
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
   await selectCharacter(page, 'Fey glade');
   await page.getByRole('radio', { name: 'Courtyard', exact: true }).check();
-  await expect(page.getByRole('button', { name: 'Choose character', exact: true })).toHaveCount(0);
-  await expect(page.locator('.style-note')).toContainText('Overgrown ruin');
+  await selectCharacter(page, 'Desecrated');
   for (const [type, label] of [
     ['Dungeon', 'Ancient crypt'],
     ['Forest', 'Fey glade'],
+    ['Courtyard', 'Desecrated ruin'],
   ]) {
     await page.getByRole('radio', { name: type, exact: true }).check();
     await expect(page.locator('#character-selection strong')).toHaveText(label ?? '');
@@ -165,6 +163,47 @@ test('each map type keeps its character draft and Courtyard offers its single ex
       label ?? '',
     );
   }
+});
+
+test('courtyard offers its four ruin characters and applies a pending choice', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('radio', { name: 'Courtyard', exact: true }).check();
+  await expect(page.locator('.style-note')).toContainText('Overgrown ruin');
+  const chooser = page.getByRole('button', { name: 'Choose character', exact: true });
+  const picker = await openCharacters(page);
+  await expect(picker.getByRole('radio')).toHaveCount(4);
+  await expect(picker.getByRole('radio', { name: 'Overgrown ruin', exact: true })).toBeChecked();
+  const labels = ['Overgrown ruin', 'Sunbleached ruin', 'Frostbound ruin', 'Desecrated ruin'];
+  for (const label of labels) {
+    await expect(
+      picker.getByRole('radio', { name: label, exact: true }),
+    ).toHaveAccessibleDescription(/\w+/);
+  }
+  await picker.getByRole('radio', { name: 'Sunbleached ruin', exact: true }).check();
+  await expect(picker.getByRole('status')).toHaveText('Selected: Sunbleached ruin');
+  await picker.getByRole('button', { name: 'Done', exact: true }).click();
+  await expect(picker).not.toBeVisible();
+  await expect(chooser).toBeFocused();
+  await expect(chooser).toHaveAccessibleDescription(/Sunbleached/);
+  await expect(chooser.locator('.character-pending')).toHaveText('Pending');
+  await expect(page.locator('#character-selection strong')).toHaveText('Sunbleached ruin');
+  await expect(page.locator('.style-note')).toContainText('Overgrown ruin');
+  await page.getByRole('button', { name: 'Generate courtyard', exact: true }).click();
+  await expect(chooser.locator('.character-pending')).toHaveCount(0);
+  await expect(page.locator('#character-selection strong')).toHaveText('Sunbleached ruin');
+  await expect(page.locator('.style-note')).toContainText('Sunbleached ruin');
+  await expect(page.locator('.style-note')).toContainText('Sun-cracked paving');
+  const applied = await png(page);
+  expect(applied.name).toContain('courtyard-sunbleached-');
+  await snapshot(page, 'Sunbleached save');
+  await page.reload();
+  await page
+    .locator('.saved-item')
+    .filter({ has: page.locator('.saved-name').getByText('Sunbleached save', { exact: true }) })
+    .getByRole('button', { name: 'Open', exact: true })
+    .click();
+  await expect(page.locator('#character-selection strong')).toHaveText('Sunbleached ruin');
+  await expect(page.locator('.character-pending')).toHaveCount(0);
 });
 
 test('illustrated cards and fixed footer fit desktop, mobile and short viewports with visible keyboard focus', async ({
@@ -179,7 +218,7 @@ test('illustrated cards and fixed footer fit desktop, mobile and short viewports
     [800, 420],
   ] as const) {
     await page.setViewportSize({ width, height });
-    for (const type of ['Dungeon', 'Forest']) {
+    for (const type of ['Dungeon', 'Forest', 'Courtyard']) {
       await page.getByRole('radio', { name: type, exact: true }).check();
       const picker = await openCharacters(page);
       const bounds = await picker.boundingBox();

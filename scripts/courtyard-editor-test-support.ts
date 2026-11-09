@@ -14,7 +14,13 @@ import type { ObjectCommand } from '../src/app/engine/object-editor/commands';
 import { QUARTER_TURNS } from '../src/app/engine/prop-footprint';
 
 export function courtyardEditorFixture(density: Density = 'Balanced') {
-  const result = generateCourtyard({ seed: 'ivy-court', density, fountain: true, wagon: true });
+  const result = generateCourtyard({
+    character: 'Overgrown',
+    seed: 'ivy-court',
+    density,
+    fountain: true,
+    wagon: true,
+  });
   if (!result.ok) throw Error(result.error);
   return result.map;
 }

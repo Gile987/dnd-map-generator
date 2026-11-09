@@ -21,6 +21,7 @@ if (!dungeon.ok) throw new Error(dungeon.error);
 if (!forest.ok) throw new Error(forest.error);
 
 const courtyard = generateCourtyard({
+  character: 'Overgrown',
   seed: 'revision-limit',
   density: 'Balanced',
   fountain: true,

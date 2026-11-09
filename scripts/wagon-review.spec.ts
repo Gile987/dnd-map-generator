@@ -9,7 +9,13 @@ test('reviews wagon scenes with and without fountains and bounds every sprite to
   mkdirSync('artifacts/wagon', { recursive: true });
   for (const seed of ['ivy-court', 'fallen-crown', 'wagon-0'])
     for (const fountain of [false, true]) {
-      const r = generateCourtyard({ seed, density: 'Balanced', fountain, wagon: true });
+      const r = generateCourtyard({
+        character: 'Overgrown',
+        seed,
+        density: 'Balanced',
+        fountain,
+        wagon: true,
+      });
       if (!r.ok) throw new Error(`${seed}: ${r.error}`);
       const full = createCanvas(2560, 1920);
       renderMap(full.getContext('2d'), r.map, { grid: true, pixelsPerTile: 64 });
