@@ -15,6 +15,7 @@ import type {
   ForestSettings,
   ForestScene,
   ForestLandmark,
+  CourtyardCharacter,
   CourtyardSettings,
 } from '../engine/model';
 import { ROOM_MAX, ROOM_MIN } from '../engine/model';
@@ -55,6 +56,7 @@ export interface SettingsDrafts {
 export interface CourtyardDraft extends CommonDraft {
   readonly wagon?: boolean;
   readonly type: 'courtyard';
+  readonly character: CourtyardCharacter;
   readonly fountain: boolean;
 }
 
@@ -159,6 +161,7 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
       wagon: draft.wagon,
       seed: draft.seed,
       density: draft.density,
+      character: draft.character,
       fountain: draft.fountain,
     };
     const error = validateCourtyardSettings(settings);
@@ -200,6 +203,7 @@ export function courtyardDraftForMap(map: CourtyardDocument): CourtyardDraft {
     wagon: Boolean(map.decoration.wagon),
     seed: map.seed,
     density: map.decoration.density,
+    character: map.decoration.character,
     fountain: map.decoration.fountain,
   };
 }

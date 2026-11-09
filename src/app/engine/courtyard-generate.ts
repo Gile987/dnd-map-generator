@@ -1,9 +1,17 @@
 import { GENERATOR_VERSION, HEIGHT, WIDTH, indexOf } from './model';
-import type { CourtyardLayout, CourtyardSettings, Prop, RuinedCourtyard } from './model';
+import type {
+  CourtyardCharacter,
+  CourtyardLayout,
+  CourtyardSettings,
+  Prop,
+  PropKind,
+  RuinedCourtyard,
+} from './model';
 import { Random, shuffleInPlace, streamSeed } from './random';
 import { nextDetailRevision } from './decoration-revision';
 import { propCells } from './prop-footprint';
 import { placeCollapsedWagon } from './courtyard-wagon';
+import { DEFAULT_COURTYARD_CHARACTER } from './model';
 import { gridDistances } from './grid-traversal';
 import {
   areaCells,
@@ -62,21 +70,58 @@ function createLayout(random: Random): CourtyardLayout {
   return { ...layout, tiles };
 }
 
+// Accents only ever draw from the supported kinds. Overgrown keeps the original
+// four-way roster, so its decoration stream and RNG consumption are exactly the
+// historical ones; the other characters reweight the same kinds with their own.
+const ACCENT_ROSTERS: Readonly<Record<CourtyardCharacter, readonly PropKind[]>> = {
+  Overgrown: ['low_rubble', 'moss', 'fern', 'vine'],
+  Sunbleached: [
+    'low_rubble',
+    'low_rubble',
+    'moss',
+    'low_rubble',
+    'fern',
+    'low_rubble',
+    'moss',
+    'low_rubble',
+  ],
+  Frostbound: [
+    'low_rubble',
+    'low_rubble',
+    'fern',
+    'low_rubble',
+    'moss',
+    'low_rubble',
+    'fern',
+    'low_rubble',
+  ],
+  Desecrated: ['vine', 'low_rubble', 'moss', 'vine', 'low_rubble', 'vine', 'fern', 'low_rubble'],
+};
+
+type DecorationInputs = Pick<CourtyardSettings, 'density' | 'fountain' | 'character'>;
+
 function decorateBase(
   layout: CourtyardLayout,
   seed: string,
-  settings: Pick<CourtyardSettings, 'density' | 'fountain'>,
+  settings: DecorationInputs,
   revision: number,
 ): RuinedCourtyard['decoration'] {
+  const fountainFlag = settings.fountain ? 'fountain' : 'open';
+  // Overgrown must reproduce historical courtyards, so it keeps the legacy
+  // argument list. Other characters consume a distinct stream.
   const random = new Random(
-    streamSeed(
-      seed,
-      'courtyard-decoration',
-      settings.density,
-      settings.fountain ? 'fountain' : 'open',
-      revision,
-    ),
+    settings.character === DEFAULT_COURTYARD_CHARACTER
+      ? streamSeed(seed, 'courtyard-decoration', settings.density, fountainFlag, revision)
+      : streamSeed(
+          seed,
+          'courtyard-decoration',
+          settings.character,
+          settings.density,
+          fountainFlag,
+          revision,
+        ),
   );
+  const roster = ACCENT_ROSTERS[settings.character];
   const protectedCells = courtyardProtectedCells(layout);
   const props: Prop[] = [];
   const blocked = new Set<number>();
@@ -129,18 +174,24 @@ function decorateBase(
     const tile = indexOf(p.x, p.y);
     if (count >= accents) break;
     if (!layout.tiles[tile] || protectedCells.has(tile) || occupied.has(tile)) continue;
-    const kind = (['low_rubble', 'moss', 'fern', 'vine'] as const)[random.int(0, 3)] ?? 'moss';
+    const kind = roster[random.int(0, roster.length - 1)] ?? 'moss';
     props.push({ ...p, kind, blocking: false, variation: random.next() });
     occupied.add(tile);
     count++;
   }
-  return { density: settings.density, fountain: settings.fountain, props, revision };
+  return {
+    density: settings.density,
+    character: settings.character,
+    fountain: settings.fountain,
+    props,
+    revision,
+  };
 }
 
 function decorate(
   layout: CourtyardLayout,
   seed: string,
-  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'wagon'>,
+  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'character' | 'wagon'>,
   revision: number,
 ): RuinedCourtyard['decoration'] | undefined {
   const base = decorateBase(layout, seed, settings, revision);
@@ -193,7 +244,13 @@ export function generateCourtyard(
     seed,
     layout: createLayout(new Random(streamSeed(seed, 'courtyard-layout'))),
     surfaceSeed: streamSeed(seed, 'courtyard-surface'),
-    decoration: { density: settings.density, fountain: settings.fountain, revision: 0, props: [] },
+    decoration: {
+      density: settings.density,
+      character: settings.character,
+      fountain: settings.fountain,
+      revision: 0,
+      props: [],
+    },
   };
   const decoration = decorate(map.layout, seed, settings, 0);
   if (!decoration)
@@ -208,12 +265,13 @@ export function generateCourtyard(
 
 export function changeCourtyardAppearance(
   map: RuinedCourtyard,
-  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'wagon'>,
+  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'character' | 'wagon'>,
 ): RuinedCourtyard {
   if (
     validateCourtyardSettings({
       seed: map.seed,
       density: settings.density,
+      character: settings.character,
       fountain: settings.fountain,
       wagon: settings.wagon,
     })
@@ -232,6 +290,7 @@ export function shuffleCourtyardDetails(map: RuinedCourtyard): RuinedCourtyard {
     map.seed,
     {
       density: map.decoration.density,
+      character: map.decoration.character,
       fountain: map.decoration.fountain,
       wagon: map.decoration.wagon,
     },

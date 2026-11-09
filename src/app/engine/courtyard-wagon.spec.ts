@@ -76,7 +76,7 @@ test('wagons coexist with fountains across densities/seeds, preserve circulation
     for (const fountain of [false, true]) {
       let successes = 0;
       for (let n = 0; n < 15; n++) {
-        const settings = { seed: `wagon-${n}`, density, fountain };
+        const settings = { seed: `wagon-${n}`, density, fountain, character: 'Overgrown' as const };
         const original = generateCourtyard(settings);
         if (!original.ok) throw new Error(original.error);
         const before = structuredClone(original.map),
@@ -114,7 +114,12 @@ test('wagons coexist with fountains across densities/seeds, preserve circulation
 });
 
 test('impossible sites and invalid settings refuse without a partial wagon', () => {
-  const r = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: true });
+  const r = generateCourtyard({
+    character: 'Overgrown',
+    seed: 'ivy-court',
+    density: 'Balanced',
+    fountain: true,
+  });
   if (!r.ok) throw new Error(r.error);
   expect(
     placeCollapsedWagon(
@@ -125,6 +130,7 @@ test('impossible sites and invalid settings refuse without a partial wagon', () 
   ).toBeUndefined();
   expect(
     generateCourtyard({
+      character: 'Overgrown',
       seed: 'ivy-court',
       density: 'Balanced',
       fountain: false,
@@ -133,6 +139,7 @@ test('impossible sites and invalid settings refuse without a partial wagon', () 
   ).toMatchObject({ ok: false });
   expect(
     changeCourtyardAppearance(r.map, {
+      character: 'Overgrown',
       density: 'Balanced',
       fountain: true,
       wagon: 'yes' as never,

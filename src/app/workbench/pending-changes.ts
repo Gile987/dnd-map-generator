@@ -1,6 +1,11 @@
 import type { MapDocument } from '../engine/model';
 import { LANDMARK_CATALOG } from '../engine/landmark-catalog';
-import { CHARACTER_LABELS, PRESET_LABELS, TOWER_STAIR_LABELS } from './presentation';
+import {
+  CHARACTER_LABELS,
+  COURTYARD_CHARACTER_LABELS,
+  PRESET_LABELS,
+  TOWER_STAIR_LABELS,
+} from './presentation';
 import {
   towerDraftForMap,
   courtyardDraftForMap,
@@ -97,6 +102,12 @@ export function pendingSettingChanges(
     add('Character', PRESET_LABELS[accepted.preset], PRESET_LABELS[draft.preset]);
   } else if (accepted.type === 'forest' && draft.type === 'forest') {
     add('Character', CHARACTER_LABELS[accepted.character], CHARACTER_LABELS[draft.character]);
+  } else if (accepted.type === 'courtyard' && draft.type === 'courtyard') {
+    add(
+      'Character',
+      COURTYARD_CHARACTER_LABELS[accepted.character],
+      COURTYARD_CHARACTER_LABELS[draft.character],
+    );
   }
   add('Additions', additionNames(accepted), additionNames(draft));
   add('Decoration', accepted.density, draft.density);

@@ -17,7 +17,12 @@ const forest = generateForestClearing({
   density: 'Balanced',
   character: 'Verdant',
 });
-const courtyard = generateCourtyard({ seed: 'ivy-seed', density: 'Balanced', fountain: false });
+const courtyard = generateCourtyard({
+  character: 'Overgrown',
+  seed: 'ivy-seed',
+  density: 'Balanced',
+  fountain: false,
+});
 if (!dungeon.ok || !forest.ok || !courtyard.ok) throw new Error('Missing library fixtures');
 const maps: Readonly<Record<Exclude<MapType, 'tower'>, GeneratedMap>> = {
   dungeon: dungeon.map,

@@ -9,6 +9,7 @@ import {
   serializeBundle,
   parseBundle,
   saveVocabulary,
+  SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
 import fixture from './fixtures/forest-v3.json';
@@ -34,7 +35,7 @@ function saved() {
 test('format 18 preserves a complete tree and freezes earlier vocabularies', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('28.0.0');
+  expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap({ ...record, saveFormatVersion: '18.0.0' })?.map).toBe(record.map);
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
@@ -108,7 +109,12 @@ test('other map types reject fallen-tree fields and objects', () => {
   const record = saved();
   for (const r of [
     generateDungeon({ seed: 'tree', roomCount: 6, preset: 'Mosslit', density: 'Balanced' }),
-    generateCourtyard({ seed: 'tree', fountain: true, density: 'Balanced' }),
+    generateCourtyard({
+      character: 'Overgrown',
+      seed: 'tree',
+      fountain: true,
+      density: 'Balanced',
+    }),
     generateTower({ seed: 'tree', floorCount: 4, portalFloor: null, density: 'Balanced' }),
   ]) {
     if (!r.ok) throw new Error(r.error);

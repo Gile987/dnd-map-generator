@@ -8,7 +8,12 @@ import {
   serializeBundle,
 } from './save-format';
 
-const result = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: true });
+const result = generateCourtyard({
+  character: 'Overgrown',
+  seed: 'ivy-court',
+  density: 'Balanced',
+  fountain: true,
+});
 if (!result.ok) throw new Error(result.error);
 const map = shuffleCourtyardDetails(result.map);
 const record = makeSavedMap(
@@ -20,7 +25,7 @@ const record = makeSavedMap(
 );
 
 test('format 9 preserves courtyard models and artwork inputs exactly through records and backups', () => {
-  expect(record.saveFormatVersion).toBe('28.0.0');
+  expect(record.saveFormatVersion).toBe('29.0.0');
   expect(parseSavedMap(record)?.map).toBe(map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (const version of ['1.0.0', '2.0.0', '3.0.0', '4.0.0', '5.0.0', '6.0.0', '7.0.0', '8.0.0']) {

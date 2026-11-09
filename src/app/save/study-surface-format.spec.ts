@@ -3,7 +3,13 @@ import fixture from './fixtures/study-v9.json';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
 import { generateCourtyard } from '../engine/courtyard-generate';
-import { makeSavedMap, parseBundle, parseSavedMap, serializeBundle } from './save-format';
+import {
+  makeSavedMap,
+  parseBundle,
+  parseSavedMap,
+  serializeBundle,
+  SAVE_FORMAT_VERSION,
+} from './save-format';
 import { isUsableMap } from './map-schema';
 
 function record() {
@@ -26,7 +32,7 @@ function record() {
 
 test('format 10 preserves new surface artwork through backup round trips', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('28.0.0');
+  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(saved.map.decoration).toHaveProperty('studySurface', 1);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   for (let version = 1; version <= 9; version++) {
@@ -38,7 +44,7 @@ test('historical study models upgrade only the record version and never acquire 
   const snapshot = structuredClone(fixture);
   for (let version = 4; version <= 10; version++) {
     const stored = { ...fixture.maps[0], saveFormatVersion: `${version}.0.0` };
-    expect(parseSavedMap(stored)).toEqual({ ...stored, saveFormatVersion: '28.0.0' });
+    expect(parseSavedMap(stored)).toEqual({ ...stored, saveFormatVersion: SAVE_FORMAT_VERSION });
   }
   const parsed = parseBundle(JSON.stringify(fixture));
   if (!parsed.ok) throw new Error(parsed.error);
@@ -69,7 +75,12 @@ test('surface metadata requires a study and cannot be smuggled into another map 
     density: 'Balanced',
     character: 'Verdant',
   });
-  const courtyard = generateCourtyard({ seed: 'surface', density: 'Balanced', fountain: false });
+  const courtyard = generateCourtyard({
+    character: 'Overgrown',
+    seed: 'surface',
+    density: 'Balanced',
+    fountain: false,
+  });
   for (const result of [dungeon, forest, courtyard]) {
     if (!result.ok) throw new Error(result.error);
     const saved = makeSavedMap(

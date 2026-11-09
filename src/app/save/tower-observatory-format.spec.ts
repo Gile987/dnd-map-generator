@@ -6,6 +6,7 @@ import {
   serializeBundle,
   parseBundle,
   saveVocabulary,
+  SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
 import oldTower from './fixtures/tower-v1.json';
@@ -35,7 +36,7 @@ function saved() {
 test('format 16 freezes observatory vocabulary while earlier readers and other map types reject it', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('28.0.0');
+  expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 15; v++) {
@@ -125,7 +126,12 @@ test('format-15 laboratories remain readable and observatory metadata is rejecte
   for (const result of [
     generateDungeon({ seed: 'observatory', roomCount: 6, preset: 'Mosslit', density: 'Balanced' }),
     generateForestClearing({ seed: 'observatory', character: 'Verdant', density: 'Balanced' }),
-    generateCourtyard({ seed: 'observatory', fountain: false, density: 'Balanced' }),
+    generateCourtyard({
+      character: 'Overgrown',
+      seed: 'observatory',
+      fountain: false,
+      density: 'Balanced',
+    }),
   ]) {
     if (!result.ok) throw new Error(result.error);
     for (const decoration of [

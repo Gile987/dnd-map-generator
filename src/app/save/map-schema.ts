@@ -7,6 +7,7 @@ import type { MapDocument } from '../engine/model';
 import { isUsableTower } from '../engine/tower';
 import {
   ALL_DENSITIES,
+  ALL_COURTYARD_CHARACTERS,
   ALL_DUNGEON_SCENES,
   ALL_DUNGEON_FURNITURE,
   ALL_DUNGEON_LANDMARKS,
@@ -15,6 +16,7 @@ import {
   ALL_FOREST_LANDMARKS,
   ALL_PRESETS,
   ALL_PROP_KINDS,
+  DEFAULT_COURTYARD_CHARACTER,
   DEFAULT_FOREST_CHARACTER,
   HEIGHT,
   ROOM_MAX,
@@ -58,6 +60,7 @@ export interface SaveVocabulary {
   readonly studySurfaces?: readonly number[];
   readonly courtyardWagons?: readonly boolean[];
   readonly courtyardFountains?: readonly boolean[];
+  readonly courtyardCharacters?: readonly string[];
   readonly propKinds: readonly string[];
 }
 
@@ -179,6 +182,12 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
     type === 'courtyard' &&
     (typeof decoration['fountain'] !== 'boolean' ||
       !vocabulary.courtyardFountains?.includes(decoration['fountain']))
+  )
+    return false;
+  if (
+    type === 'courtyard' &&
+    (typeof decoration['character'] !== 'string' ||
+      !vocabulary.courtyardCharacters?.includes(decoration['character']))
   )
     return false;
   if (Array.isArray(decoration['props'])) {
@@ -431,7 +440,10 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
     return (
       isCourtyardLayout(layout) &&
       isDecorationBase(decoration) &&
-      typeof decoration['fountain'] === 'boolean'
+      typeof decoration['fountain'] === 'boolean' &&
+      isObject(decoration) &&
+      typeof decoration['character'] === 'string' &&
+      isIn(decoration['character'], ALL_COURTYARD_CHARACTERS)
     );
   return isForestLayout(layout) && isForestDecoration(decoration);
 }
@@ -508,6 +520,20 @@ export function parseSavedMapBody(
     return parseDungeonEdits(parsedBase, objectEdits);
   }
   let normalizedMap: unknown = map;
+  // Historical courtyards predate characters; every format that recorded a
+  // courtyard so far is covered by these generator versions.
+  if (
+    isObject(map) &&
+    map['type'] === 'courtyard' &&
+    (map['version'] === '3.0.0' || map['version'] === '4.0.0') &&
+    isObject(map['decoration']) &&
+    !('character' in map['decoration'])
+  ) {
+    normalizedMap = {
+      ...map,
+      decoration: { ...map['decoration'], character: DEFAULT_COURTYARD_CHARACTER },
+    };
+  }
   if (
     isObject(map) &&
     map['type'] === 'forest' &&

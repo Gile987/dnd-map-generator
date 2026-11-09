@@ -4,7 +4,13 @@ import { generateForestClearing } from '../engine/forest-generate';
 import { generateDungeon } from '../engine/generate';
 import { generateCourtyard } from '../engine/courtyard-generate';
 import { validateForest } from '../engine/forest-validation';
-import { makeSavedMap, parseBundle, parseSavedMap, serializeBundle } from './save-format';
+import {
+  makeSavedMap,
+  parseBundle,
+  parseSavedMap,
+  serializeBundle,
+  SAVE_FORMAT_VERSION,
+} from './save-format';
 import { isUsableMap } from './map-schema';
 
 function record() {
@@ -25,7 +31,7 @@ function record() {
 
 test('format 12 round-trips forest artwork metadata while all older vocabularies stay frozen', () => {
   const saved = record();
-  expect(saved.saveFormatVersion).toBe('28.0.0');
+  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(saved.map.decoration).toHaveProperty('forestSurface', 1);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   if (saved.map.type !== 'forest' || !!saved.map.objectEdits) throw new Error('Missing forest');
@@ -44,7 +50,7 @@ test('loading, rewriting and backing up captured forests preserves every histori
   const parsed = parseBundle(JSON.stringify(fixture));
   if (!parsed.ok) throw new Error(parsed.error);
   expect(parsed.maps).toEqual(
-    fixture.maps.map((entry) => ({ ...entry, saveFormatVersion: '28.0.0' })),
+    fixture.maps.map((entry) => ({ ...entry, saveFormatVersion: SAVE_FORMAT_VERSION })),
   );
   for (const entry of parsed.maps) expect(entry.map.decoration).not.toHaveProperty('forestSurface');
   expect(parseBundle(serializeBundle(parsed.maps))).toEqual(parsed);
@@ -80,7 +86,12 @@ test('forest surface metadata is rejected on dungeons and courtyards', () => {
     density: 'Balanced',
     preset: 'Mosslit',
   });
-  const courtyard = generateCourtyard({ seed: 'surface', density: 'Balanced', fountain: false });
+  const courtyard = generateCourtyard({
+    character: 'Overgrown',
+    seed: 'surface',
+    density: 'Balanced',
+    fountain: false,
+  });
   for (const result of [dungeon, courtyard]) {
     if (!result.ok) throw new Error(result.error);
     const saved = makeSavedMap(

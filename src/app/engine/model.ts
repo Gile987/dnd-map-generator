@@ -98,6 +98,15 @@ export const ALL_FOREST_CHARACTERS: readonly ForestCharacter[] = [
   'Fey',
 ];
 
+export type CourtyardCharacter = 'Overgrown' | 'Sunbleached' | 'Frostbound' | 'Desecrated';
+export const DEFAULT_COURTYARD_CHARACTER: CourtyardCharacter = 'Overgrown';
+export const ALL_COURTYARD_CHARACTERS: readonly CourtyardCharacter[] = [
+  'Overgrown',
+  'Sunbleached',
+  'Frostbound',
+  'Desecrated',
+];
+
 export interface DungeonSettings {
   readonly ritual?: boolean;
   readonly seed: string;
@@ -122,6 +131,7 @@ export interface CourtyardSettings {
   readonly wagon?: boolean;
   readonly seed: string;
   readonly density: Density;
+  readonly character: CourtyardCharacter;
   readonly fountain: boolean;
 }
 
@@ -149,6 +159,7 @@ export interface RuinedCourtyard {
   readonly decoration: {
     readonly props: readonly Prop[];
     readonly density: Density;
+    readonly character: CourtyardCharacter;
     readonly fountain: boolean;
     readonly wagon?: true;
     readonly revision: number;

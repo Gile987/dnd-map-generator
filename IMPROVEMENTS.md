@@ -821,3 +821,50 @@ Follow-up verified 19 October 2026: `npm test` 89/89, `npm run test:e2e` 21/21,
 `npm run build`, `npm run typecheck:tests`, and `npm run format:check` pass. Independent checks
 against the pre-I19 code confirm that its reader rejects both new format-2 records and backups,
 while nine actual v3 forest snapshots still render to identical PNG bytes after migration.
+
+## I20 — Courtyard character presets
+
+**Implemented 9 November 2026.** Following the I19 pattern, Courtyard gains four selectable
+characters — Overgrown ruin (default, the existing look), Sunbleached ruin (sandy, rubble-heavy),
+Frostbound ruin (icy, fern/rubble, no vine), and Desecrated ruin (ashen, vine-heavy) — each with
+its own accent roster reweighting, decoration stream, and rendering atmosphere. A character
+change preserves the enclosure layout, walls, approaches, gathering space, surface seed, and
+detail revision; Shuffle, saves, backups, and exports use the accepted character and leave
+pending drafts untouched.
+
+- Compatibility decision (documented and tested): `CourtyardCharacter`,
+  `CourtyardSettings.character`, and a required `CourtyardDecoration.character` field were
+  added, and save format bumped `28.0.0` → `29.0.0` with `FORMAT_29_VOCABULARY` storing the full
+  `courtyardCharacters` list. Historical vocabularies (formats 1–28) also carry the list so
+  character-less courtyard records normalize to Overgrown, keeping their original artwork;
+  unknown characters are rejected. `FORMAT_29_VOCABULARY` inherits `towerEditVersions: [1, 2]`
+  from format 28.
+- Generator compatibility: Overgrown keeps the exact legacy decoration stream key and arg list,
+  reproducing every pre-change seed byte-identically. Other characters insert their name into
+  the stream args; generator version stays `4.0.0` because the default stream is unchanged.
+  `Accents` reweight per character: Sunbleached and Frostbound place no vines; Desecrated leans
+  vine-heavy; Overgrown keeps the legacy four-way roster.
+- Rendering (`src/app/rendering/courtyard-renderer.ts`): all four atmospheres share one
+  geometry/RNG path; only palette values differ. Overgrown's palette equals the previous
+  literals exactly, so grid-on and grid-off rendered pixels are unchanged; new per-character
+  render hash baselines protect the other three.
+- Artwork: the workbench character selector, style note, pending-changes row, map summary
+  (`{Character} ruin`), and picker catalog use the four characters; the object editor keeps its
+  shared prop artwork across characters (identity comes from ground/wall palettes).
+- Export filename keeps the default history: the character appears only for non-default
+  characters; Overgrown exports keep the pre-change name. Saves/summaries always name the
+  character; save names remain seed-based.
+- Tests: engine determinism and per-character accent invariants on fixed seeds, re-decoration in
+  place, rejection of unknown characters, per-character render-baseline hash rows (grid on/off ×
+  four characters), identical double-render PNGs, schema/vocabulary/normalization cases
+  including the `courtyard-v24` fixture, browser picker coverage for the four cards and pending
+  badge, and an updated save-version matrix.
+
+Verified 9 November 2026: full unit/review suite (118 files, 1810 tests) with
+`--maxWorkers=1`, `npm run build`, `npm run typecheck:tests`, and `npm run format:check` pass,
+and the full Playwright browser suite is green. Committed baseline policy held: only model
+hashes that legitimately gained `character: 'Overgrown'` changed; every pre-change pixel hash
+(wagon pixels and editor fixture pixel hashes) verified byte-identical without regeneration,
+and new render hashes were added for the three additional characters. Visual review inspected
+the picker catalog at desktop, tablet, mobile, and short viewport widths
+(`artifacts/characters/Courtyard-*.png`), pending/accepted states, and changed map summaries.

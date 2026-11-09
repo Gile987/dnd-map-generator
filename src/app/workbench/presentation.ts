@@ -1,5 +1,11 @@
 export { TOWER_STAIR_LABELS } from '../engine/tower';
-import type { DecorationPreset, Density, ForestCharacter, MapType } from '../engine/model';
+import type {
+  CourtyardCharacter,
+  DecorationPreset,
+  Density,
+  ForestCharacter,
+  MapType,
+} from '../engine/model';
 import type { IconName } from '../icon';
 
 export const MAP_TYPE_LABELS: Readonly<Record<MapType, string>> = {
@@ -20,8 +26,6 @@ export const MAP_HEADINGS: Readonly<Record<MapType, string>> = {
   forest: 'Shape your clearing',
   courtyard: 'Shape your courtyard',
 };
-export const COURTYARD_DESCRIPTION = 'Weathered paving, broken walls, and open grass approaches.';
-
 export const PRESET_DESCRIPTIONS: Readonly<Record<DecorationPreset, string>> = {
   Mosslit: 'Cool slate. Soft moss. A warm glow.',
   Crypt: 'Stone sarcophagi and subdued lantern light.',
@@ -48,6 +52,20 @@ export const CHARACTER_LABELS: Readonly<Record<ForestCharacter, string>> = {
   Autumn: 'Autumn grove',
   Pines: 'Ancient pines',
   Fey: 'Fey glade',
+};
+
+export const COURTYARD_CHARACTER_DESCRIPTIONS: Readonly<Record<CourtyardCharacter, string>> = {
+  Overgrown: 'Weathered paving, broken walls, and open grass approaches.',
+  Sunbleached: 'Sun-cracked paving, dry grass, and loose stony rubble.',
+  Frostbound: 'Frosted paving, pale cold ground, and snow-flecked stone.',
+  Desecrated: 'Ashen ground, darkened stone, and creeping dead vines.',
+};
+
+export const COURTYARD_CHARACTER_LABELS: Readonly<Record<CourtyardCharacter, string>> = {
+  Overgrown: 'Overgrown ruin',
+  Sunbleached: 'Sunbleached ruin',
+  Frostbound: 'Frostbound ruin',
+  Desecrated: 'Desecrated ruin',
 };
 
 export const DENSITY_DESCRIPTIONS: Readonly<Record<Density, string>> = {
