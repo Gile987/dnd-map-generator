@@ -9,11 +9,12 @@ import type { AddedObject } from './document';
 import { arrangementInstances, arrangementArtTurns } from './arrangement';
 import type { ArrangementEdits } from './arrangement';
 
-export const COURTYARD_GROUP_IDS = ['fountain', 'wagon'] as const;
+export const COURTYARD_GROUP_IDS = ['fountain', 'wagon', 'well'] as const;
 export type CourtyardGroupId = (typeof COURTYARD_GROUP_IDS)[number];
 export type CourtyardEditsV1 = ArrangementEdits<CourtyardGroupId>;
+export type CourtyardEditsV2 = Omit<CourtyardEditsV1, 'version'> & { readonly version: 2 };
 export interface AuthoredCourtyard extends Omit<RuinedCourtyard, 'objectEdits'> {
-  readonly objectEdits: CourtyardEditsV1;
+  readonly objectEdits: CourtyardEditsV1 | CourtyardEditsV2;
 }
 export type CourtyardDocument = RuinedCourtyard | AuthoredCourtyard;
 export interface ResolvedCourtyard extends Omit<RuinedCourtyard, 'objectEdits'> {
@@ -39,6 +40,14 @@ export function courtyardGroups(base: RuinedCourtyard): readonly ObjectGroup<Cou
       label: 'Dry fountain',
       members: [fountain.id],
       area: { x: fountain.prop.x - 1, y: fountain.prop.y - 1, width: 5, height: 5 },
+    });
+  const well = items.find((item) => item.prop.kind === 'stone_well');
+  if (well)
+    groups.push({
+      id: 'well',
+      label: 'Stone well',
+      members: [well.id],
+      area: { x: well.prop.x - 1, y: well.prop.y - 1, width: 4, height: 4 },
     });
   const wagon = items.filter((item) => WAGON_PROP_KINDS.some((kind) => kind === item.prop.kind));
   if (wagon.length) {
@@ -72,7 +81,7 @@ export function currentCourtyardGroups(
 export function courtyardInstances(map: CourtyardDocument): readonly AddedObject[] {
   return arrangementInstances(
     map.decoration.props,
-    map.objectEdits,
+    map.objectEdits && { ...map.objectEdits, version: 1 as const },
     courtyardGroups(courtyardBase(map)),
   );
 }
@@ -80,7 +89,10 @@ export function resolveCourtyard(map: CourtyardDocument): CourtyardDrawing {
   if (!map.objectEdits) return map;
   const items = courtyardInstances(map),
     groups = courtyardGroups(courtyardBase(map));
-  const artTurns = arrangementArtTurns(items, groups, map.objectEdits);
+  const artTurns = arrangementArtTurns(items, groups, {
+    ...map.objectEdits,
+    version: 1 as const,
+  });
   return {
     ...courtyardBase(map),
     objectEdits: 'resolved',

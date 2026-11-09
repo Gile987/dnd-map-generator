@@ -6,7 +6,7 @@ import { generateDungeon } from '../src/app/engine/generate';
 import { generateForestClearing } from '../src/app/engine/forest-generate';
 import { generateCourtyard } from '../src/app/engine/courtyard-generate';
 import type { GeneratedMap, MapType } from '../src/app/engine/model';
-import { makeSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import { makeSavedMap, SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 import { renderMap } from '../src/app/rendering/render-map';
 
 const dungeon = generateDungeon({
@@ -302,7 +302,7 @@ test('a filtered-out save and a full-library backup retain their exact models', 
   const download = await pending;
   const bundle: unknown = JSON.parse((await readFile(await download.path())).toString());
   expect(bundle).toMatchObject({
-    saveFormatVersion: '29.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: expect.arrayContaining(
       records.map((record) => expect.objectContaining({ id: record.id, map: record.map })),
     ),

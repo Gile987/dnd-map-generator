@@ -71,6 +71,7 @@ describe('production option constants', () => {
       'wagon_wheel',
       'spilled_crate',
       'spilled_goods',
+      'stone_well',
     ]);
   });
 });

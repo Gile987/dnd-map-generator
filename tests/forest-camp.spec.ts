@@ -3,7 +3,7 @@ import { selectedAddition, setAddition } from './additions';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import { parseSavedMap, SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 import { PNG } from './png';
 
 async function snapshot(page: Page, name: string) {
@@ -105,10 +105,12 @@ test('a camp survives refresh and a current-format backup imported into an empty
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '29.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
+    saveFormatVersion: SAVE_FORMAT_VERSION,
+  });
   const fresh = await browser.newPage();
   try {
-    await fresh.goto('http://128.0.0.1:4200/');
+    await fresh.goto('/');
     await fresh.setInputFiles('.import-label input', path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();

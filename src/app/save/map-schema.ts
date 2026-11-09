@@ -59,6 +59,7 @@ export interface SaveVocabulary {
   readonly dungeonScenes?: readonly string[];
   readonly studySurfaces?: readonly number[];
   readonly courtyardWagons?: readonly boolean[];
+  readonly courtyardWells?: readonly boolean[];
   readonly courtyardFountains?: readonly boolean[];
   readonly courtyardCharacters?: readonly string[];
   readonly propKinds: readonly string[];
@@ -75,6 +76,13 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
     (type !== 'courtyard' ||
       typeof decoration['wagon'] !== 'boolean' ||
       !vocabulary.courtyardWagons?.includes(decoration['wagon']))
+  )
+    return false;
+  if (
+    decoration['well'] !== undefined &&
+    (type !== 'courtyard' ||
+      typeof decoration['well'] !== 'boolean' ||
+      !vocabulary.courtyardWells?.includes(decoration['well']))
   )
     return false;
   if (
@@ -435,6 +443,7 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
   )
     return false;
   if (type !== 'courtyard' && decoration['wagon'] !== undefined) return false;
+  if (type !== 'courtyard' && decoration['well'] !== undefined) return false;
   if (type === 'dungeon') return isDungeonLayout(layout) && isDungeonDecoration(decoration);
   if (type === 'courtyard')
     return (

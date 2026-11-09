@@ -136,6 +136,7 @@ test('format 28 adds Tower stair edit v2 without changing the format-27 furnitur
     );
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(saveVocabulary('29.0.0')?.towerEditVersions).toEqual([1, 2]);
+  expect(saveVocabulary('28.0.0')?.towerEditVersions).toEqual([1, 2]);
   expect(saveVocabulary('27.0.0')?.towerEditVersions).toEqual([1]);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });

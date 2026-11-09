@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import { SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 
 function item(page: Page, name: string) {
   return page.locator('.saved-item').filter({ has: page.getByText(name, { exact: true }) });
@@ -189,7 +189,7 @@ for (const kind of ['unreadable', 'duplicate', 'malformed'] as const) {
       const download = await pendingBackup;
       const parsed: unknown = JSON.parse(readFileSync(await download.path(), 'utf8'));
       expect(parsed).toMatchObject({
-        saveFormatVersion: '9.0.0',
+        saveFormatVersion: SAVE_FORMAT_VERSION,
         maps: [expect.objectContaining({ id: record['id'] })],
       });
     } else {

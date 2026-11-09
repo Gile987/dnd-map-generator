@@ -7,6 +7,7 @@ import {
   SAVE_STORAGE_KEY,
   makeSavedMap,
   serializeBundle,
+  SAVE_FORMAT_VERSION,
 } from '../src/app/save/save-format';
 import { generateDungeon } from '../src/app/engine/generate';
 import { createLayout } from '../src/app/engine/topology';
@@ -129,10 +130,12 @@ test('statues survive refresh and backup import with their exact saved layout an
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await pending;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '29.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
+    saveFormatVersion: SAVE_FORMAT_VERSION,
+  });
   const fresh = await browser.newPage();
   try {
-    await fresh.goto('http://128.0.0.1:4200/');
+    await fresh.goto('/');
     await fresh.setInputFiles('.import-label input', path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();

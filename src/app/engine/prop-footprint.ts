@@ -7,6 +7,7 @@ export const MULTI_TILE_PROPS = {
   collapsed_wagon: { width: 3, height: 2 },
   dining_table: { width: 2, height: 1 },
   dry_fountain: { width: 3, height: 3 },
+  stone_well: { width: 2, height: 2 },
 } as const;
 export const QUARTER_TURNS: readonly QuarterTurn[] = [0, 1, 2, 3];
 

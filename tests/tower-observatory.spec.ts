@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Page, Locator } from '@playwright/test';
-import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import { parseSavedMap, SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 import { openAdditions, setAddition } from './additions';
 
 const OBS = 'Tower observatory',
@@ -69,7 +69,7 @@ test('observatory and laboratory coexist as appearance drafts, survive history a
   expect((await png(page)).bytes).toEqual(beforePng.bytes);
   await apply(page, 4);
   const accepted = await snapshot(page, 'Observatory');
-  expect(accepted.saveFormatVersion).toBe('29.0.0');
+  expect(accepted.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(accepted.map.layout).toEqual(before.map.layout);
   expect(accepted.map.surfaceSeed).toBe(before.map.surfaceSeed);
   expect(accepted.map.decoration).toMatchObject({
@@ -122,7 +122,7 @@ test('observatory and laboratory coexist as appearance drafts, survive history a
   const backup = await pending,
     bytes = await readFile(await backup.path());
   expect(JSON.parse(bytes.toString())).toMatchObject({
-    saveFormatVersion: '29.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: expect.arrayContaining([
       expect.objectContaining({ name: 'Observatory', map: accepted.map }),
     ]),

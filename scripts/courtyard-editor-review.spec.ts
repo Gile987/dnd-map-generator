@@ -13,7 +13,7 @@ import type { CourtyardDocument } from '../src/app/engine/object-editor/courtyar
 import type { Prop } from '../src/app/engine/model';
 const hash = (bytes: Uint8ClampedArray) => createHash('sha256').update(bytes).digest('hex');
 
-test.each(['fountain', 'wagon'] as const)(
+test.each(['fountain', 'well', 'wagon'] as const)(
   '%s accepted artwork roundtrips exactly, resets to original pixels, and shares unscaled prop drawing with ghosts',
   (id) => {
     const { base, prepared, group, target } = courtyardGroupFixture(id),

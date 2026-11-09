@@ -2,7 +2,12 @@ import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { generateCourtyard } from '../src/app/engine/courtyard-generate';
-import { makeSavedMap, parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import {
+  makeSavedMap,
+  parseSavedMap,
+  SAVE_STORAGE_KEY,
+  SAVE_FORMAT_VERSION,
+} from '../src/app/save/save-format';
 import { openAdditions, setAddition } from './additions';
 
 const WAGON = 'Collapsed wagon';
@@ -67,7 +72,7 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   await apply(page);
   const accepted = await snapshot(page, 'Wagon courtyard'),
     acceptedPng = await png(page);
-  expect(accepted.saveFormatVersion).toBe('29.0.0');
+  expect(accepted.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(accepted.map.layout).toEqual(before.map.layout);
   expect(accepted.map.surfaceSeed).toBe(before.map.surfaceSeed);
   expect(accepted.map.decoration).toMatchObject({ wagon: true, fountain: true, revision: 0 });
@@ -114,7 +119,7 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   const file = await pending,
     backup = await readFile(await file.path());
   expect(JSON.parse(backup.toString())).toMatchObject({
-    saveFormatVersion: '29.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: expect.arrayContaining([
       expect.objectContaining({ name: 'Wagon courtyard', map: accepted.map }),
     ]),

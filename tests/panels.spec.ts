@@ -49,7 +49,7 @@ test('the additions picker keeps independent drafts, supports the keyboard, and 
   await expect(opener).toBeFocused();
   await page.getByRole('radio', { name: 'Forest', exact: true }).check();
   await openAdditions(page);
-  await expect(picker.getByRole('checkbox')).toHaveCount(2);
+  await expect(picker.getByRole('checkbox')).toHaveCount(3);
   const camp = picker.getByRole('checkbox', { name: 'Abandoned camp', exact: true });
   await expect(camp).not.toBeChecked();
   await picker.getByText(/Two tents, bedrolls/).click();

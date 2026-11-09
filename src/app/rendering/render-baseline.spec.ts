@@ -45,12 +45,14 @@ function courtyardHash(map: RuinedCourtyard, grid: boolean): string {
 
 function generatedCourtyard(
   character: RuinedCourtyard['decoration']['character'],
+  well = false,
 ): RuinedCourtyard {
   const result = generateCourtyard({
     seed: 'character-showcase',
     density: 'Balanced',
     fountain: true,
     character,
+    well,
   });
   if (!result.ok) throw new Error(result.error);
   return result.map;
@@ -292,6 +294,64 @@ describe('current artwork baselines', () => {
     'courtyard pixels are unchanged for %s (%s) with grid=%s',
     (_kind, character, grid, expected) => {
       expect(courtyardHash(generatedCourtyard(character), grid)).toBe(expected);
+    },
+  );
+
+  // Committed with the stone-well release; each hash below pins one
+  // character's well render both with and without the grid overlay.
+  test.each([
+    [
+      'courtyard-well',
+      'Overgrown',
+      true,
+      'f203956cfb0e4be13a362bf87e6c21f90f0e60099b90b16f1e86b4b0db00f651',
+    ],
+    [
+      'courtyard-well',
+      'Overgrown',
+      false,
+      'cf49a5c9d7af335eca8f14020efb65f0b544c5a26352ab31411bec68c5b79106',
+    ],
+    [
+      'courtyard-well',
+      'Sunbleached',
+      true,
+      '783f898067849e3853e38cb0a6b4fbb5746e25f0fdfbff8f21dae3ba8d1ec434',
+    ],
+    [
+      'courtyard-well',
+      'Sunbleached',
+      false,
+      '1aa5319c248054e399ada5f2fc07274294ca1e271380f67d4c1b83f4458c9667',
+    ],
+    [
+      'courtyard-well',
+      'Frostbound',
+      true,
+      'ed0372827e8521213fd9ad9c734354368299861f1507b095aaa261b3186d0280',
+    ],
+    [
+      'courtyard-well',
+      'Frostbound',
+      false,
+      '9fa7aa2aea84e0f3185a0187bc522388e2c1f881cdc9e09f05626e4863ae48e3',
+    ],
+    [
+      'courtyard-well',
+      'Desecrated',
+      true,
+      '47b252405e0c46e23082952f6dc9dca914147bce8ce6fbbbf9646d1b01db6bd6',
+    ],
+    [
+      'courtyard-well',
+      'Desecrated',
+      false,
+      'c18e8f2df17cb487a471ff72404a4afc0c5f412a5ebc9d95a03710e4837c2e94',
+    ],
+  ] as const)(
+    'courtyard well pixels are unchanged for %s (%s) with grid=%s',
+    (_kind, character, grid, expected) => {
+      expect(courtyardHash(generatedCourtyard(character, true), grid)).toBe(expected);
     },
   );
 

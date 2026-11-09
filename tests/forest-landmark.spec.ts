@@ -3,7 +3,12 @@ import { generateForestClearing } from '../src/app/engine/forest-generate';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { makeSavedMap, parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import {
+  makeSavedMap,
+  parseSavedMap,
+  SAVE_STORAGE_KEY,
+  SAVE_FORMAT_VERSION,
+} from '../src/app/save/save-format';
 import { PNG } from './png';
 
 async function snapshot(page: Page, name: string) {
@@ -105,7 +110,9 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const backup = await backupDownload;
   const path = await backup.path();
-  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({ saveFormatVersion: '29.0.0' });
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
+    saveFormatVersion: SAVE_FORMAT_VERSION,
+  });
   await page.reload();
   await page
     .locator('.saved-item')
@@ -115,7 +122,7 @@ test('landmarks remain pending until generated, compose with camps, and survive 
   expect(await snapshot(page, 'After refresh')).toEqual(combined);
   const fresh = await browser.newPage();
   try {
-    await fresh.goto('http://128.0.0.1:4200/');
+    await fresh.goto('/');
     await fresh.setInputFiles('.import-label input', path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 5 maps.');
     await fresh
@@ -223,11 +230,11 @@ for (const source of ['library', 'backup'] as const) {
     const backup = await download;
     const bundle: unknown = JSON.parse(readFileSync(await backup.path(), 'utf8'));
     expect(bundle).toMatchObject({
-      saveFormatVersion: '29.0.0',
+      saveFormatVersion: SAVE_FORMAT_VERSION,
       maps: expect.arrayContaining([
         expect.objectContaining({
           id: 'legacy-circle',
-          saveFormatVersion: '29.0.0',
+          saveFormatVersion: SAVE_FORMAT_VERSION,
           map: historical,
         }),
       ]),

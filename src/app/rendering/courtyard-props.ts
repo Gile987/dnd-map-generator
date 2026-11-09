@@ -21,6 +21,104 @@ export function drawLowRubble(ctx: DrawingContext, prop: Prop): void {
   }
 }
 
+/** A free-standing 2 × 2 stone well: circular coping, dark mouth with a faint
+ * water glint, and a wooden bucket on a rope. All shadows stay inside the
+ * footprint rect plus a small bleed, so the sprite never overlaps movers.
+ */
+export function drawStoneWell(ctx: DrawingContext, prop: Prop): void {
+  ctx.fillStyle = '#232d2066';
+  ctx.fillRect(-0.98, -0.9, 1.96, 1.88);
+  const plinth = ctx.createRadialGradient(-0.25, -0.35, 0.08, 0, 0, 0.9);
+  plinth.addColorStop(0, '#c9c2a2');
+  plinth.addColorStop(0.72, '#a6a287');
+  plinth.addColorStop(1, '#6d7060');
+  ctx.beginPath();
+  ctx.arc(0, 0, 0.82, 0, Math.PI * 2);
+  ctx.fillStyle = plinth;
+  ctx.fill();
+  ctx.strokeStyle = '#4b5243';
+  ctx.lineWidth = 0.05;
+  ctx.stroke();
+  ctx.strokeStyle = '#525c4720';
+  ctx.lineWidth = 0.03;
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * Math.PI) / 6 + 0.26;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * 0.62, Math.sin(angle) * 0.62);
+    ctx.lineTo(Math.cos(angle) * 0.78, Math.sin(angle) * 0.78);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(0, 0, 0.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#221a10';
+  ctx.fill();
+  ctx.strokeStyle = '#d8d2ae';
+  ctx.lineWidth = 0.045;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(-0.07, 0.03, 0.3, 0.24, -0.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#39525940';
+  ctx.fill();
+  // A rope descends from the rim to a wooden bucket, resting at its side.
+  ctx.strokeStyle = '#6d5b3b';
+  ctx.lineWidth = 0.025;
+  ctx.beginPath();
+  ctx.moveTo(0.16, -0.46);
+  ctx.lineTo(0.1, -0.1);
+  ctx.stroke();
+  ctx.strokeStyle = '#663e3c';
+  ctx.lineWidth = 0.02;
+  ctx.beginPath();
+  ctx.moveTo(-0.02, -0.38);
+  ctx.lineTo(0.16, -0.46);
+  ctx.stroke();
+  path(
+    ctx,
+    [
+      [0.02, -0.14],
+      [0.2, -0.14],
+      [0.16, 0.08],
+      [0.06, 0.08],
+    ],
+    '#8a6a3f',
+    '#4f3a20',
+  );
+  ctx.strokeStyle = '#5d4527';
+  ctx.lineWidth = 0.03;
+  ctx.beginPath();
+  ctx.moveTo(0.02, -0.06);
+  ctx.lineTo(0.2, -0.06);
+  ctx.stroke();
+  // Coping chips, a moss tuft and scattered pebbles around the rim.
+  for (let i = 0; i < 8; i++) {
+    const a = i * 2.9 + prop.variation * 4;
+    ctx.fillStyle = i % 2 ? '#b5ad8b62' : '#707a5f4c';
+    ctx.fillRect(Math.cos(a) * 0.92, Math.sin(a) * 0.92, 0.07, 0.032);
+  }
+  path(
+    ctx,
+    [
+      [-0.78, -0.42],
+      [-0.66, -0.5],
+      [-0.6, -0.38],
+      [-0.72, -0.3],
+    ],
+    '#7d875f',
+    '#55603f',
+  );
+  path(
+    ctx,
+    [
+      [0.72, 0.55],
+      [0.85, 0.5],
+      [0.93, 0.62],
+      [0.8, 0.68],
+    ],
+    '#8f9179',
+    '#5c624c',
+  );
+}
+
 export function drawDryFountain(ctx: DrawingContext, prop: Prop): void {
   ctx.fillStyle = '#25372665';
   ctx.fillRect(-1.36, -1.25, 2.84, 2.77);

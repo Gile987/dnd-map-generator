@@ -151,6 +151,14 @@ export class SettingsPanel {
           checked: Boolean(draft.wagon),
           change: { type: 'courtyard', changes: { wagon: !draft.wagon } },
         },
+        {
+          id: 'stone-well',
+          label: 'Stone well',
+          description:
+            'A free-standing stone well with a bucket on a rope. The body blocks four squares with a clear ring of space around its rim.',
+          checked: Boolean(draft.well),
+          change: { type: 'courtyard', changes: { well: !draft.well } },
+        },
       ];
     if (draft.type === 'dungeon') {
       return [

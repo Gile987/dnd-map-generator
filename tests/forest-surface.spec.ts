@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import { parseSavedMap, SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 import { setAddition, selectedAddition } from './additions';
 
 async function snapshot(page: Page, name: string) {
@@ -96,7 +96,7 @@ test('new forest surface art survives refresh, backup/share import and VTT expor
   const before = await download(page, 'Quick export PNG');
   const backup = await download(page, 'Download backup');
   expect(JSON.parse(backup.bytes.toString())).toMatchObject({
-    saveFormatVersion: '29.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: [{ map: { decoration: { forestSurface: 1 } } }],
   });
   await page.reload();
@@ -106,7 +106,7 @@ test('new forest surface art survives refresh, backup/share import and VTT expor
   const shared = await download(page, 'Export this map');
   const fresh = await browser.newPage();
   try {
-    await fresh.goto('http://128.0.0.1:4200/');
+    await fresh.goto('/');
     await fresh.setInputFiles('.import-label input', shared.path);
     await expect(fresh.locator('.library-message .notice')).toHaveText('Imported 1 map.');
     await fresh.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();

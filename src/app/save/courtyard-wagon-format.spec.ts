@@ -9,6 +9,7 @@ import {
   serializeBundle,
   parseBundle,
   saveVocabulary,
+  SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
 function saved() {
@@ -32,7 +33,7 @@ function saved() {
 test('format 17 round-trips a complete wagon and freezes all earlier vocabularies', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('29.0.0');
+  expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 16; v++) {

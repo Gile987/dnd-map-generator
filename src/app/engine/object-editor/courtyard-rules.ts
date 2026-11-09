@@ -4,12 +4,12 @@ import { gridDistances } from '../grid-traversal';
 import { areasOverlap } from '../feature-reservation';
 import { propBounds, propCells } from '../prop-footprint';
 import { courtyardInstances, currentCourtyardGroups } from './courtyard-document';
-import type { CourtyardDocument } from './courtyard-document';
+import type { CourtyardDocument, CourtyardGroupId } from './courtyard-document';
 import { courtyardCapability, isCourtyardGroundCover } from './courtyard-catalog';
 import type { ObjectSelection } from './object-selection';
 
 export interface CourtyardSelection extends ObjectSelection {
-  readonly groupId?: 'fountain' | 'wagon';
+  readonly groupId?: CourtyardGroupId;
 }
 export function courtyardObjectLock(
   map: CourtyardDocument,
