@@ -15,6 +15,7 @@ const COURTYARD_OBJECTS_V1 = {
     reason: 'Vines remain protected in this editor.',
   },
   dry_fountain: { label: 'Dry fountain', category: 'Protected', editable: false },
+  stone_well: { label: 'Stone well', category: 'Protected', editable: false },
   collapsed_wagon: { label: 'Collapsed wagon', category: 'Protected', editable: false },
   spilled_crate: { label: 'Spilled crate', category: 'Protected', editable: false },
   wagon_wheel: { label: 'Detached wheel', category: 'Protected', editable: false },

@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import { parseSavedMap, SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 import { openAdditions, setAddition } from './additions';
 import { PNG } from './png';
 
@@ -123,7 +123,7 @@ test('courtyard saves and backups reopen exact artwork and PNGs after a refresh'
   const backup = await backupPending;
   const backupBytes = await readFile(await backup.path());
   expect(JSON.parse(backupBytes.toString())).toMatchObject({
-    saveFormatVersion: '29.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: [{ map: saved.map }],
   });
   await page.reload();

@@ -37,7 +37,7 @@ export function exportFilename(map: MapDocument, showSecrets = false, towerFloor
     // The original look keeps its historical filename; other looks append theirs.
     const look =
       map.decoration.character === 'Overgrown' ? '' : `-${map.decoration.character.toLowerCase()}`;
-    return `encounter-${seed}-courtyard${look}${map.decoration.fountain ? '-dry-fountain' : ''}${map.decoration.wagon ? '-collapsed-wagon' : ''}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+    return `encounter-${seed}-courtyard${look}${map.decoration.fountain ? '-dry-fountain' : ''}${map.decoration.wagon ? '-collapsed-wagon' : ''}${map.decoration.well ? '-stone-well' : ''}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   }
   if (type === 'dungeon') {
     const preset = map.decoration.preset.toLowerCase();

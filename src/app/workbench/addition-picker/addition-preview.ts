@@ -12,6 +12,7 @@ export type AdditionId =
   | 'abandoned-camp'
   | 'dining-table'
   | 'dry-fountain'
+  | 'stone-well'
   | 'alchemist-laboratory'
   | 'tower-observatory'
   | 'collapsed-wagon'
@@ -50,6 +51,11 @@ const illustrations: Readonly<
     width: 5,
     height: 5,
     props: [{ ...prop('dry_fountain', 1, 1), footprint: { width: 3, height: 3 }, rotation: 0 }],
+  },
+  'stone-well': {
+    width: 4,
+    height: 4,
+    props: [{ ...prop('stone_well', 1, 1), footprint: { width: 2, height: 2 }, rotation: 0 }],
   },
   'forgotten-study': {
     width: 5,

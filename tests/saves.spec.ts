@@ -1,6 +1,7 @@
 import { selectCharacter, characterLabel } from './characters';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 
 const itemByName = (page: import('@playwright/test').Page, name: string) =>
   page.locator('.saved-item').filter({ has: page.getByText(name, { exact: true }) });
@@ -88,9 +89,9 @@ test('imports a v3 library, reopens its original settings, and exports current-f
   const download = await downloadPromise;
   const path = await download.path();
   expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
-    saveFormatVersion: '29.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: Array.from({ length: 3 }, () => ({
-      saveFormatVersion: '29.0.0',
+      saveFormatVersion: SAVE_FORMAT_VERSION,
       map: { version: '3.0.0', decoration: { character: 'Verdant' } },
     })),
   });
@@ -110,8 +111,8 @@ test('a Fey save survives a current-format backup round trip and refresh', async
   const download = await downloadPromise;
   const path = await download.path();
   expect(JSON.parse(readFileSync(path, 'utf8'))).toMatchObject({
-    saveFormatVersion: '29.0.0',
-    maps: [{ saveFormatVersion: '29.0.0', map: { decoration: { character: 'Fey' } } }],
+    saveFormatVersion: SAVE_FORMAT_VERSION,
+    maps: [{ saveFormatVersion: SAVE_FORMAT_VERSION, map: { decoration: { character: 'Fey' } } }],
   });
   await itemByName(page, 'Fey backup').getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByText('Your library is empty.')).toBeVisible();

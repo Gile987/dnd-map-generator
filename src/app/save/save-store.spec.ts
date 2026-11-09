@@ -856,7 +856,7 @@ test('unknown Courtyard editing versions remain recoverable and prevent later li
   const future = {
     ...original,
     id: 'future-courtyard',
-    map: { ...map, objectEdits: { ...map.objectEdits, version: 2 } },
+    map: { ...map, objectEdits: { ...map.objectEdits, version: 3 } },
   };
   const raw = JSON.stringify([original, future]),
     storage = stubStorage(raw),

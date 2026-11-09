@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import { parseSavedMap, SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 import fixture from '../src/app/save/fixtures/forest-v3.json';
 import { openAdditions, setAddition } from './additions';
 
@@ -67,7 +67,7 @@ test('fallen trees coexist with camps and standing stones, preserve accepted map
   await apply(page);
   const accepted = await snapshot(page, 'Ancient tree'),
     image = await png(page);
-  expect(accepted.saveFormatVersion).toBe('29.0.0');
+  expect(accepted.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(accepted.map.layout).toEqual(before.map.layout);
   expect(accepted.map.surfaceSeed).toBe(before.map.surfaceSeed);
   expect(accepted.map.decoration).toMatchObject({
@@ -123,7 +123,7 @@ test('fallen trees coexist with camps and standing stones, preserve accepted map
   const file = await pending,
     backup = await readFile(await file.path());
   expect(JSON.parse(backup.toString())).toMatchObject({
-    saveFormatVersion: '29.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: expect.arrayContaining([
       expect.objectContaining({ name: 'Ancient tree', map: accepted.map }),
     ]),

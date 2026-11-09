@@ -99,7 +99,7 @@ for (const record of records) {
     const context = await browser.newContext();
     try {
       const receiver = await context.newPage();
-      await receiver.goto('http://128.0.0.1:4200');
+      await receiver.goto('/');
       await receiver.setInputFiles('.import-label input', {
         name: exported.name,
         mimeType: 'application/json',

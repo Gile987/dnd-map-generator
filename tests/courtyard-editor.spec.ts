@@ -178,6 +178,37 @@ for (const id of ['fountain', 'wagon'] as const) {
   });
 }
 
+test('the well moves as one complete addition and its sidecar reopens unchanged', async ({
+  page,
+}) => {
+  const { base, prepared } = courtyardGroupFixture('well');
+  expect(base.decoration.well).toBe(true);
+  const target = { x: base.layout.encounter.x - 1, y: base.layout.encounter.y - 1 };
+  await openMap(page, prepared);
+  await edit(page);
+  await objects(page).selectOption('group-well');
+  await position(page, target);
+  await expect(page.getByRole('button', { name: 'Place object', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Place object', exact: true }).click();
+  const name = 'well in gathering space';
+  expect(await snapshot(page, name)).toEqual(
+    acceptCourtyard(prepared, { kind: 'move-group', id: 'well', target, rotation: 0 }),
+  );
+  await expect(page.getByRole('button', { name: 'Rotate object', exact: true })).toHaveCount(0);
+  await page.locator('forge-object-editor').screenshot({
+    path: 'artifacts/courtyard-editor/well-gathering-space.png',
+  });
+  const exported = await png(page);
+  await page.reload();
+  await page
+    .locator('.saved-item')
+    .filter({ has: page.getByText(name, { exact: true }) })
+    .getByRole('button', { name: 'Open', exact: true })
+    .click();
+  await ready(page);
+  expect((await png(page)).hash).toBe(exported.hash);
+});
+
 test('Courtyard catalog, outdoor movement, pending settings, pins, undo and recoverable Generate use accepted maps', async ({
   page,
 }) => {

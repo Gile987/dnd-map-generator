@@ -18,7 +18,7 @@ import {
   courtyardPlacementError,
   courtyardSelections,
 } from './courtyard-rules';
-import { COURTYARD_PALETTE } from './courtyard-catalog';
+import { COURTYARD_PALETTE, courtyardCapability } from './courtyard-catalog';
 import { courtyardProtectedCells } from '../courtyard-validation';
 import { propCells } from '../prop-footprint';
 import { indexOf } from '../model';
@@ -171,6 +171,26 @@ test('an empty fountain margin may overlap standing masonry when its actual body
   const target = { x: base.layout.bounds.x - 4, y: base.layout.bounds.y };
   const moved = accept(prepared, { kind: 'move-group', id: 'fountain', target, rotation: 0 });
   expect(parseCourtyardEdits(base, moved.objectEdits)).toEqual(moved);
+});
+
+test('the stone well moves as one complete addition and rejects editorial rotation', () => {
+  const { base, prepared, target } = courtyardGroupFixture('well');
+  expect(base.decoration.well).toBe(true);
+  const moved = accept(prepared, { kind: 'move-group', id: 'well', target, rotation: 0 });
+  expect(currentCourtyardGroups(moved).find((group) => group.id === 'well')?.area).toMatchObject(
+    target,
+  );
+  expect(parseCourtyardEdits(base, moved.objectEdits)).toEqual(moved);
+  const rotated = applyCourtyardCommand(moved, {
+    kind: 'move-group',
+    id: 'well',
+    target,
+    rotation: 1,
+  });
+  expect(rotated.ok).toBe(false);
+  if (!rotated.ok)
+    expect(rotated.error).toBe('Only the complete wagon supports quarter-turn rotation.');
+  expect(courtyardCapability('stone_well')?.editable).toBe(false);
 });
 
 test('all wagon turns rotate every occupied square as one arrangement without changing artwork choices', () => {

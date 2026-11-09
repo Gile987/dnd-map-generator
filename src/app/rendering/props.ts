@@ -12,7 +12,7 @@ import {
 } from './wagon-props';
 import { drawDiningTable } from './furniture-props';
 import { drawRitualAltar, drawRitualCandles, drawRitualOffering } from './ritual-props';
-import { drawDryFountain, drawLowRubble } from './courtyard-props';
+import { drawDryFountain, drawLowRubble, drawStoneWell } from './courtyard-props';
 import { propBounds } from '../engine/prop-footprint';
 import { drawStandingStone, drawWeatheredStatue } from './landmark-props';
 import type { Prop, PropKind } from '../engine/model';
@@ -85,6 +85,7 @@ const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   scroll_case: drawScrollCase,
   dry_fountain: drawDryFountain,
   low_rubble: drawLowRubble,
+  stone_well: drawStoneWell,
   fallen_trunk: drawFallenTrunk,
   fallen_roots: drawFallenRoots,
   fallen_branch: drawFallenBranch,

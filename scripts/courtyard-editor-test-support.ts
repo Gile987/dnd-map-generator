@@ -54,7 +54,16 @@ export function validCourtyardCommand(
   throw Error('No eligible Courtyard position');
 }
 export function courtyardGroupFixture(id: CourtyardGroupId) {
-  const base = courtyardEditorFixture(),
+  const result = generateCourtyard({
+    character: 'Overgrown',
+    seed: 'ivy-court',
+    density: 'Balanced',
+    fountain: true,
+    wagon: true,
+    ...(id === 'well' ? { well: true } : {}),
+  });
+  if (!result.ok) throw Error(result.error);
+  const base = result.map,
     prepared = clearCourtyard(base),
     group = courtyardGroups(base).find((g) => g.id === id);
   if (!group) throw Error('Missing group');
@@ -62,7 +71,7 @@ export function courtyardGroupFixture(id: CourtyardGroupId) {
     for (let x = 0; x < 40; x++) {
       if (x === group.area.x && y === group.area.y) continue;
       if (
-        (id === 'fountain' ? ([0] as const) : QUARTER_TURNS).every(
+        (id === 'fountain' || id === 'well' ? ([0] as const) : QUARTER_TURNS).every(
           (rotation) =>
             applyCourtyardCommand(prepared, { kind: 'move-group', id, target: { x, y }, rotation })
               .ok,

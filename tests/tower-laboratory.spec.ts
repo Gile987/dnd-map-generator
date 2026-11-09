@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
+import { parseSavedMap, SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 import { openAdditions, setAddition } from './additions';
 const LAB = 'Alchemist’s laboratory';
 async function settled(page: Page) {
@@ -58,7 +58,7 @@ test('laboratory drafts apply without rebuilding floors and survive shuffling, b
   const saved = await snapshot(page, 'Laboratory');
   expect(saved.map.layout).toEqual(before.map.layout);
   expect(saved.map.surfaceSeed).toBe(before.map.surfaceSeed);
-  expect(saved.saveFormatVersion).toBe('29.0.0');
+  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   const cauldron = saved.map.decoration.props.find((p) => p.kind === 'cauldron');
   expect(cauldron).toBeDefined();
   const accepted = await png(page);
@@ -87,7 +87,7 @@ test('laboratory drafts apply without rebuilding floors and survive shuffling, b
   const backup = await backupPending,
     backupBytes = await readFile(await backup.path());
   expect(JSON.parse(backupBytes.toString())).toMatchObject({
-    saveFormatVersion: '29.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: expect.arrayContaining([expect.objectContaining({ name: 'Laboratory', map: saved.map })]),
   });
   await page.evaluate(() => localStorage.clear());

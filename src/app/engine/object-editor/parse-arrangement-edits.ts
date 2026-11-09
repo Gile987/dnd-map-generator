@@ -29,14 +29,15 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
   base: Base,
   value: unknown,
   adapter: ArrangementAdapter<Base, Id>,
-  options: { readonly allowEmpty?: boolean } = {},
+  options: { readonly allowEmpty?: boolean; readonly allowedVersion?: 1 | 2 } = {},
 ): AuthoredArrangement<Base, Id> | undefined {
   const validPosition = (x: number, y: number) =>
     adapter.validPosition ? adapter.validPosition(base, x, y) : isTilePosition(x, y);
+  const version = options.allowedVersion ?? 1;
   if (
     !object(value) ||
     !keys(value, ['version', 'nextId', 'moves', 'removed', 'added', 'groups', 'order']) ||
-    value['version'] !== 1 ||
+    value['version'] !== version ||
     typeof value['nextId'] !== 'number' ||
     !Number.isSafeInteger(value['nextId']) ||
     value['nextId'] < 1 ||
@@ -135,7 +136,7 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
   if (!order.every((id): id is string => typeof id === 'string')) return undefined;
   const result: AuthoredArrangement<Base, Id> = {
     ...base,
-    objectEdits: { version: 1, nextId: value['nextId'], groups, moves, removed, added, order },
+    objectEdits: { version, nextId: value['nextId'], groups, moves, removed, added, order },
   };
   const items = adapter.instances(result),
     ids = new Set(items.map((item) => item.id));

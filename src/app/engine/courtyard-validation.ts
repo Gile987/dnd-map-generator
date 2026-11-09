@@ -1,4 +1,5 @@
 import { placeCollapsedWagon } from './courtyard-wagon';
+import { placeStoneWell } from './courtyard-well';
 import {
   ALL_DENSITIES,
   WAGON_PROP_KINDS,
@@ -66,6 +67,8 @@ export function validateCourtyardSettings(settings: CourtyardSettings): string |
     return 'Choose a valid courtyard character.';
   if (settings.wagon !== undefined && typeof settings.wagon !== 'boolean')
     return 'Choose whether to add a collapsed wagon.';
+  if (settings.well !== undefined && typeof settings.well !== 'boolean')
+    return 'Choose whether to add a stone well.';
   if (typeof settings.fountain !== 'boolean') return 'Choose whether to add a dry fountain.';
   return undefined;
 }
@@ -133,10 +136,13 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
     character: map.decoration.character,
     fountain: map.decoration.fountain,
     wagon: map.decoration.wagon,
+    well: map.decoration.well,
   });
   if (settingsError) return settingsError;
   if (map.decoration.wagon !== undefined && map.decoration.wagon !== true)
     return 'Invalid collapsed wagon selection.';
+  if (map.decoration.well !== undefined && map.decoration.well !== true)
+    return 'Invalid stone well selection.';
   const layoutError = validateCourtyardLayout(map.layout);
   if (layoutError) return layoutError;
   if (!isDetailRevision(map.decoration.revision))
@@ -153,16 +159,43 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
   );
   if (map.decoration.fountain && [...fountainReserve].some((tile) => !map.layout.tiles[tile]))
     return 'The fountain needs clear ground and circulation on every side.';
+  // Recompute additions in canonical order: the well first, then the wagon
+  // avoiding both the well and the areas already protected beforehand.
+  const well = map.decoration.well
+    ? placeStoneWell(map.layout, map.seed, new Set([...protectedCells, ...fountainReserve]))
+    : undefined;
+  if (map.decoration.well && !well) return 'The stone well could not fit outside protected areas.';
   const wagon = map.decoration.wagon
-    ? placeCollapsedWagon(map.layout, map.seed, new Set([...protectedCells, ...fountainReserve]))
+    ? placeCollapsedWagon(
+        map.layout,
+        map.seed,
+        new Set([...protectedCells, ...fountainReserve, ...(well?.reserve ?? [])]),
+      )
     : undefined;
   if (map.decoration.wagon && !wagon)
     return 'The collapsed wagon could not fit outside protected areas.';
+  const expectedWell = well?.props[0];
   const expectedWagon = new Map(wagon?.props.map((p) => [p.kind, p]) ?? []);
   const seenWagon = new Set<string>();
+  let seenWell = false;
   for (const prop of map.decoration.props) {
+    const isWellProp = prop.kind === 'stone_well';
     const isWagonProp = WAGON_PROP_KINDS.some((kind) => kind === prop.kind);
-    if (isWagonProp) {
+    if (isWellProp) {
+      if (seenWell || !expectedWell)
+        return 'The stone well must retain its complete canonical arrangement.';
+      if (
+        prop.x !== expectedWell.x ||
+        prop.y !== expectedWell.y ||
+        prop.blocking !== expectedWell.blocking ||
+        prop.variation !== expectedWell.variation ||
+        prop.rotation !== expectedWell.rotation ||
+        prop.footprint?.width !== expectedWell.footprint?.width ||
+        prop.footprint?.height !== expectedWell.footprint?.height
+      )
+        return 'The stone well must retain its complete canonical arrangement.';
+      seenWell = true;
+    } else if (isWagonProp) {
       const expected = expectedWagon.get(prop.kind);
       if (
         !expected ||
@@ -201,12 +234,18 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
         return 'Courtyard objects need clear ground outside approaches and the encounter space.';
       if (map.decoration.fountain && prop.kind !== 'dry_fountain' && fountainReserve.has(tile))
         return 'The fountain needs a clear tile on every side.';
+      if (well && !isWellProp && well.reserve.has(tile))
+        return 'The stone well needs clear circulation around its rim.';
       if (wagon && !isWagonProp && wagon.reserve.has(tile))
         return 'The collapsed wagon needs clear circulation and space for its scattered objects.';
       occupied.add(tile);
       if (prop.blocking) blocked.add(tile);
     }
   }
+  if (seenWell !== Boolean(map.decoration.well))
+    return Boolean(map.decoration.well)
+      ? 'The selected stone well must be present.'
+      : 'The stone well must be present exactly once.';
   if (seenWagon.size !== expectedWagon.size)
     return 'The selected collapsed wagon must be complete.';
   if (

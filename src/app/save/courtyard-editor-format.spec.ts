@@ -26,6 +26,26 @@ import {
 import { isUsableMap } from './map-schema';
 import { editorFixture } from '../../../scripts/editor-test-support';
 
+test('a version-2 well sidecar round-trips through format 30 and every earlier format rejects it', () => {
+  const { prepared, target } = courtyardGroupFixture('well');
+  const moved = accept(prepared, { kind: 'move-group', id: 'well', target, rotation: 0 });
+  expect(moved.objectEdits?.version).toBe(2);
+  const saved = makeSavedMap(
+    moved,
+    'Well court',
+    'data:image/png;base64,AAAA',
+    'well-edit',
+    '2026-11-09T13:00:00Z',
+  );
+  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
+  expect(parseSavedMap(saved)?.map).toEqual(moved);
+  expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
+  for (let v = 1; v <= 29; v++) {
+    expect(saveVocabulary(`${v}.0.0`)?.courtyardEditVersions?.includes(2) ?? false).toBe(false);
+    expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
+  }
+});
+
 test('format 25 explicitly supports Courtyard edits while canonical generators and old formats reject them', () => {
   const { prepared, target } = courtyardGroupFixture('wagon');
   const edited = accept(prepared, { kind: 'move-group', id: 'wagon', target, rotation: 3 });
@@ -44,6 +64,7 @@ test('format 25 explicitly supports Courtyard edits while canonical generators a
     expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
   }
   expect(saveVocabulary('25.0.0')?.courtyardEditVersions).toEqual([1]);
+  expect(saveVocabulary(SAVE_FORMAT_VERSION)?.courtyardEditVersions).toEqual([1, 2]);
   expect(isUsableMap(edited)).toBe(false);
   expectTypeOf<AuthoredCourtyard>().not.toExtend<RuinedCourtyard>();
   expectTypeOf<ResolvedCourtyard>().not.toExtend<GeneratedMap>();
@@ -59,7 +80,7 @@ test('strict references, capabilities, counters, group transforms and complete p
   if (!member) throw Error('Missing member');
   const allIds = courtyardInstances(edited).map((item) => item.id);
   const bads = [
-    { ...edits, version: 2 },
+    { ...edits, version: 3 },
     { ...edits, future: true },
     { ...edits, nextId: 0 },
     { ...edits, nextId: Number.MAX_SAFE_INTEGER + 1 },
@@ -84,6 +105,11 @@ test('strict references, capabilities, counters, group transforms and complete p
   ];
   for (const bad of bads) expect(parseCourtyardEdits(base, bad)).toBeUndefined();
   expect(parseCourtyardEdits(base, edits)).toEqual(edited);
+  // Version 2 accepts the same arrangement; only future versions stay rejected.
+  expect(parseCourtyardEdits(base, { ...edits, version: 2 })).toEqual({
+    ...edited,
+    objectEdits: { ...edits, version: 2 },
+  });
   const validOrder = orderedCourtyardObjects(edited).map((item) => item.id);
   expect(parseCourtyardEdits(base, { ...edits, order: validOrder })).toEqual({
     ...edited,

@@ -128,6 +128,7 @@ describe('draft conversion', () => {
       character: 'Desecrated',
       fountain: true,
       wagon: false,
+      well: false,
     });
   });
 });

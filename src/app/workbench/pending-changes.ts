@@ -32,7 +32,11 @@ function additionNames(draft: SettingsDraft): string {
     );
   if (draft.type === 'courtyard')
     return (
-      [draft.fountain ? 'Dry fountain' : '', draft.wagon ? 'Collapsed wagon' : '']
+      [
+        draft.fountain ? 'Dry fountain' : '',
+        draft.wagon ? 'Collapsed wagon' : '',
+        draft.well ? 'Stone well' : '',
+      ]
         .filter(Boolean)
         .join(', ') || 'None'
     );

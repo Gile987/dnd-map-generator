@@ -11,6 +11,7 @@ import { Random, shuffleInPlace, streamSeed } from './random';
 import { nextDetailRevision } from './decoration-revision';
 import { propCells } from './prop-footprint';
 import { placeCollapsedWagon } from './courtyard-wagon';
+import { placeStoneWell } from './courtyard-well';
 import { DEFAULT_COURTYARD_CHARACTER } from './model';
 import { gridDistances } from './grid-traversal';
 import {
@@ -191,24 +192,32 @@ function decorateBase(
 function decorate(
   layout: CourtyardLayout,
   seed: string,
-  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'character' | 'wagon'>,
+  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'character' | 'wagon' | 'well'>,
   revision: number,
-): RuinedCourtyard['decoration'] | undefined {
+):
+  | { ok: true; decoration: RuinedCourtyard['decoration'] }
+  | { ok: false; missing: 'well' | 'wagon' } {
   const base = decorateBase(layout, seed, settings, revision);
-  if (!settings.wagon) return base;
+  // The fountain reserve always stays clear, whether the fountain is selected or not.
   const reserve = courtyardProtectedCells(layout),
     site = fountainSite(layout);
   for (const p of areaCells({ x: site.x - 1, y: site.y - 1, width: 5, height: 5 }))
     reserve.add(indexOf(p.x, p.y));
-  const wagon = placeCollapsedWagon(layout, seed, reserve);
-  if (!wagon) return undefined;
+  const well = settings.well ? placeStoneWell(layout, seed, reserve) : undefined;
+  if (settings.well && !well) return { ok: false, missing: 'well' };
+  for (const tile of well?.reserve ?? []) reserve.add(tile);
+  const wagon = settings.wagon ? placeCollapsedWagon(layout, seed, reserve) : undefined;
+  if (settings.wagon && !wagon) return { ok: false, missing: 'wagon' };
+  const reserved = new Set<number>();
+  for (const tile of well?.reserve ?? []) reserved.add(tile);
+  for (const tile of wagon?.reserve ?? []) reserved.add(tile);
   let ordinary = base.props.filter(
-    (p) => !propCells(p).some((cell) => wagon.reserve.has(indexOf(cell.x, cell.y))),
+    (p) => !propCells(p).some((cell) => reserved.has(indexOf(cell.x, cell.y))),
   );
   // A new blocking pack can expose a pinch point formed by ordinary columns.
   // Remove only ordinary blocking props, without consuming another random draw.
   while (true) {
-    const props = [...ordinary, ...wagon.props];
+    const props = [...ordinary, ...(well?.props ?? []), ...(wagon?.props ?? [])];
     const blocked = new Set(
       props
         .filter((p) => p.blocking)
@@ -218,14 +227,22 @@ function decorate(
       gridDistances(layout.tiles, { x: 0, y: 0 }, blocked).size ===
       layout.tiles.filter(Boolean).length - blocked.size
     )
-      return { ...base, wagon: true, props };
+      return {
+        ok: true,
+        decoration: {
+          ...base,
+          ...(well ? { well: true as const } : {}),
+          ...(wagon ? { wagon: true as const } : {}),
+          props,
+        },
+      };
     let last = -1;
     for (let i = ordinary.length - 1; i >= 0; i--)
       if (ordinary[i]?.kind === 'broken_column') {
         last = i;
         break;
       }
-    if (last < 0) return undefined;
+    if (last < 0) return { ok: false, missing: settings.wagon ? 'wagon' : 'well' };
     ordinary = ordinary.filter((_, i) => i !== last);
   }
 }
@@ -252,20 +269,25 @@ export function generateCourtyard(
       props: [],
     },
   };
-  const decoration = decorate(map.layout, seed, settings, 0);
-  if (!decoration)
-    return {
-      ok: false,
-      error: 'The collapsed wagon could not fit. Try another seed or remove the wagon.',
-    };
-  const next = { ...map, decoration };
+  const attempt = decorate(map.layout, seed, settings, 0);
+  if (!attempt.ok)
+    return attempt.missing === 'well'
+      ? {
+          ok: false,
+          error: 'The stone well could not fit. Try another seed or remove the well.',
+        }
+      : {
+          ok: false,
+          error: 'The collapsed wagon could not fit. Try another seed or remove the wagon.',
+        };
+  const next = { ...map, decoration: attempt.decoration };
   const invalid = validateCourtyard(next);
   return invalid ? { ok: false, error: invalid } : { ok: true, map: next };
 }
 
 export function changeCourtyardAppearance(
   map: RuinedCourtyard,
-  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'character' | 'wagon'>,
+  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'character' | 'wagon' | 'well'>,
 ): RuinedCourtyard {
   if (
     validateCourtyardSettings({
@@ -274,18 +296,19 @@ export function changeCourtyardAppearance(
       character: settings.character,
       fountain: settings.fountain,
       wagon: settings.wagon,
+      well: settings.well,
     })
   )
     return map;
-  const decoration = decorate(map.layout, map.seed, settings, map.decoration.revision);
-  if (!decoration) return map;
-  const next = { ...map, decoration };
+  const attempt = decorate(map.layout, map.seed, settings, map.decoration.revision);
+  if (!attempt.ok) return map;
+  const next = { ...map, decoration: attempt.decoration };
   return validateCourtyard(next) ? map : next;
 }
 
 export function shuffleCourtyardDetails(map: RuinedCourtyard): RuinedCourtyard {
   const revision = nextDetailRevision(map.decoration.revision);
-  const decoration = decorate(
+  const attempt = decorate(
     map.layout,
     map.seed,
     {
@@ -293,10 +316,11 @@ export function shuffleCourtyardDetails(map: RuinedCourtyard): RuinedCourtyard {
       character: map.decoration.character,
       fountain: map.decoration.fountain,
       wagon: map.decoration.wagon,
+      well: map.decoration.well,
     },
     revision,
   );
-  if (!decoration) return map;
-  const next = { ...map, decoration };
+  if (!attempt.ok) return map;
+  const next = { ...map, decoration: attempt.decoration };
   return validateCourtyard(next) ? map : next;
 }

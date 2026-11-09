@@ -22,7 +22,7 @@ export const COURTYARD_EDITOR: ArrangementAdapter<RuinedCourtyard, CourtyardGrou
   lock: courtyardObjectLock,
   capability: courtyardCapability,
   surface: isCourtyardSurface,
-  rotatable: (id) => id !== 'fountain',
+  rotatable: (id) => id !== 'fountain' && id !== 'well',
   placementError: courtyardPlacementError,
   unsupportedObject: 'That object cannot be added individually to a courtyard.',
   unsupportedRotation: 'Only the complete wagon supports quarter-turn rotation.',

@@ -266,7 +266,8 @@ export class WorkbenchSession {
         draft.density !== decoration.density ||
         draft.character !== decoration.character ||
         draft.fountain !== decoration.fountain ||
-        Boolean(draft.wagon) !== Boolean(decoration.wagon)
+        Boolean(draft.wagon) !== Boolean(decoration.wagon) ||
+        Boolean(draft.well) !== Boolean(decoration.well)
       );
     }
     if (state.type === 'forest') {
@@ -503,6 +504,7 @@ export class WorkbenchSession {
       if (
         next.decoration.fountain !== parsed.settings.fountain ||
         Boolean(next.decoration.wagon) !== Boolean(parsed.settings.wagon) ||
+        Boolean(next.decoration.well) !== Boolean(parsed.settings.well) ||
         next.decoration.density !== parsed.settings.density
       )
         return {
