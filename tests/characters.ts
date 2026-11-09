@@ -1,11 +1,12 @@
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { PRESET_LABELS } from '../src/app/workbench/presentation';
+import { COURTYARD_CHARACTER_LABELS, PRESET_LABELS } from '../src/app/workbench/presentation';
 
 export function characterLabel(name: string): string {
-  return Object.hasOwn(PRESET_LABELS, name)
-    ? PRESET_LABELS[name as keyof typeof PRESET_LABELS]
-    : name;
+  if (Object.hasOwn(PRESET_LABELS, name)) return PRESET_LABELS[name as keyof typeof PRESET_LABELS];
+  if (Object.hasOwn(COURTYARD_CHARACTER_LABELS, name))
+    return COURTYARD_CHARACTER_LABELS[name as keyof typeof COURTYARD_CHARACTER_LABELS];
+  return name;
 }
 
 export async function openCharacters(page: Page) {

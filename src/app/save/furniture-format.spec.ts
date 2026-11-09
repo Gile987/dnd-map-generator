@@ -8,6 +8,7 @@ import {
   parseBundle,
   serializeBundle,
   saveVocabulary,
+  SAVE_FORMAT_VERSION,
 } from './save-format';
 import { mapUsesVocabulary } from './map-schema';
 
@@ -43,7 +44,7 @@ test.each(QUARTER_TURNS)(
     expect(saved.map.decoration.props.find((p) => p.kind === 'dining_table')?.rotation).toBe(
       rotation,
     );
-    expect(saved.saveFormatVersion).toBe('28.0.0');
+    expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
     expect(parseSavedMap(saved)).toEqual(saved);
     expect(parseSavedMap({ ...saved, saveFormatVersion: '8.0.0' })).toEqual(saved);
     expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });

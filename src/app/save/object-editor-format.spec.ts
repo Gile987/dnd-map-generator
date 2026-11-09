@@ -7,6 +7,7 @@ import {
   parseBundle,
   serializeBundle,
   saveVocabulary,
+  SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
 import oldStudy from './fixtures/study-v9.json';
@@ -30,7 +31,7 @@ function record() {
 test('format 25 persists the immutable base plus bounded edits through record, backup and sharing roundtrips', () => {
   const saved = record(),
     before = structuredClone(saved);
-  expect(saved.saveFormatVersion).toBe('28.0.0');
+  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   expect(saved).toEqual(before);
@@ -79,7 +80,7 @@ test('malformed and future editing data are rejected, counted and never silently
         parseBundle(
           JSON.stringify({
             format: 'encounter-map-forge-saves',
-            saveFormatVersion: '28.0.0',
+            saveFormatVersion: SAVE_FORMAT_VERSION,
             maps: [saved, bad],
           }),
         ),

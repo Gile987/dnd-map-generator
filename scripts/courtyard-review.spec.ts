@@ -38,6 +38,7 @@ test('reviews a fixed courtyard composition and varied generated ruins', () => {
       ],
     },
     decoration: {
+      character: 'Overgrown',
       density: 'Balanced',
       fountain: true,
       revision: 0,
@@ -61,7 +62,12 @@ test('reviews a fixed courtyard composition and varied generated ruins', () => {
   mkdirSync('artifacts/courtyard', { recursive: true });
   const cases = [fixed];
   for (const seed of ['ivy-court', 'fallen-crown', 'sunken-abbey', 'mosslit-sanctum']) {
-    const result = generateCourtyard({ seed, density: 'Balanced', fountain: true });
+    const result = generateCourtyard({
+      character: 'Overgrown',
+      seed,
+      density: 'Balanced',
+      fountain: true,
+    });
     if (!result.ok) throw new Error(`${seed}: ${result.error}`);
     cases.push(result.map);
   }

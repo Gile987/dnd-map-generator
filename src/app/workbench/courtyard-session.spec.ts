@@ -74,6 +74,7 @@ test('courtyard drafts, accepted maps and history remain independent from both o
   expect(fountain.layout).toBe(original.layout);
   expect(fountain.decoration.props.some((p) => p.kind === 'dry_fountain')).toBe(true);
   const reproduced = engine.generateCourtyard({
+    character: 'Overgrown',
     seed: fountain.seed,
     density: 'Balanced',
     fountain: true,

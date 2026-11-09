@@ -13,6 +13,7 @@ import {
 import { isUsableMap } from './map-schema';
 function saved() {
   const r = generateCourtyard({
+    character: 'Overgrown',
     seed: 'ivy-court',
     density: 'Balanced',
     fountain: true,
@@ -31,7 +32,7 @@ function saved() {
 test('format 17 round-trips a complete wagon and freezes all earlier vocabularies', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('28.0.0');
+  expect(record.saveFormatVersion).toBe('29.0.0');
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 16; v++) {
@@ -44,7 +45,12 @@ test('format 17 round-trips a complete wagon and freezes all earlier vocabularie
   expect(record).toEqual(before);
 });
 test('old courtyards keep absent wagon metadata and exact artwork until the explicit addition', () => {
-  const r = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: true });
+  const r = generateCourtyard({
+    character: 'Overgrown',
+    seed: 'ivy-court',
+    density: 'Balanced',
+    fountain: true,
+  });
   if (!r.ok) throw new Error(r.error);
   const record = saved();
   for (let version = 9; version <= 16; version++) {
@@ -53,7 +59,12 @@ test('old courtyards keep absent wagon metadata and exact artwork until the expl
     expect(parsed?.map.decoration).not.toHaveProperty('wagon');
   }
   expect(
-    changeCourtyardAppearance(r.map, { density: 'Balanced', fountain: true, wagon: true }),
+    changeCourtyardAppearance(r.map, {
+      character: 'Overgrown',
+      density: 'Balanced',
+      fountain: true,
+      wagon: true,
+    }),
   ).toEqual(record.map);
 });
 test('missing, moved, duplicate, oversized or inconsistent wagon components are rejected without losing valid records', () => {

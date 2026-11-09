@@ -43,6 +43,7 @@ test('Forest filenames identify the accepted fallen ancient tree', () => {
 
 test('courtyard filenames identify only the accepted wagon addition', () => {
   const r = generateCourtyard({
+    character: 'Overgrown',
     seed: 'ivy-court',
     density: 'Balanced',
     fountain: true,
@@ -55,7 +56,12 @@ test('courtyard filenames identify only the accepted wagon addition', () => {
   expect(configuredExportFilename(r.map, false, 15, EXPORT_PRESETS[1])).toContain(
     '-collapsed-wagon-balanced-r0-v4.0.0-owlbear-40x30-64px-grid-off.png',
   );
-  const old = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: true });
+  const old = generateCourtyard({
+    character: 'Overgrown',
+    seed: 'ivy-court',
+    density: 'Balanced',
+    fountain: true,
+  });
   if (!old.ok) throw new Error(old.error);
   expect(exportFilename(old.map)).toBe(
     'encounter-ivy-court-courtyard-dry-fountain-balanced-r0-v4.0.0.png',

@@ -11,7 +11,13 @@ import {
 } from './dungeon-doors';
 import { dungeonBase } from './object-editor/document';
 import { applyObjectCommand } from './object-editor/commands';
-import { makeSavedMap, parseSavedMap, parseBundle, serializeBundle } from '../save/save-format';
+import {
+  makeSavedMap,
+  parseSavedMap,
+  parseBundle,
+  serializeBundle,
+  SAVE_FORMAT_VERSION,
+} from '../save/save-format';
 import { isUsableMap } from '../save/map-schema';
 
 test('door identity follows geometry, coalesces duplicate thresholds and hit tests both axes', () => {
@@ -97,7 +103,7 @@ test('bounded door state rejects malformed, unknown, duplicate and future data; 
     'open-door',
     '2026-11-03T12:00:00Z',
   );
-  expect(saved.saveFormatVersion).toBe('28.0.0');
+  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   expect(parseSavedMap({ ...saved, saveFormatVersion: '22.0.0' })).toBeUndefined();

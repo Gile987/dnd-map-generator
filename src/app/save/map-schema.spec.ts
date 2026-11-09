@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
+import { generateCourtyard } from '../engine/courtyard-generate';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
 import { parseSavedMapBody } from './map-schema';
@@ -86,4 +87,51 @@ describe('saved map bodies', () => {
       expect(invalid.decoration.character).toBe(character);
     },
   );
+
+  describe('courtyard characters', () => {
+    const courtyard = generateCourtyard({
+      seed: 'ivy-court',
+      density: 'Balanced',
+      character: 'Desecrated',
+      fountain: true,
+    });
+    if (!courtyard.ok) throw new Error(courtyard.error);
+
+    test('retains an accepted generated courtyard by reference', () => {
+      expect(parseSavedMapBody(courtyard.map, currentVocabulary)).toBe(courtyard.map);
+    });
+
+    test.each(['3.0.0', '4.0.0'])(
+      'normalizes a historical %s courtyard without a character to Overgrown in place',
+      (version) => {
+        const { character, ...decoration } = courtyard.map.decoration;
+        const historical = {
+          ...courtyard.map,
+          version,
+          decoration,
+        };
+        const before = structuredClone(historical);
+        const parsed = parseSavedMapBody(historical, currentVocabulary);
+        if (parsed?.type !== 'courtyard') throw new Error('Expected a migrated courtyard');
+        expect(parsed).not.toBe(historical);
+        expect(parsed.layout).toBe(historical.layout);
+        expect(parsed.decoration.props).toBe(historical.decoration.props);
+        expect(parsed).toEqual({
+          ...historical,
+          decoration: { ...decoration, character: 'Overgrown' },
+        });
+        expect(historical).toEqual(before);
+        expect(parseSavedMapBody(parsed, currentVocabulary)).toBe(parsed);
+      },
+    );
+
+    test('rejects an out-of-vocabulary courtyard character without normalizing it', () => {
+      const { character, ...decoration } = courtyard.map.decoration;
+      const invalid = {
+        ...courtyard.map,
+        decoration: { ...decoration, character: 'Mossless' },
+      };
+      expect(parseSavedMapBody(invalid, currentVocabulary)).toBeUndefined();
+    });
+  });
 });

@@ -1,6 +1,12 @@
 import { expect, test } from 'vitest';
 import { generateForestClearing } from '../engine/forest-generate';
-import { makeSavedMap, parseBundle, parseSavedMap, serializeBundle } from './save-format';
+import {
+  makeSavedMap,
+  parseBundle,
+  parseSavedMap,
+  serializeBundle,
+  SAVE_FORMAT_VERSION,
+} from './save-format';
 
 function campRecord() {
   const result = generateForestClearing({
@@ -24,7 +30,7 @@ function campRecord() {
 
 test('a camp round-trips through current format without changing its saved model', () => {
   const record = campRecord();
-  expect(record.saveFormatVersion).toBe('28.0.0');
+  expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(record)).toEqual(record);
   expect(parseSavedMap({ ...record, saveFormatVersion: '3.0.0' })).toEqual(record);
   expect(parseSavedMap({ ...record, saveFormatVersion: '4.0.0' })).toEqual(record);

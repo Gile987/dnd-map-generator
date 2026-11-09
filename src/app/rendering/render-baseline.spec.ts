@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createCanvas } from '@napi-rs/canvas';
 import { describe, expect, test } from 'vitest';
+import { generateCourtyard } from '../engine/courtyard-generate';
 import { generateForestClearing } from '../engine/forest-generate';
 import { GENERATOR_VERSION, WIDTH } from '../engine/model';
 import type {
@@ -10,10 +11,13 @@ import type {
   ForestClearing,
   Prop,
   PropKind,
+  RuinedCourtyard,
 } from '../engine/model';
+import { ALL_COURTYARD_CHARACTERS } from '../engine/model';
 import { hashSeed } from '../engine/random';
 import { createLayout } from '../engine/topology';
 import { showcaseDungeon } from '../engine/showcase';
+import { renderCourtyard } from './courtyard-renderer';
 import { renderDungeon } from './dungeon-renderer';
 import { renderForest } from './forest-renderer';
 import type { DrawingContext } from './drawing-context';
@@ -33,6 +37,23 @@ function dungeonHash(map: Dungeon, grid: boolean): string {
 
 function forestHash(map: ForestClearing, grid: boolean): string {
   return pixelHash((ctx) => renderForest(ctx, map, { grid, pixelsPerTile: PIXELS_PER_TILE }));
+}
+
+function courtyardHash(map: RuinedCourtyard, grid: boolean): string {
+  return pixelHash((ctx) => renderCourtyard(ctx, map, { grid, pixelsPerTile: PIXELS_PER_TILE }));
+}
+
+function generatedCourtyard(
+  character: RuinedCourtyard['decoration']['character'],
+): RuinedCourtyard {
+  const result = generateCourtyard({
+    seed: 'character-showcase',
+    density: 'Balanced',
+    fountain: true,
+    character,
+  });
+  if (!result.ok) throw new Error(result.error);
+  return result.map;
 }
 
 function completeDungeon(preset: DecorationPreset): Dungeon {
@@ -213,6 +234,79 @@ describe('current artwork baselines', () => {
       const map =
         kind === 'complete-forest' ? completeForest(character) : generatedForest(character);
       expect(forestHash(map, grid)).toBe(expected);
+    },
+  );
+
+  // Committed with the courtyard character release; Overgrown reproduces the
+  // historical renderer byte for byte.
+  test.each([
+    [
+      'generated-courtyard',
+      'Overgrown',
+      true,
+      'ae67666fc92c9cedf30ef334d0a31a9b02a347d4554dba3cd80ec1f00479d8eb',
+    ],
+    [
+      'generated-courtyard',
+      'Overgrown',
+      false,
+      '5e9f2e25449cb0ad1024e3489a19c601b5c08ecd1c5c409817977bd9294fd103',
+    ],
+    [
+      'generated-courtyard',
+      'Sunbleached',
+      true,
+      '0d1a39a8afa89c94a76ded579bc70894813d4a1f195da873524f6b9826db2db0',
+    ],
+    [
+      'generated-courtyard',
+      'Sunbleached',
+      false,
+      '339ee47586c4c70f28cedba50dd226ce86becbead3108341610357dacb87abea',
+    ],
+    [
+      'generated-courtyard',
+      'Frostbound',
+      true,
+      '46b693fa4ac820af93451b8581ebdf1694fce162d4b54058bc167307320da20d',
+    ],
+    [
+      'generated-courtyard',
+      'Frostbound',
+      false,
+      'c33e0c15aa7a6bbd7604b0c80715e47deecf16834b2ed2b53c847c789303133a',
+    ],
+    [
+      'generated-courtyard',
+      'Desecrated',
+      true,
+      'ce57d658b19b10bf6b1fc8b43879f5c4614c465c863ffa5296b65249ac112da9',
+    ],
+    [
+      'generated-courtyard',
+      'Desecrated',
+      false,
+      '28d2c0adb285accecba392ce0708da4064104077dc7e5872fff1247b04de7392',
+    ],
+  ] as const)(
+    'courtyard pixels are unchanged for %s (%s) with grid=%s',
+    (_kind, character, grid, expected) => {
+      expect(courtyardHash(generatedCourtyard(character), grid)).toBe(expected);
+    },
+  );
+
+  test.each(ALL_COURTYARD_CHARACTERS)(
+    'renders the same %s courtyard twice to identical PNG bytes',
+    (character) => {
+      const canvas = createCanvas(EXPORT_WIDTH, EXPORT_HEIGHT);
+      const map = generatedCourtyard(character);
+      renderCourtyard(canvas.getContext('2d'), map, { grid: true, pixelsPerTile: PIXELS_PER_TILE });
+      const again = createCanvas(EXPORT_WIDTH, EXPORT_HEIGHT);
+      renderCourtyard(again.getContext('2d'), map, {
+        grid: true,
+        pixelsPerTile: PIXELS_PER_TILE,
+      });
+      expect(canvas.toBuffer('image/png').equals(again.toBuffer('image/png'))).toBe(true);
     },
   );
 });

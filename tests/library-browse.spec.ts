@@ -20,7 +20,12 @@ const forest = generateForestClearing({
   density: 'Balanced',
   character: 'Verdant',
 });
-const courtyard = generateCourtyard({ seed: 'ivy-seed', density: 'Balanced', fountain: true });
+const courtyard = generateCourtyard({
+  character: 'Overgrown',
+  seed: 'ivy-seed',
+  density: 'Balanced',
+  fountain: true,
+});
 if (!dungeon.ok || !forest.ok || !courtyard.ok) throw new Error('Missing browser fixtures');
 const maps: Readonly<Record<Exclude<MapType, 'tower'>, GeneratedMap>> = {
   dungeon: dungeon.map,
@@ -297,7 +302,7 @@ test('a filtered-out save and a full-library backup retain their exact models', 
   const download = await pending;
   const bundle: unknown = JSON.parse((await readFile(await download.path())).toString());
   expect(bundle).toMatchObject({
-    saveFormatVersion: '28.0.0',
+    saveFormatVersion: '29.0.0',
     maps: expect.arrayContaining(
       records.map((record) => expect.objectContaining({ id: record.id, map: record.map })),
     ),

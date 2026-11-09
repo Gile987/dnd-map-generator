@@ -16,6 +16,7 @@ import {
   parseBundle,
   serializeBundle,
   saveVocabulary,
+  SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
 import { courtyardEditorFixture } from '../../../scripts/courtyard-editor-test-support';
@@ -30,7 +31,7 @@ test('format 26 introduces independent Forest edit version 1 and prior vocabular
     'forest-edit',
     '2026-11-05T12:00:00Z',
   );
-  expect(saved.saveFormatVersion).toBe('28.0.0');
+  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   expect(isUsableMap(edited)).toBe(false);

@@ -4,8 +4,15 @@ import {
   generateCourtyard,
   shuffleCourtyardDetails,
 } from './courtyard-generate';
-import { validateCourtyard } from './courtyard-validation';
-import { ALL_DENSITIES, DENSITY_BUDGETS, HEIGHT, WIDTH, indexOf } from './model';
+import { validateCourtyard, validateCourtyardSettings } from './courtyard-validation';
+import {
+  ALL_COURTYARD_CHARACTERS,
+  ALL_DENSITIES,
+  DENSITY_BUDGETS,
+  HEIGHT,
+  WIDTH,
+  indexOf,
+} from './model';
 import type { CourtyardSettings, RuinedCourtyard } from './model';
 
 function courtyard(settings: Partial<CourtyardSettings> = {}): RuinedCourtyard {
@@ -14,6 +21,7 @@ function courtyard(settings: Partial<CourtyardSettings> = {}): RuinedCourtyard {
     density: 'Balanced',
     fountain: true,
     ...settings,
+    character: settings.character ?? 'Overgrown',
   });
   if (!result.ok) throw new Error(result.error);
   return result.map;
@@ -103,20 +111,29 @@ test('appearance changes and shuffles retain the layout and surface, without cha
   const map = courtyard();
   const before = structuredClone(map);
   const next = shuffleCourtyardDetails(map);
-  const changed = changeCourtyardAppearance(next, { density: 'Sparse', fountain: false });
+  const changed = changeCourtyardAppearance(next, {
+    character: 'Overgrown',
+    density: 'Sparse',
+    fountain: false,
+  });
   expect(map).toEqual(before);
   expect(changed.layout).toBe(map.layout);
   expect(changed.surfaceSeed).toBe(map.surfaceSeed);
   expect(changed.decoration.revision).toBe(1);
   expect(changed.decoration.fountain).toBe(false);
   assertOpen(changed);
-  const restored = changeCourtyardAppearance(changed, { density: 'Balanced', fountain: true });
+  const restored = changeCourtyardAppearance(changed, {
+    character: 'Overgrown',
+    density: 'Balanced',
+    fountain: true,
+  });
   expect(restored).toEqual(next);
 });
 
 test('appearance commands use only appearance settings, even when passed full generator settings', () => {
   const original = courtyard({ fountain: false });
   const settings: CourtyardSettings = {
+    character: 'Overgrown',
     seed: 'an-unapplied-seed',
     density: 'Balanced',
     fountain: true,
@@ -128,11 +145,18 @@ test('appearance commands use only appearance settings, even when passed full ge
 });
 
 test('rejects invalid settings and obstructed or disconnected courtyard geometry', () => {
-  expect(generateCourtyard({ seed: ' ', density: 'Balanced', fountain: false })).toMatchObject({
+  expect(
+    generateCourtyard({ character: 'Overgrown', seed: ' ', density: 'Balanced', fountain: false }),
+  ).toMatchObject({
     ok: false,
   });
   expect(
-    generateCourtyard({ seed: 'x'.repeat(65), density: 'Balanced', fountain: false }),
+    generateCourtyard({
+      character: 'Overgrown',
+      seed: 'x'.repeat(65),
+      density: 'Balanced',
+      fountain: false,
+    }),
   ).toMatchObject({ ok: false });
   const map = courtyard();
   const tiles = [...map.layout.tiles];
@@ -143,4 +167,80 @@ test('rejects invalid settings and obstructed or disconnected courtyard geometry
   const divided = map.layout.tiles.map((tile, i) => (i % WIDTH === 20 ? false : tile));
   expect(validateCourtyard({ ...map, layout: { ...map.layout, tiles: divided } })).toBeDefined();
   expect(map.layout.tiles).toHaveLength(WIDTH * HEIGHT);
+});
+
+describe.each(ALL_COURTYARD_CHARACTERS)('%s courtyard characters', (character) => {
+  test('decorates open, valid maps deterministically from its own accents', () => {
+    const map = courtyard({ character });
+    expect(map.decoration.character).toBe(character);
+    expect(validateCourtyard(map)).toBeUndefined();
+    assertOpen(map);
+    expect(courtyard({ character })).toEqual(map);
+    let shuffled = map;
+    for (let n = 0; n < 2; n++) {
+      shuffled = shuffleCourtyardDetails(shuffled);
+      expect(shuffled.decoration.character).toBe(character);
+      expect(validateCourtyard(shuffled)).toBeUndefined();
+      assertOpen(shuffled);
+    }
+  });
+
+  test('re-decorates in place when the character changes, keeping the layout and surface', () => {
+    const map = courtyard({ character: 'Overgrown' });
+    const changed = changeCourtyardAppearance(map, {
+      density: map.decoration.density,
+      character,
+      fountain: map.decoration.fountain,
+    });
+    expect(changed.layout).toBe(map.layout);
+    expect(changed.surfaceSeed).toBe(map.surfaceSeed);
+    expect(changed.decoration.revision).toBe(map.decoration.revision);
+    expect(changed.decoration.character).toBe(character);
+    expect(validateCourtyard(changed)).toBeUndefined();
+    assertOpen(changed);
+    if (character !== 'Overgrown')
+      expect(changed.decoration.props).not.toEqual(map.decoration.props);
+  });
+});
+
+test('Overgrown keeps the historical accents and other characters reweigh them', () => {
+  const accents = (character: CourtyardSettings['character']) =>
+    courtyard({ character, density: 'Cluttered' }).decoration.props.reduce(
+      (counts, prop) => {
+        if (['low_rubble', 'moss', 'fern', 'vine'].includes(prop.kind))
+          counts[prop.kind] = (counts[prop.kind] ?? 0) + 1;
+        return counts;
+      },
+      {} as Record<string, number>,
+    );
+  expect(accents('Frostbound')['vine']).toBeUndefined();
+  expect(accents('Sunbleached')['vine']).toBeUndefined();
+  // Rubble-heavy characters lean on rubble; Desecrated leans on vine instead;
+  // Overgrown carries the historical even mix, so only the vine-free ones assert.
+  for (const character of ['Sunbleached', 'Frostbound'] as const) {
+    const counts = accents(character);
+    expect(counts['vine']).toBeUndefined();
+    expect(counts['low_rubble'] ?? 0).toBeGreaterThan(counts['fern'] ?? 0);
+    expect(counts['low_rubble'] ?? 0).toBeGreaterThan(counts['moss'] ?? 0);
+  }
+  expect(accents('Desecrated')['vine'] ?? 0).toBeGreaterThan(accents('Overgrown')['vine'] ?? 0);
+  expect(accents('Sunbleached')['low_rubble'] ?? 0).toBeGreaterThan(
+    accents('Overgrown')['low_rubble'] ?? 0,
+  );
+  expect(accents('Overgrown')['vine'] ?? 0).toBeGreaterThan(accents('Sunbleached')['vine'] ?? 0);
+});
+
+test('unknown characters are rejected without decorating anything', () => {
+  const invalid = {
+    seed: 'ivy-court',
+    density: 'Balanced',
+    character: 'Mossless',
+    fountain: false,
+  } as unknown as CourtyardSettings;
+  expect(validateCourtyardSettings(invalid)).toBe('Choose a valid courtyard character.');
+  expect(generateCourtyard(invalid)).toMatchObject({ ok: false });
+  const map = courtyard();
+  expect(changeCourtyardAppearance(map, invalid)).toBe(map);
+  const shuffled = shuffleCourtyardDetails(map);
+  expect(shuffled.decoration.character).toBe('Overgrown');
 });

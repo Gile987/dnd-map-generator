@@ -1,11 +1,19 @@
+import { generateCourtyard } from '../engine/courtyard-generate';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
 import { HEIGHT, WIDTH, contains } from '../engine/model';
-import type { DecorationPreset, ForestCharacter, GeneratedMap, TileArea } from '../engine/model';
+import type {
+  CourtyardCharacter,
+  DecorationPreset,
+  ForestCharacter,
+  GeneratedMap,
+  TileArea,
+} from '../engine/model';
 
 export type CharacterSample =
   | { readonly type: 'dungeon'; readonly id: DecorationPreset }
-  | { readonly type: 'forest'; readonly id: ForestCharacter };
+  | { readonly type: 'forest'; readonly id: ForestCharacter }
+  | { readonly type: 'courtyard'; readonly id: CourtyardCharacter };
 
 function frame(x: number, y: number, width: number, height: number): TileArea {
   const w = Math.max(width, height * 1.6);
@@ -53,6 +61,20 @@ export function characterSample(choice: CharacterSample): {
         room.width + 1.3,
         room.height + 1.3,
       ),
+    };
+  }
+  if (choice.type === 'courtyard') {
+    const result = generateCourtyard({
+      seed: 'character-showcase',
+      density: 'Balanced',
+      character: choice.id,
+      fountain: true,
+    });
+    if (!result.ok) throw new Error(result.error);
+    const b = result.map.layout.bounds;
+    return {
+      map: result.map,
+      region: frame(b.x + b.width / 2, b.y + b.height / 2, b.width - 14, b.height - 12),
     };
   }
   const result = generateForestClearing({

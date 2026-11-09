@@ -42,7 +42,9 @@ export class CharacterPicker {
     this.changed.emit(
       option.type === 'dungeon'
         ? { type: 'dungeon', changes: { preset: option.id } }
-        : { type: 'forest', changes: { character: option.id } },
+        : option.type === 'courtyard'
+          ? { type: 'courtyard', changes: { character: option.id } }
+          : { type: 'forest', changes: { character: option.id } },
     );
   }
 

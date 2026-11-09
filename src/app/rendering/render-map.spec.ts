@@ -17,7 +17,12 @@ const forest = generateForestClearing({
   character: 'Fey',
 });
 if (!forest.ok) throw new Error(forest.error);
-const courtyard = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: true });
+const courtyard = generateCourtyard({
+  character: 'Overgrown',
+  seed: 'ivy-court',
+  density: 'Balanced',
+  fountain: true,
+});
 if (!courtyard.ok) throw new Error(courtyard.error);
 
 describe.each([showcaseDungeon(), forest.map, courtyard.map])('$type rendering dispatch', (map) => {

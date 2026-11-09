@@ -21,7 +21,8 @@ import {
   MAP_TYPE_LABELS,
   MAP_TYPE_ICONS,
   MAP_HEADINGS,
-  COURTYARD_DESCRIPTION,
+  COURTYARD_CHARACTER_DESCRIPTIONS,
+  COURTYARD_CHARACTER_LABELS,
   TOWER_STAIR_LABELS,
 } from '../presentation';
 import { normalizeRoomCount, stepRoomCount } from '../room-count';
@@ -276,7 +277,7 @@ export class SettingsPanel {
   );
   protected readonly characterOptions = computed(() => {
     const type = this.draft().type;
-    return type === 'courtyard' || type === 'tower' ? [] : CHARACTER_OPTIONS[type];
+    return type === 'tower' ? [] : CHARACTER_OPTIONS[type];
   });
   protected readonly selectedCharacter = computed(() => {
     const draft = this.draft();
@@ -285,7 +286,9 @@ export class SettingsPanel {
         ? draft.preset
         : draft.type === 'forest'
           ? draft.character
-          : undefined;
+          : draft.type === 'courtyard'
+            ? draft.character
+            : undefined;
     return this.characterOptions().find((choice) => choice.id === id);
   });
   protected readonly characterPending = computed(() => {
@@ -295,13 +298,15 @@ export class SettingsPanel {
       return choice.id !== map.decoration.preset;
     if (choice?.type === 'forest' && map.type === 'forest')
       return choice.id !== map.decoration.character;
+    if (choice?.type === 'courtyard' && map.type === 'courtyard')
+      return choice.id !== map.decoration.character;
     return false;
   });
   protected readonly styleDescription = computed(() => {
     const map = this.map();
     if (map.type === 'tower')
       return 'Connected stone chambers, arcane details, and a clear route between floors.';
-    if (map.type === 'courtyard') return COURTYARD_DESCRIPTION;
+    if (map.type === 'courtyard') return COURTYARD_CHARACTER_DESCRIPTIONS[map.decoration.character];
     return map.type === 'dungeon'
       ? PRESET_DESCRIPTIONS[map.decoration.preset]
       : CHARACTER_DESCRIPTIONS[map.decoration.character];
@@ -309,7 +314,7 @@ export class SettingsPanel {
   protected readonly styleLabel = computed(() => {
     const map = this.map();
     if (map.type === 'tower') return 'Ruined wizard’s tower';
-    if (map.type === 'courtyard') return 'Overgrown ruin';
+    if (map.type === 'courtyard') return COURTYARD_CHARACTER_LABELS[map.decoration.character];
     if (map.type === 'forest') return CHARACTER_LABELS[map.decoration.character];
     return PRESET_LABELS[map.decoration.preset];
   });

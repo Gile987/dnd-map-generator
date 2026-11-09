@@ -1,7 +1,13 @@
 import { describe, expect, test } from 'vitest';
+import { generateCourtyard } from '../engine/courtyard-generate';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
-import { dungeonDraftForMap, forestDraftForMap, parseDraft } from './settings-draft';
+import {
+  dungeonDraftForMap,
+  forestDraftForMap,
+  parseDraft,
+  courtyardDraftForMap,
+} from './settings-draft';
 import type { DungeonDraft, ForestDraft } from './settings-draft';
 
 const dungeon: DungeonDraft = {
@@ -107,6 +113,21 @@ describe('draft conversion', () => {
       seed: 'accepted-grove',
       density: 'Cluttered',
       character: 'Fey',
+    });
+    const courtyardResult = generateCourtyard({
+      seed: 'accepted-court',
+      density: 'Cluttered',
+      character: 'Desecrated',
+      fountain: true,
+    });
+    if (!courtyardResult.ok) throw new Error(courtyardResult.error);
+    expect(courtyardDraftForMap(courtyardResult.map)).toEqual({
+      type: 'courtyard',
+      seed: 'accepted-court',
+      density: 'Cluttered',
+      character: 'Desecrated',
+      fountain: true,
+      wagon: false,
     });
   });
 });

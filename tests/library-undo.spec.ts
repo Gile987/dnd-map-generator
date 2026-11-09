@@ -22,7 +22,12 @@ const dungeon = generateDungeon({
   density: 'Balanced',
   preset: 'Mosslit',
 });
-const courtyard = generateCourtyard({ seed: 'ivy-court', density: 'Balanced', fountain: true });
+const courtyard = generateCourtyard({
+  character: 'Overgrown',
+  seed: 'ivy-court',
+  density: 'Balanced',
+  fountain: true,
+});
 const legacy = parseBundle(readFileSync('src/app/save/fixtures/forest-v3.json', 'utf8'));
 if (!dungeon.ok || !courtyard.ok || !legacy.ok || !legacy.maps[0])
   throw new Error('Missing undo fixtures');

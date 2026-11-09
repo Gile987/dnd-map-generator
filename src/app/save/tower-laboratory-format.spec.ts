@@ -9,6 +9,7 @@ import {
   parseBundle,
   serializeBundle,
   saveVocabulary,
+  SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
 import oldTower from './fixtures/tower-v1.json';
@@ -37,7 +38,7 @@ function saved() {
 test('the current format preserves laboratories while pre-laboratory vocabularies stay frozen', () => {
   const record = saved(),
     before = structuredClone(record);
-  expect(record.saveFormatVersion).toBe('28.0.0');
+  expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
   for (let v = 1; v <= 14; v++) {
@@ -118,7 +119,12 @@ test('laboratory metadata and cauldrons cannot be imported as other map types', 
       density: 'Balanced',
     }),
     generateForestClearing({ seed: 'laboratory-type', character: 'Verdant', density: 'Balanced' }),
-    generateCourtyard({ seed: 'laboratory-type', fountain: false, density: 'Balanced' }),
+    generateCourtyard({
+      character: 'Overgrown',
+      seed: 'laboratory-type',
+      fountain: false,
+      density: 'Balanced',
+    }),
   ];
   for (const result of results) {
     if (!result.ok) throw new Error(result.error);
