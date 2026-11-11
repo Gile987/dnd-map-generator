@@ -4,7 +4,7 @@ import type { MapDocument } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '30.0.0';
+export const SAVE_FORMAT_VERSION = '31.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -268,8 +268,16 @@ const FORMAT_30_VOCABULARY: SaveVocabulary = {
   courtyardEditVersions: [1, 2],
 };
 
+const FORMAT_31_VOCABULARY: SaveVocabulary = {
+  ...FORMAT_30_VOCABULARY,
+  courtyardBraziers: [true],
+  propKinds: [...FORMAT_30_VOCABULARY.propKinds, 'abandoned_brazier'],
+};
+
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
   switch (version) {
+    case '31.0.0':
+      return FORMAT_31_VOCABULARY;
     case '30.0.0':
       return FORMAT_30_VOCABULARY;
     case '29.0.0':
@@ -465,7 +473,7 @@ export function mapSummary(map: MapDocument): string {
   if (map.type === 'tower')
     return `${map.objectEdits ? 'Customized · ' : ''}${map.layout.floors.length} floors · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · Wizard’s tower${map.decoration.laboratoryFloor !== undefined ? ' · Laboratory on floor ' + map.decoration.laboratoryFloor : ''}${map.decoration.observatoryFloor !== undefined ? ' · Observatory on floor ' + map.decoration.observatoryFloor : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'courtyard')
-    return `${map.objectEdits ? 'Customized · ' : ''}${map.decoration.character} ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''}${map.decoration.well ? ' · Stone well' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
+    return `${map.objectEdits ? 'Customized · ' : ''}${map.decoration.character} ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''}${map.decoration.well ? ' · Stone well' : ''}${map.decoration.brazier ? ' · Abandoned brazier' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'dungeon') {
     const scene = map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : '';
     return `${map.objectEdits ? 'Customized · ' : ''}${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;

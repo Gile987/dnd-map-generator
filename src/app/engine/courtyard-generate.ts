@@ -12,6 +12,7 @@ import { nextDetailRevision } from './decoration-revision';
 import { propCells } from './prop-footprint';
 import { placeCollapsedWagon } from './courtyard-wagon';
 import { placeStoneWell } from './courtyard-well';
+import { placeAbandonedBrazier } from './courtyard-brazier';
 import { DEFAULT_COURTYARD_CHARACTER } from './model';
 import { gridDistances } from './grid-traversal';
 import {
@@ -192,11 +193,14 @@ function decorateBase(
 function decorate(
   layout: CourtyardLayout,
   seed: string,
-  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'character' | 'wagon' | 'well'>,
+  settings: Pick<
+    CourtyardSettings,
+    'density' | 'fountain' | 'character' | 'wagon' | 'well' | 'brazier'
+  >,
   revision: number,
 ):
   | { ok: true; decoration: RuinedCourtyard['decoration'] }
-  | { ok: false; missing: 'well' | 'wagon' } {
+  | { ok: false; missing: 'well' | 'wagon' | 'brazier' } {
   const base = decorateBase(layout, seed, settings, revision);
   // The fountain reserve always stays clear, whether the fountain is selected or not.
   const reserve = courtyardProtectedCells(layout),
@@ -208,16 +212,35 @@ function decorate(
   for (const tile of well?.reserve ?? []) reserve.add(tile);
   const wagon = settings.wagon ? placeCollapsedWagon(layout, seed, reserve) : undefined;
   if (settings.wagon && !wagon) return { ok: false, missing: 'wagon' };
+  for (const tile of wagon?.reserve ?? []) reserve.add(tile);
+  const fixedBlocked = new Set(
+    [...(well?.props ?? []), ...(wagon?.props ?? [])]
+      .filter((p) => p.blocking)
+      .flatMap((p) => propCells(p).map((cell) => indexOf(cell.x, cell.y))),
+  );
+  for (const prop of base.props)
+    if (prop.kind === 'dry_fountain')
+      for (const cell of propCells(prop)) fixedBlocked.add(indexOf(cell.x, cell.y));
+  const brazier = settings.brazier
+    ? placeAbandonedBrazier(layout, seed, reserve, fixedBlocked)
+    : undefined;
+  if (settings.brazier && !brazier) return { ok: false, missing: 'brazier' };
   const reserved = new Set<number>();
   for (const tile of well?.reserve ?? []) reserved.add(tile);
   for (const tile of wagon?.reserve ?? []) reserved.add(tile);
+  if (brazier) reserved.add(indexOf(brazier.x, brazier.y));
   let ordinary = base.props.filter(
     (p) => !propCells(p).some((cell) => reserved.has(indexOf(cell.x, cell.y))),
   );
   // A new blocking pack can expose a pinch point formed by ordinary columns.
   // Remove only ordinary blocking props, without consuming another random draw.
   while (true) {
-    const props = [...ordinary, ...(well?.props ?? []), ...(wagon?.props ?? [])];
+    const props = [
+      ...ordinary,
+      ...(well?.props ?? []),
+      ...(wagon?.props ?? []),
+      ...(brazier ? [brazier] : []),
+    ];
     const blocked = new Set(
       props
         .filter((p) => p.blocking)
@@ -233,6 +256,7 @@ function decorate(
           ...base,
           ...(well ? { well: true as const } : {}),
           ...(wagon ? { wagon: true as const } : {}),
+          ...(brazier ? { brazier: true as const } : {}),
           props,
         },
       };
@@ -242,7 +266,11 @@ function decorate(
         last = i;
         break;
       }
-    if (last < 0) return { ok: false, missing: settings.wagon ? 'wagon' : 'well' };
+    if (last < 0)
+      return {
+        ok: false,
+        missing: settings.brazier ? 'brazier' : settings.wagon ? 'wagon' : 'well',
+      };
     ordinary = ordinary.filter((_, i) => i !== last);
   }
 }
@@ -276,10 +304,15 @@ export function generateCourtyard(
           ok: false,
           error: 'The stone well could not fit. Try another seed or remove the well.',
         }
-      : {
-          ok: false,
-          error: 'The collapsed wagon could not fit. Try another seed or remove the wagon.',
-        };
+      : attempt.missing === 'wagon'
+        ? {
+            ok: false,
+            error: 'The collapsed wagon could not fit. Try another seed or remove the wagon.',
+          }
+        : {
+            ok: false,
+            error: 'The abandoned brazier could not fit. Try another seed or remove the brazier.',
+          };
   const next = { ...map, decoration: attempt.decoration };
   const invalid = validateCourtyard(next);
   return invalid ? { ok: false, error: invalid } : { ok: true, map: next };
@@ -287,7 +320,10 @@ export function generateCourtyard(
 
 export function changeCourtyardAppearance(
   map: RuinedCourtyard,
-  settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'character' | 'wagon' | 'well'>,
+  settings: Pick<
+    CourtyardSettings,
+    'density' | 'fountain' | 'character' | 'wagon' | 'well' | 'brazier'
+  >,
 ): RuinedCourtyard {
   if (
     validateCourtyardSettings({
@@ -297,6 +333,7 @@ export function changeCourtyardAppearance(
       fountain: settings.fountain,
       wagon: settings.wagon,
       well: settings.well,
+      brazier: settings.brazier,
     })
   )
     return map;
@@ -317,6 +354,7 @@ export function shuffleCourtyardDetails(map: RuinedCourtyard): RuinedCourtyard {
       fountain: map.decoration.fountain,
       wagon: map.decoration.wagon,
       well: map.decoration.well,
+      brazier: map.decoration.brazier,
     },
     revision,
   );

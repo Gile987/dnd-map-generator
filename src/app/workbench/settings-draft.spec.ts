@@ -129,6 +129,7 @@ describe('draft conversion', () => {
       fountain: true,
       wagon: false,
       well: false,
+      brazier: false,
     });
   });
 });

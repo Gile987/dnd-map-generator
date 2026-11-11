@@ -22,12 +22,17 @@ const COURTYARD_OBJECTS_V1 = {
   spilled_goods: { label: 'Loose goods', category: 'Protected', editable: false },
 } as const satisfies Partial<Record<PropKind, ObjectCapability>>;
 
+const COURTYARD_OBJECTS_CURRENT = {
+  ...COURTYARD_OBJECTS_V1,
+  abandoned_brazier: { label: 'Abandoned brazier', category: 'Stonework', editable: true },
+} as const satisfies Partial<Record<PropKind, ObjectCapability>>;
+
 export function courtyardCapability(kind: PropKind): ObjectCapability | undefined {
-  return Object.hasOwn(COURTYARD_OBJECTS_V1, kind)
-    ? COURTYARD_OBJECTS_V1[kind as keyof typeof COURTYARD_OBJECTS_V1]
+  return Object.hasOwn(COURTYARD_OBJECTS_CURRENT, kind)
+    ? COURTYARD_OBJECTS_CURRENT[kind as keyof typeof COURTYARD_OBJECTS_CURRENT]
     : undefined;
 }
-export const COURTYARD_PALETTE = Object.entries(COURTYARD_OBJECTS_V1)
+export const COURTYARD_PALETTE = Object.entries(COURTYARD_OBJECTS_CURRENT)
   .filter(([, capability]) => capability.editable)
   .map(([kind, capability]) => ({
     kind: kind as PropKind,

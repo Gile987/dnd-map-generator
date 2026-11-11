@@ -25,6 +25,7 @@ export type SeedStream =
   | 'courtyard-decoration'
   | 'courtyard-wagon'
   | 'courtyard-well'
+  | 'courtyard-brazier'
   | 'courtyard-surface';
 
 export function streamSeed(seed: string, kind: SeedStream, ...parts: (string | number)[]): number {

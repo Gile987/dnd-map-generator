@@ -1,5 +1,6 @@
 import { placeCollapsedWagon } from './courtyard-wagon';
 import { placeStoneWell } from './courtyard-well';
+import { placeAbandonedBrazier } from './courtyard-brazier';
 import {
   ALL_DENSITIES,
   WAGON_PROP_KINDS,
@@ -69,6 +70,8 @@ export function validateCourtyardSettings(settings: CourtyardSettings): string |
     return 'Choose whether to add a collapsed wagon.';
   if (settings.well !== undefined && typeof settings.well !== 'boolean')
     return 'Choose whether to add a stone well.';
+  if (settings.brazier !== undefined && typeof settings.brazier !== 'boolean')
+    return 'Choose whether to add an abandoned brazier.';
   if (typeof settings.fountain !== 'boolean') return 'Choose whether to add a dry fountain.';
   return undefined;
 }
@@ -137,12 +140,15 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
     fountain: map.decoration.fountain,
     wagon: map.decoration.wagon,
     well: map.decoration.well,
+    brazier: map.decoration.brazier,
   });
   if (settingsError) return settingsError;
   if (map.decoration.wagon !== undefined && map.decoration.wagon !== true)
     return 'Invalid collapsed wagon selection.';
   if (map.decoration.well !== undefined && map.decoration.well !== true)
     return 'Invalid stone well selection.';
+  if (map.decoration.brazier !== undefined && map.decoration.brazier !== true)
+    return 'Invalid abandoned brazier selection.';
   const layoutError = validateCourtyardLayout(map.layout);
   if (layoutError) return layoutError;
   if (!isDetailRevision(map.decoration.revision))
@@ -174,12 +180,31 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
     : undefined;
   if (map.decoration.wagon && !wagon)
     return 'The collapsed wagon could not fit outside protected areas.';
+  const brazierReserve = new Set([
+    ...protectedCells,
+    ...fountainReserve,
+    ...(well?.reserve ?? []),
+    ...(wagon?.reserve ?? []),
+  ]);
+  const fixedBlocked = new Set<number>();
+  if (map.decoration.fountain)
+    for (const p of areaCells({ ...site, width: 3, height: 3 }))
+      fixedBlocked.add(indexOf(p.x, p.y));
+  for (const p of [...(well?.props ?? []), ...(wagon?.props ?? [])])
+    if (p.blocking) for (const cell of propCells(p)) fixedBlocked.add(indexOf(cell.x, cell.y));
+  const brazier = map.decoration.brazier
+    ? placeAbandonedBrazier(map.layout, map.seed, brazierReserve, fixedBlocked)
+    : undefined;
+  if (map.decoration.brazier && !brazier)
+    return 'The abandoned brazier could not fit outside protected areas.';
   const expectedWell = well?.props[0];
   const expectedWagon = new Map(wagon?.props.map((p) => [p.kind, p]) ?? []);
   const seenWagon = new Set<string>();
   let seenWell = false;
+  let seenBrazier = false;
   for (const prop of map.decoration.props) {
     const isWellProp = prop.kind === 'stone_well';
+    const isBrazierProp = prop.kind === 'abandoned_brazier';
     const isWagonProp = WAGON_PROP_KINDS.some((kind) => kind === prop.kind);
     if (isWellProp) {
       if (seenWell || !expectedWell)
@@ -195,6 +220,19 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
       )
         return 'The stone well must retain its complete canonical arrangement.';
       seenWell = true;
+    } else if (isBrazierProp) {
+      if (
+        seenBrazier ||
+        !brazier ||
+        prop.x !== brazier.x ||
+        prop.y !== brazier.y ||
+        prop.blocking !== brazier.blocking ||
+        prop.variation !== brazier.variation ||
+        prop.footprint !== undefined ||
+        prop.rotation !== undefined
+      )
+        return 'The abandoned brazier must retain its canonical placement.';
+      seenBrazier = true;
     } else if (isWagonProp) {
       const expected = expectedWagon.get(prop.kind);
       if (
@@ -246,6 +284,8 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
     return Boolean(map.decoration.well)
       ? 'The selected stone well must be present.'
       : 'The stone well must be present exactly once.';
+  if (seenBrazier !== Boolean(map.decoration.brazier))
+    return 'The selected abandoned brazier must be present exactly once.';
   if (seenWagon.size !== expectedWagon.size)
     return 'The selected collapsed wagon must be complete.';
   if (

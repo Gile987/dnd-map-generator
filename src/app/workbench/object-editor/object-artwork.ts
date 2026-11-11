@@ -1,6 +1,6 @@
 import { FOREST_PALETTES } from '../../rendering/forest-palette';
 import { Directive, computed, input } from '@angular/core';
-import type { PropKind, ForestCharacter } from '../../engine/model';
+import type { PropKind, ForestCharacter, CourtyardCharacter } from '../../engine/model';
 import { isBlockingProp } from '../../engine/model';
 import { drawProp } from '../../rendering/props';
 
@@ -8,6 +8,7 @@ import { drawProp } from '../../rendering/props';
 export class ObjectArtwork {
   readonly kind = input.required<PropKind>({ alias: 'forgeObjectArtwork' });
   readonly forestCharacter = input<ForestCharacter | undefined>();
+  readonly courtyardCharacter = input<CourtyardCharacter | undefined>();
   protected readonly source = computed(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 80;
@@ -31,6 +32,7 @@ export class ObjectArtwork {
         variation: 0.5,
       },
       character ? FOREST_PALETTES[character] : undefined,
+      this.courtyardCharacter(),
     );
     return canvas.toDataURL();
   });
