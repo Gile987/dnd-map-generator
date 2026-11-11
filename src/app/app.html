@@ -87,9 +87,12 @@
       ><span><span class="objective-symbol"></span>Objective dais</span>
       } @else if (map().type === 'forest') {
       <span><forge-icon name="tree" />Forest trees</span>
-      } @else {
+      } @else if (map().type === 'courtyard') {
       <span><forge-icon name="ruin" />Walls & columns block</span>
       <span>Flat rubble is passable</span>
+      } @else {
+      <span><forge-icon name="stairs" />Match stair letters across floors</span>
+      <span>Arrows show up or down</span>
       }
       <span class="legend-divider"></span><span class="scale-note">1 square = 5 feet</span>
     </div>
