@@ -60,6 +60,7 @@ export interface SaveVocabulary {
   readonly studySurfaces?: readonly number[];
   readonly courtyardWagons?: readonly boolean[];
   readonly courtyardWells?: readonly boolean[];
+  readonly courtyardBraziers?: readonly boolean[];
   readonly courtyardFountains?: readonly boolean[];
   readonly courtyardCharacters?: readonly string[];
   readonly propKinds: readonly string[];
@@ -83,6 +84,13 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
     (type !== 'courtyard' ||
       typeof decoration['well'] !== 'boolean' ||
       !vocabulary.courtyardWells?.includes(decoration['well']))
+  )
+    return false;
+  if (
+    decoration['brazier'] !== undefined &&
+    (type !== 'courtyard' ||
+      typeof decoration['brazier'] !== 'boolean' ||
+      !vocabulary.courtyardBraziers?.includes(decoration['brazier']))
   )
     return false;
   if (
@@ -444,6 +452,7 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
     return false;
   if (type !== 'courtyard' && decoration['wagon'] !== undefined) return false;
   if (type !== 'courtyard' && decoration['well'] !== undefined) return false;
+  if (type !== 'courtyard' && decoration['brazier'] !== undefined) return false;
   if (type === 'dungeon') return isDungeonLayout(layout) && isDungeonDecoration(decoration);
   if (type === 'courtyard')
     return (
@@ -507,7 +516,7 @@ export function parseSavedMapBody(
       if (parsed?.type === 'forest' && !parsed.objectEdits)
         return parseForestEdits(parsed, objectEdits);
       return parsed?.type === 'courtyard' && !parsed.objectEdits
-        ? parseCourtyardEdits(parsed, objectEdits)
+        ? parseCourtyardEdits(parsed, objectEdits, vocabulary.propKinds)
         : undefined;
     }
     if (

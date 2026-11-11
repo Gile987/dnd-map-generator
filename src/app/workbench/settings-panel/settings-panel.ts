@@ -159,6 +159,14 @@ export class SettingsPanel {
           checked: Boolean(draft.well),
           change: { type: 'courtyard', changes: { well: !draft.well } },
         },
+        {
+          id: 'abandoned-brazier',
+          label: 'Abandoned brazier',
+          description:
+            'An unlit iron fire bowl beside ruined masonry. It blocks one square and can be moved or copied in Edit objects.',
+          checked: Boolean(draft.brazier),
+          change: { type: 'courtyard', changes: { brazier: !draft.brazier } },
+        },
       ];
     if (draft.type === 'dungeon') {
       return [

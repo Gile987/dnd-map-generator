@@ -12,10 +12,15 @@ import {
 } from './wagon-props';
 import { drawDiningTable } from './furniture-props';
 import { drawRitualAltar, drawRitualCandles, drawRitualOffering } from './ritual-props';
-import { drawDryFountain, drawLowRubble, drawStoneWell } from './courtyard-props';
+import {
+  drawAbandonedBrazier,
+  drawDryFountain,
+  drawLowRubble,
+  drawStoneWell,
+} from './courtyard-props';
 import { propBounds } from '../engine/prop-footprint';
 import { drawStandingStone, drawWeatheredStatue } from './landmark-props';
-import type { Prop, PropKind } from '../engine/model';
+import type { CourtyardCharacter, Prop, PropKind } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import { drawTent, drawBedroll, drawFireRing, drawSupplyBundle } from './camp-props';
 import { drawDesk, drawBookshelf, drawScrollCase } from './study-props';
@@ -50,7 +55,12 @@ import {
   drawTree,
 } from './forest-props';
 
-type PropDrawer = (ctx: DrawingContext, prop: Prop, forest: ForestPalette) => void;
+type PropDrawer = (
+  ctx: DrawingContext,
+  prop: Prop,
+  forest: ForestPalette,
+  courtyard: CourtyardCharacter,
+) => void;
 
 const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   ritual_altar: drawRitualAltar,
@@ -86,6 +96,7 @@ const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   dry_fountain: drawDryFountain,
   low_rubble: drawLowRubble,
   stone_well: drawStoneWell,
+  abandoned_brazier: (ctx, prop, _forest, courtyard) => drawAbandonedBrazier(ctx, prop, courtyard),
   fallen_trunk: drawFallenTrunk,
   fallen_roots: drawFallenRoots,
   fallen_branch: drawFallenBranch,
@@ -105,6 +116,7 @@ export function drawProp(
   ctx: DrawingContext,
   prop: Prop,
   forest: ForestPalette = VERDANT_PALETTE,
+  courtyard: CourtyardCharacter = 'Overgrown',
 ): void {
   ctx.save();
   if (prop.footprint) {
@@ -115,6 +127,6 @@ export function drawProp(
     ctx.translate(prop.x + 0.5, prop.y + (prop.kind === 'sconce' ? 0.18 : 0.5));
   }
   ctx.lineWidth = 0.025;
-  PROP_DRAWERS[prop.kind](ctx, prop, forest);
+  PROP_DRAWERS[prop.kind](ctx, prop, forest, courtyard);
   ctx.restore();
 }

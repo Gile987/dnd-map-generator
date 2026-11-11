@@ -29,7 +29,11 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
   base: Base,
   value: unknown,
   adapter: ArrangementAdapter<Base, Id>,
-  options: { readonly allowEmpty?: boolean; readonly allowedVersion?: 1 | 2 } = {},
+  options: {
+    readonly allowEmpty?: boolean;
+    readonly allowedVersion?: 1 | 2;
+    readonly allowedKinds?: readonly string[];
+  } = {},
 ): AuthoredArrangement<Base, Id> | undefined {
   const validPosition = (x: number, y: number) =>
     adapter.validPosition ? adapter.validPosition(base, x, y) : isTilePosition(x, y);
@@ -98,6 +102,7 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
       !keys(prop, ['kind', 'x', 'y', 'blocking', 'variation']) ||
       !position(prop, validPosition) ||
       typeof prop['kind'] !== 'string' ||
+      (options.allowedKinds !== undefined && !options.allowedKinds.includes(prop['kind'])) ||
       !adapter.capability(prop['kind'] as PropKind)?.editable ||
       prop['blocking'] !== isBlockingProp(prop['kind'] as PropKind) ||
       prop['variation'] !== 0.5

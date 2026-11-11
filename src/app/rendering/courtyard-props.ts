@@ -1,4 +1,4 @@
-import type { Prop } from '../engine/model';
+import type { CourtyardCharacter, Prop } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import { path } from './drawing-primitives';
 
@@ -19,6 +19,104 @@ export function drawLowRubble(ctx: DrawingContext, prop: Prop): void {
       '#666e5740',
     );
   }
+}
+
+const BRAZIER_COLORS: Readonly<
+  Record<
+    CourtyardCharacter,
+    { metal: string; rim: string; ash: string; accent: string; highlight: string }
+  >
+> = {
+  Overgrown: {
+    metal: '#514e3f',
+    rim: '#9a8a62',
+    ash: '#504e43',
+    accent: '#658167',
+    highlight: '#c3ae78',
+  },
+  Sunbleached: {
+    metal: '#6a5b47',
+    rim: '#b49c6e',
+    ash: '#786d5b',
+    accent: '#c8b88b',
+    highlight: '#e4cc96',
+  },
+  Frostbound: {
+    metal: '#48545c',
+    rim: '#8a9ba0',
+    ash: '#556069',
+    accent: '#b5d2d4',
+    highlight: '#dde8e3',
+  },
+  Desecrated: {
+    metal: '#34382f',
+    rim: '#68704c',
+    ash: '#34372d',
+    accent: '#7a9151',
+    highlight: '#a4ab6d',
+  },
+};
+
+export function drawAbandonedBrazier(
+  ctx: DrawingContext,
+  prop: Prop,
+  character: CourtyardCharacter,
+): void {
+  const colors = BRAZIER_COLORS[character];
+  ctx.fillStyle = '#17201666';
+  ctx.beginPath();
+  ctx.ellipse(0.04, 0.09, 0.41, 0.32, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = colors.metal;
+  for (const [x, y] of [
+    [-0.31, -0.27],
+    [0.25, -0.27],
+    [-0.31, 0.23],
+    [0.25, 0.23],
+  ] as const)
+    ctx.fillRect(x, y, 0.07, 0.12);
+  ctx.beginPath();
+  ctx.arc(0, 0, 0.35, 0, Math.PI * 2);
+  ctx.fillStyle = colors.metal;
+  ctx.fill();
+  ctx.strokeStyle = colors.rim;
+  ctx.lineWidth = 0.07;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, 0.245, 0, Math.PI * 2);
+  ctx.fillStyle = colors.ash;
+  ctx.fill();
+  ctx.strokeStyle = '#1f241f';
+  ctx.lineWidth = 0.035;
+  ctx.stroke();
+  for (let i = 0; i < 7; i++) {
+    const angle = i * 2.37 + prop.variation * 4;
+    const radius = 0.07 + (i % 3) * 0.055;
+    ctx.fillStyle = i % 3 === 0 ? colors.accent : '#22251f';
+    ctx.beginPath();
+    ctx.ellipse(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+      i % 3 === 0 ? 0.055 : 0.045,
+      0.025,
+      angle,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fill();
+  }
+  for (let i = 0; i < 6; i++) {
+    const angle = (i * Math.PI) / 3 + 0.22;
+    ctx.beginPath();
+    ctx.arc(Math.cos(angle) * 0.345, Math.sin(angle) * 0.345, 0.018, 0, Math.PI * 2);
+    ctx.fillStyle = colors.highlight;
+    ctx.fill();
+  }
+  ctx.strokeStyle = colors.highlight;
+  ctx.lineWidth = 0.025;
+  ctx.beginPath();
+  ctx.arc(0, 0, 0.35, -2.4, -0.85);
+  ctx.stroke();
 }
 
 /** A free-standing 2 × 2 stone well: circular coping, dark mouth with a faint

@@ -72,6 +72,7 @@ describe('production option constants', () => {
       'spilled_crate',
       'spilled_goods',
       'stone_well',
+      'abandoned_brazier',
     ]);
   });
 });

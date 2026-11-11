@@ -332,6 +332,7 @@ describe('save format', () => {
       '28.0.0',
       '29.0.0',
       '30.0.0',
+      '31.0.0',
     ]) {
       test.each([
         '1.0.0',
@@ -364,6 +365,7 @@ describe('save format', () => {
         '28.0.0',
         '29.0.0',
         '30.0.0',
+        '31.0.0',
       ])(
         `accepts header ${header} with record version %s and preserves the map`,
         (saveFormatVersion) => {

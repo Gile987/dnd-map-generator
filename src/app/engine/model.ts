@@ -128,6 +128,7 @@ export interface ForestSettings {
 }
 
 export interface CourtyardSettings {
+  readonly brazier?: boolean;
   readonly wagon?: boolean;
   readonly well?: boolean;
   readonly seed: string;
@@ -162,6 +163,7 @@ export interface RuinedCourtyard {
     readonly density: Density;
     readonly character: CourtyardCharacter;
     readonly fountain: boolean;
+    readonly brazier?: true;
     readonly wagon?: true;
     readonly well?: true;
     readonly revision: number;
@@ -232,6 +234,7 @@ export const WELL_PROP_KINDS = ['stone_well'] as const;
 export const COURTYARD_PROP_KINDS = [
   ...WAGON_PROP_KINDS,
   'stone_well',
+  'abandoned_brazier',
   'broken_column',
   'moss',
   'fern',
@@ -245,6 +248,7 @@ export type PropKind =
   | 'low_rubble'
   | 'dry_fountain'
   | 'stone_well'
+  | 'abandoned_brazier'
   | 'cauldron'
   | 'telescope'
   | 'star_chart_table'
@@ -265,6 +269,7 @@ export const ALL_PROP_KINDS: readonly PropKind[] = [
   'star_charts',
   ...WAGON_PROP_KINDS,
   ...WELL_PROP_KINDS,
+  'abandoned_brazier',
 ];
 
 export function isDungeonPropKind(kind: PropKind): kind is DungeonPropKind {
@@ -380,6 +385,7 @@ export function isBlockingProp(kind: PropKind): boolean {
     kind === 'rubble' ||
     kind === 'sarcophagus' ||
     kind === 'broken_column' ||
+    kind === 'abandoned_brazier' ||
     kind === 'boulder' ||
     kind === 'log' ||
     kind === 'stump' ||

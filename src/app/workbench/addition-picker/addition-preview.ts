@@ -13,6 +13,7 @@ export type AdditionId =
   | 'dining-table'
   | 'dry-fountain'
   | 'stone-well'
+  | 'abandoned-brazier'
   | 'alchemist-laboratory'
   | 'tower-observatory'
   | 'collapsed-wagon'
@@ -56,6 +57,11 @@ const illustrations: Readonly<
     width: 4,
     height: 4,
     props: [{ ...prop('stone_well', 1, 1), footprint: { width: 2, height: 2 }, rotation: 0 }],
+  },
+  'abandoned-brazier': {
+    width: 3,
+    height: 3,
+    props: [prop('abandoned_brazier', 1, 1)],
   },
   'forgotten-study': {
     width: 5,

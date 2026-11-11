@@ -14,6 +14,7 @@ export type EditorDrawing = DungeonDrawing | CourtyardDrawing | ForestDrawing | 
 export function drawEditorProp(ctx: DrawingContext, prop: Prop, map: EditorDrawing): void {
   if (map.type === 'dungeon') return drawDungeonProp(ctx, prop, map);
   const palette = map.type === 'forest' ? FOREST_PALETTES[map.decoration.character] : undefined;
+  const courtyard = map.type === 'courtyard' ? map.decoration.character : undefined;
   const turn = map.objectEdits === 'resolved' ? map.artTurns.get(prop) : undefined;
   if (turn && map.type === 'tower' && prop.kind === 'ritual_candles') {
     ctx.save();
@@ -23,11 +24,11 @@ export function drawEditorProp(ctx: DrawingContext, prop: Prop, map: EditorDrawi
     ctx.restore();
     return;
   }
-  if (!turn) return drawProp(ctx, prop, palette);
+  if (!turn) return drawProp(ctx, prop, palette, courtyard);
   ctx.save();
   ctx.translate(prop.x + 0.5, prop.y + 0.5);
   ctx.rotate((turn * Math.PI) / 2);
   ctx.translate(-prop.x - 0.5, -prop.y - 0.5);
-  drawProp(ctx, prop, palette);
+  drawProp(ctx, prop, palette, courtyard);
   ctx.restore();
 }

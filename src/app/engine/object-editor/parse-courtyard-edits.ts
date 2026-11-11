@@ -14,11 +14,15 @@ function record(value: unknown): value is Record<string, unknown> {
 export function parseCourtyardEdits(
   base: RuinedCourtyard,
   value: unknown,
+  allowedKinds?: readonly string[],
 ): AuthoredCourtyard | undefined {
   if (record(value) && value['version'] === 2) {
-    const authored = parseArrangementEdits(base, value, COURTYARD_EDITOR, { allowedVersion: 2 });
+    const authored = parseArrangementEdits(base, value, COURTYARD_EDITOR, {
+      allowedVersion: 2,
+      allowedKinds,
+    });
     if (!authored) return undefined;
     return { ...authored, objectEdits: { ...authored.objectEdits, version: 2 as const } };
   }
-  return parseArrangementEdits(base, value, COURTYARD_EDITOR);
+  return parseArrangementEdits(base, value, COURTYARD_EDITOR, { allowedKinds });
 }
