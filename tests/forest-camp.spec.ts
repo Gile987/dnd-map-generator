@@ -130,7 +130,7 @@ test('a camp that cannot fit preserves an imported map and recovers with a new s
     maps: {
       map: { layout: { tiles: boolean[]; route: number[] }; decoration: { props: unknown[] } };
     }[];
-  } = JSON.parse(readFileSync('src/app/save/fixtures/forest-v3.json', 'utf8'));
+  } = JSON.parse(readFileSync('src/app/save/fixtures/forest-current.json', 'utf8'));
   const record = fixture.maps[0];
   if (!record) throw new Error('Expected fixture map');
   record.map.layout.route = record.map.layout.tiles.flatMap((floor, tile) => (floor ? [tile] : []));

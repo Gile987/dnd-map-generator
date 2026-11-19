@@ -178,7 +178,7 @@ test('an imported dungeon with insufficient study space stays intact and permits
   expect((await snapshot(page, 'Recovered study')).decoration.scene).toBe('Forgotten study');
 });
 
-test('historical study pixels survive saving, shuffle undo, and portable sharing', async ({
+test('saved study pixels survive saving, shuffle undo, and portable sharing', async ({
   page,
   browser,
 }) => {
@@ -189,11 +189,11 @@ test('historical study pixels survive saving, shuffle undo, and portable sharing
     return readFileSync(await (await pending).path());
   }
   await page.goto('/');
-  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/study-v9.json');
+  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/study-current.json');
   await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
   const original = await snapshot(page, 'Old study');
-  expect(original.decoration).not.toHaveProperty('studySurface');
+  expect(original.decoration).toHaveProperty('studySurface', 1);
   const oldPng = await png(page);
   await page.getByRole('button', { name: 'Shuffle details', exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');

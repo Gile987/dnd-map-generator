@@ -195,16 +195,16 @@ test('comparison is keyboard accessible in normal and focused layouts, with safe
   await page.screenshot({ path: 'artifacts/f14/workbench-320.png', fullPage: true });
 });
 
-test('a historical study pin keeps original model and PNG artwork through generation and shuffle undo', async ({
+test('a saved study pin keeps original model and PNG artwork through generation and shuffle undo', async ({
   page,
 }) => {
   await page.goto('/');
-  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/study-v9.json');
+  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/study-current.json');
   await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
   await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
   await pin(page).click();
   const original = await save(page, 'Historical pin');
-  expect(original.decoration).not.toHaveProperty('studySurface');
+  expect(original.decoration).toHaveProperty('studySurface', 1);
   const before = await png(page);
   await page.getByRole('button', { name: 'Shuffle details', exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');

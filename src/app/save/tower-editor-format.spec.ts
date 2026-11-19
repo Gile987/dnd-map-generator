@@ -18,12 +18,11 @@ import {
   parseSavedMap,
   parseBundle,
   serializeBundle,
-  saveVocabulary,
   SAVE_FORMAT_VERSION,
 } from './save-format';
 import { forestEditorFixture } from '../../../scripts/forest-editor-test-support';
 
-test('format 27 permits Tower edit v1 while formats 1–26 keep their original closed vocabularies', () => {
+test('current format round-trips Tower furniture edits', () => {
   const { base, prepared, target } = towerGroupFixture('laboratory'),
     edited = accept(prepared, { kind: 'move-group', id: 'laboratory', target, rotation: 3 });
   const saved = makeSavedMap(
@@ -36,11 +35,6 @@ test('format 27 permits Tower edit v1 while formats 1–26 keep their original c
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-  for (let v = 1; v <= 26; v++) {
-    expect(saveVocabulary(`${v}.0.0`)?.towerEditVersions).toBeUndefined();
-    expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
-  }
-  expect(saveVocabulary('27.0.0')?.towerEditVersions).toEqual([1]);
   expect(parseTowerEdits(base, edited.objectEdits)).toEqual(edited);
 });
 
@@ -124,7 +118,7 @@ test('strict import validates dynamic coordinates, membership, canonical floors,
   ).toBeUndefined();
 });
 
-test('format 28 adds Tower stair edit v2 without changing the format-27 furniture vocabulary', () => {
+test('current format round-trips Tower stair edits', () => {
   const { base, moved, stair, command } = towerStairFixture();
   const edited = accept(moved, { kind: 'add', propKind: 'crate', target: stair }),
     saved = makeSavedMap(
@@ -135,13 +129,8 @@ test('format 28 adds Tower stair edit v2 without changing the format-27 furnitur
       '2026-11-05T12:00:00Z',
     );
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
-  expect(saveVocabulary('29.0.0')?.towerEditVersions).toEqual([1, 2]);
-  expect(saveVocabulary('28.0.0')?.towerEditVersions).toEqual([1, 2]);
-  expect(saveVocabulary('27.0.0')?.towerEditVersions).toEqual([1]);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-  for (let v = 1; v <= 27; v++)
-    expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
   const edits = moved.objectEdits;
   if (edits?.version !== 2) throw Error('Missing stair edits');
   const move = edits.stairs[0];

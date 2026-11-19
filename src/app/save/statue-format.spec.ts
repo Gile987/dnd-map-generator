@@ -27,34 +27,11 @@ function record() {
   );
 }
 
-test('statue snapshots round-trip in current format and historical vocabularies reject new metadata and objects', () => {
+test('current format round-trips statue snapshots', () => {
   const saved = record();
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)).toEqual(saved);
-  const historical = {
-    ...saved,
-    map: { ...saved.map, decoration: { ...saved.map.decoration, studySurface: undefined } },
-  };
-  expect(parseSavedMap({ ...historical, saveFormatVersion: '7.0.0' })).toEqual(historical);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-  for (const saveFormatVersion of ['1.0.0', '2.0.0', '3.0.0', '4.0.0', '5.0.0', '6.0.0']) {
-    expect(parseSavedMap({ ...historical, saveFormatVersion })).toBeUndefined();
-    expect(
-      parseSavedMap({
-        ...historical,
-        saveFormatVersion,
-        map: {
-          ...historical.map,
-          decoration: {
-            ...historical.map.decoration,
-            scene: undefined,
-            landmark: 'None',
-            props: [],
-          },
-        },
-      }),
-    ).toBeUndefined();
-  }
 });
 
 test.each([

@@ -3,7 +3,7 @@ import { expect, test } from 'vitest';
 import type { DungeonDocument, QuarterTurn } from '../model';
 import { propBounds, propCells, QUARTER_TURNS } from '../prop-footprint';
 import { applyObjectCommand } from './commands';
-import { dungeonBase, dungeonInstances, resolveDungeon } from './document';
+import { dungeonBase, dungeonInstances } from './document';
 import { dungeonSelections } from './dungeon-selection';
 import { parseDungeonEdits } from './parse-edits';
 import { makeSavedMap, parseSavedMap, parseBundle, serializeBundle } from '../../save/save-format';
@@ -135,31 +135,6 @@ test('bad turns, collisions, stale group identities and boundary failures preser
   expect(applyObjectCommand(doc, { kind: 'move-group', id: 'table', target, rotation: 2 }).ok).toBe(
     true,
   );
-});
-
-test('old v3 group transforms remain translation-only until a real new edit upgrades them', () => {
-  const { base, prepared, target } = rotationFixture('ritual');
-  const moved = applyObjectCommand(prepared, { kind: 'move-group', id: 'ritual', target });
-  if (!moved.ok || !moved.document.objectEdits) throw Error('Missing move');
-  const oldEdits = {
-    ...moved.document.objectEdits,
-    version: 3,
-    groups: [{ id: 'ritual', ...target }],
-  };
-  const old = parseDungeonEdits(base, oldEdits);
-  if (!old) throw Error('Missing v3 map');
-  expect(resolveDungeon(old).decoration.props).toEqual(
-    dungeonInstances(moved.document).map((i) => i.prop),
-  );
-  const noop = applyObjectCommand(old, { kind: 'move-group', id: 'ritual', target });
-  expect(noop.ok && noop.document).toBe(old);
-  const rotated = applyObjectCommand(old, {
-    kind: 'move-group',
-    id: 'ritual',
-    target,
-    rotation: 1,
-  });
-  expect(rotated.ok && rotated.document.objectEdits?.version).toBe(4);
 });
 
 test('table rotation refuses a newly occupied square and can turn the other way without moving loose objects', () => {

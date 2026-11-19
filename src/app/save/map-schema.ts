@@ -7,6 +7,8 @@ import type { MapDocument } from '../engine/model';
 import { isUsableTower } from '../engine/tower';
 import {
   ALL_DENSITIES,
+  GENERATOR_VERSION,
+  COURTYARD_GENERATOR_VERSION,
   ALL_COURTYARD_CHARACTERS,
   ALL_DUNGEON_SCENES,
   ALL_DUNGEON_FURNITURE,
@@ -16,8 +18,6 @@ import {
   ALL_FOREST_LANDMARKS,
   ALL_PRESETS,
   ALL_PROP_KINDS,
-  DEFAULT_COURTYARD_CHARACTER,
-  DEFAULT_FOREST_CHARACTER,
   HEIGHT,
   ROOM_MAX,
   ROOM_MIN,
@@ -60,7 +60,6 @@ export interface SaveVocabulary {
   readonly studySurfaces?: readonly number[];
   readonly courtyardWagons?: readonly boolean[];
   readonly courtyardWells?: readonly boolean[];
-  readonly courtyardBraziers?: readonly boolean[];
   readonly courtyardFountains?: readonly boolean[];
   readonly courtyardCharacters?: readonly string[];
   readonly propKinds: readonly string[];
@@ -86,13 +85,7 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
       !vocabulary.courtyardWells?.includes(decoration['well']))
   )
     return false;
-  if (
-    decoration['brazier'] !== undefined &&
-    (type !== 'courtyard' ||
-      typeof decoration['brazier'] !== 'boolean' ||
-      !vocabulary.courtyardBraziers?.includes(decoration['brazier']))
-  )
-    return false;
+  if ('brazier' in decoration) return false;
   if (
     decoration['fallenTree'] !== undefined &&
     (type !== 'forest' ||
@@ -411,8 +404,9 @@ function isDungeonDecoration(value: unknown): boolean {
       (typeof value['landmark'] === 'string' && isIn(value['landmark'], ALL_DUNGEON_LANDMARKS))) &&
     (value['scene'] === undefined ||
       (typeof value['scene'] === 'string' && isIn(value['scene'], ALL_DUNGEON_SCENES))) &&
-    (value['studySurface'] === undefined ||
-      (value['studySurface'] === 1 && value['scene'] === 'Forgotten study'))
+    (value['scene'] === 'Forgotten study'
+      ? value['studySurface'] === 1
+      : value['studySurface'] === undefined)
   );
 }
 
@@ -420,7 +414,7 @@ function isForestDecoration(value: unknown): boolean {
   return (
     isObject(value) &&
     isDecorationBase(value) &&
-    (value['forestSurface'] === undefined || value['forestSurface'] === 1) &&
+    value['forestSurface'] === 1 &&
     typeof value['character'] === 'string' &&
     isIn(value['character'], ALL_FOREST_CHARACTERS) &&
     (value['landmark'] === undefined ||
@@ -434,7 +428,8 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
   if (!isObject(value)) return false;
   const { type, version, seed, surfaceSeed, layout, decoration } = value;
   if (type !== 'dungeon' && type !== 'forest' && type !== 'courtyard') return false;
-  if (typeof version !== 'string' || !version) return false;
+  if (version !== (type === 'courtyard' ? COURTYARD_GENERATOR_VERSION : GENERATOR_VERSION))
+    return false;
   if (typeof seed !== 'string' || !seed || seed !== seed.trim() || seed.length > 64) return false;
   if (!isFiniteNumber(surfaceSeed)) return false;
   if (!isObject(layout) || !isObject(decoration)) return false;
@@ -537,48 +532,6 @@ export function parseSavedMapBody(
       return undefined;
     return parseDungeonEdits(parsedBase, objectEdits);
   }
-  let normalizedMap: unknown = map;
-  // Historical courtyards predate characters; every format that recorded a
-  // courtyard so far is covered by these generator versions.
-  if (
-    isObject(map) &&
-    map['type'] === 'courtyard' &&
-    (map['version'] === '3.0.0' || map['version'] === '4.0.0') &&
-    isObject(map['decoration']) &&
-    !('character' in map['decoration'])
-  ) {
-    normalizedMap = {
-      ...map,
-      decoration: { ...map['decoration'], character: DEFAULT_COURTYARD_CHARACTER },
-    };
-  }
-  if (
-    isObject(map) &&
-    map['type'] === 'forest' &&
-    map['version'] === '3.0.0' &&
-    isObject(map['decoration']) &&
-    !('character' in map['decoration'])
-  ) {
-    normalizedMap = {
-      ...map,
-      decoration: { ...map['decoration'], character: DEFAULT_FOREST_CHARACTER },
-    };
-  }
-  // Retain the stored vocabulary for compatibility checks after bounded shape
-  // validation. An old format cannot claim a new ID, nor a new format an alias.
-  const storedMap = normalizedMap;
-  if (
-    isObject(normalizedMap) &&
-    normalizedMap['type'] === 'forest' &&
-    isObject(normalizedMap['decoration']) &&
-    normalizedMap['decoration']['landmark'] === 'Suggested landmark'
-  ) {
-    normalizedMap = {
-      ...normalizedMap,
-      decoration: { ...normalizedMap['decoration'], landmark: 'standing-stone-circle' },
-    };
-  }
-  if (!isUsableMap(normalizedMap)) return undefined;
-  if (!mapUsesVocabulary(storedMap, vocabulary)) return undefined;
-  return normalizedMap;
+  if (!isUsableMap(map) || !mapUsesVocabulary(map, vocabulary)) return undefined;
+  return map;
 }

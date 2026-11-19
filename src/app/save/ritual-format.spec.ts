@@ -7,10 +7,9 @@ import {
   parseBundle,
   parseSavedMap,
   serializeBundle,
-  saveVocabulary,
   SAVE_FORMAT_VERSION,
 } from './save-format';
-import { isUsableMap, mapUsesVocabulary } from './map-schema';
+import { isUsableMap } from './map-schema';
 
 function record() {
   const result = generateDungeon({
@@ -30,37 +29,11 @@ function record() {
   );
 }
 
-test('format 11 round-trips exact ritual models and freezes older vocabularies', () => {
+test('current format round-trips exact ritual models', () => {
   const saved = record();
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-  for (let version = 1; version <= 10; version++) {
-    const saveFormatVersion = `${version}.0.0`;
-    const vocabulary = saveVocabulary(saveFormatVersion);
-    if (!vocabulary) throw new Error('Missing historical vocabulary');
-    expect(
-      mapUsesVocabulary(
-        { ...saved.map, decoration: { ...saved.map.decoration, ritual: undefined } },
-        vocabulary,
-      ),
-    ).toBe(false);
-    expect(parseSavedMap({ ...saved, saveFormatVersion })).toBeUndefined();
-    expect(
-      parseSavedMap({
-        ...saved,
-        saveFormatVersion,
-        map: { ...saved.map, decoration: { ...saved.map.decoration, ritual: false, props: [] } },
-      }),
-    ).toBeUndefined();
-    expect(
-      parseSavedMap({
-        ...saved,
-        saveFormatVersion,
-        map: { ...saved.map, decoration: { ...saved.map.decoration, ritual: undefined } },
-      }),
-    ).toBeUndefined();
-  }
 });
 
 test.each([

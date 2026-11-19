@@ -12,7 +12,7 @@ import {
   orderedCourtyardObjects,
 } from './courtyard-document';
 import { courtyardSelections } from './courtyard-rules';
-import { dungeonCapability, DUNGEON_PALETTE_V2 } from './catalog';
+import { dungeonCapability, DUNGEON_PALETTE } from './catalog';
 import { dungeonInstances, resolveDungeon } from './document';
 import type { EditableMapDocument } from './document';
 import type { MapDocument, PropKind } from '../model';
@@ -58,7 +58,7 @@ export function editorSelections(map: EditableMapDocument): readonly EditorSelec
 }
 export function editorPalette(map: EditableMapDocument) {
   return map.type === 'dungeon'
-    ? DUNGEON_PALETTE_V2
+    ? DUNGEON_PALETTE
     : map.type === 'forest'
       ? FOREST_PALETTE
       : map.type === 'tower'
@@ -68,7 +68,7 @@ export function editorPalette(map: EditableMapDocument) {
 export function editorObjectLabel(map: EditableMapDocument, kind: PropKind): string {
   return (
     (map.type === 'dungeon'
-      ? dungeonCapability(kind, 2)
+      ? dungeonCapability(kind)
       : map.type === 'forest'
         ? forestCapability(kind)
         : map.type === 'tower'

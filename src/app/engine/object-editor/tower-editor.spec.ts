@@ -261,9 +261,6 @@ test('blocking limits are per floor, preserve accepted objects on rejection, and
   expect(applyTowerCommand(map, elsewhere).ok).toBe(true);
 });
 
-// Historical snapshots carry no editing metadata and keep their positions until
-// an explicit command adopts the new contract.
-
 test('a real same-floor barrier is refused and removing a blocker permits correction', () => {
   const base = towerEditorFixture({
       portalFloor: null,

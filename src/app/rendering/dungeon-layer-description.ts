@@ -30,9 +30,5 @@ export function describeObjectLayer(
 }
 
 export function describeDungeonLayer(items: readonly AddedObject[], underneath: readonly string[]) {
-  return describeObjectLayer(
-    items,
-    underneath,
-    (kind) => dungeonCapability(kind, 2)?.label ?? kind,
-  );
+  return describeObjectLayer(items, underneath, (kind) => dungeonCapability(kind)?.label ?? kind);
 }

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import fixture from './fixtures/courtyard-v24.json';
+import fixture from './fixtures/courtyard-current.json';
 import { generateCourtyard, changeCourtyardAppearance } from '../engine/courtyard-generate';
 import { generateTower } from '../engine/tower';
 import { generateDungeon } from '../engine/generate';
@@ -9,7 +9,6 @@ import {
   parseSavedMap,
   serializeBundle,
   parseBundle,
-  saveVocabulary,
   SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
@@ -31,39 +30,22 @@ function saved() {
   );
 }
 
-test('format 17 round-trips a complete wagon and freezes all earlier vocabularies', () => {
+test('current format round-trips a complete wagon', () => {
   const record = saved(),
     before = structuredClone(record);
   expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
-  for (let v = 1; v <= 16; v++) {
-    const vocabulary = saveVocabulary(`${v}.0.0`);
-    expect(vocabulary?.courtyardWagons).toBeUndefined();
-    expect(vocabulary?.propKinds).not.toContain('collapsed_wagon');
-    expect(vocabulary?.propFootprints?.['collapsed_wagon']).toBeUndefined();
-    expect(parseSavedMap({ ...record, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
-  }
   expect(record).toEqual(before);
 });
-test('old courtyards keep absent wagon metadata and exact artwork until the explicit addition', () => {
-  const historical = parseSavedMap(fixture.maps[1]);
-  if (
-    !historical ||
-    historical.map.type !== 'courtyard' ||
-    historical.map.objectEdits !== undefined
-  )
-    throw new Error('Missing historical courtyard');
-  const legacy = historical.map;
-  const record = saved();
-  for (let version = 9; version <= 16; version++) {
-    const parsed = parseSavedMap({ ...record, map: legacy, saveFormatVersion: `${version}.0.0` });
-    expect(parsed?.map).toBe(legacy);
-    expect(parsed?.map.decoration).not.toHaveProperty('wagon');
-  }
-  const applied = changeCourtyardAppearance(legacy, { ...legacy.decoration, wagon: true });
-  expect(applied.layout).toBe(legacy.layout);
-  expect(applied.version).toBe(legacy.version);
+test('current courtyard snapshots acquire a wagon only through an explicit appearance action', () => {
+  const restored = parseSavedMap(fixture.maps[1]);
+  if (!restored || restored.map.type !== 'courtyard' || restored.map.objectEdits !== undefined)
+    throw new Error('Missing current courtyard');
+  const base = restored.map;
+  const applied = changeCourtyardAppearance(base, { ...base.decoration, wagon: true });
+  expect(applied.layout).toBe(base.layout);
+  expect(applied.version).toBe(base.version);
   expect(applied.decoration.wagon).toBe(true);
 });
 test('missing, moved, duplicate, oversized or inconsistent wagon components are rejected without losing valid records', () => {

@@ -11,14 +11,13 @@ import { withDoorStates } from '../dungeon-doors';
 import { groupRotation } from './group-rotation';
 import { QUARTER_TURNS } from '../prop-footprint';
 import { layeredDungeonError } from './dungeon-layering-rules';
-import { authoredDungeonError, individualObjectLock } from './dungeon-authoring-rules';
+import { individualObjectLock } from './dungeon-authoring-rules';
 import { dungeonGroups } from './dungeon-groups';
 import { isBlockingProp, isTilePosition } from '../model';
 import type { Prop } from '../model';
 import { dungeonCapability } from './catalog';
 import { dungeonBase, dungeonInstances } from './document';
 import type { DungeonDocument, ObjectEditsV4, ObjectEditsV5 } from './document';
-import { dungeonTargetsError } from './dungeon-rules';
 
 export { MAX_AUTHORED_OBJECTS } from './object-command';
 export type { ObjectCommand } from './object-command';
@@ -49,13 +48,7 @@ export function proposeObjectCommand(
     ? {
         ...document.objectEdits,
         version: 4,
-        groups:
-          document.objectEdits.version !== 1
-            ? document.objectEdits.groups.map((move) => ({
-                ...move,
-                rotation: groupRotation(move),
-              }))
-            : [],
+        groups: document.objectEdits.groups,
       }
     : {
         version: 4,
@@ -104,7 +97,7 @@ export function proposeObjectCommand(
       ].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
     };
   } else if (command.kind === 'add') {
-    if (!dungeonCapability(command.propKind, 2)?.editable)
+    if (!dungeonCapability(command.propKind)?.editable)
       return { ok: false, error: 'This object cannot be added individually.' };
     if (edits.added.length >= MAX_AUTHORED_OBJECTS || edits.nextId >= Number.MAX_SAFE_INTEGER)
       return { ok: false, error: 'The custom object limit has been reached.' };
@@ -196,19 +189,5 @@ export function applyObjectCommand(document: DungeonDocument, command: ObjectCom
 }
 
 export function authoredPlacementError(document: DungeonDocument): string | undefined {
-  if (
-    document.objectEdits?.version === 3 ||
-    document.objectEdits?.version === 4 ||
-    document.objectEdits?.version === 5
-  )
-    return layeredDungeonError(dungeonBase(document), document, dungeonInstances(document));
-  if (document.objectEdits?.version === 2)
-    return authoredDungeonError(dungeonBase(document), document, dungeonInstances(document));
-  const all = dungeonInstances(document),
-    moved = new Set(document.objectEdits?.moves.map((m) => m.id));
-  return dungeonTargetsError(
-    dungeonBase(document),
-    all.filter((p) => moved.has(p.id) || p.id.startsWith('added-')).map((p) => p.prop),
-    all.map((p) => p.prop),
-  );
+  return layeredDungeonError(dungeonBase(document), document, dungeonInstances(document));
 }

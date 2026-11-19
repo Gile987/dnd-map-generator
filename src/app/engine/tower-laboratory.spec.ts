@@ -90,7 +90,7 @@ test('adding a laboratory preserves unrelated floor decoration and removing it r
         const shuffled = shuffleTowerDetails(changed);
         expect(shuffled.decoration.laboratoryFloor).toBe(floor.number);
         const laboratoryProps = towerLaboratoryProps(changed.layout, floor.number, (p) =>
-          towerConnectionReserved(changed.layout, p, changed.version),
+          towerConnectionReserved(changed.layout, p),
         );
         expect(laboratoryProps).toHaveLength(5);
         for (const prop of laboratoryProps ?? [])

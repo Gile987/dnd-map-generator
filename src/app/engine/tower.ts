@@ -47,7 +47,7 @@ export interface Tower {
   readonly seed: string;
   readonly surfaceSeed: number;
   readonly layout: {
-    readonly stairStyle?: TowerStairStyle;
+    readonly stairStyle: TowerStairStyle;
     readonly width: number;
     readonly height: number;
     readonly floors: readonly TowerFloor[];
@@ -63,8 +63,8 @@ export interface Tower {
     readonly props: readonly Prop[];
   };
 }
-export function towerStairStyle(map: Pick<Tower, 'layout' | 'version'>): TowerStairStyle {
-  return map.layout.stairStyle ?? (map.version === '1.0.0' ? 'separate' : 'spiral');
+export function towerStairStyle(map: Pick<Tower, 'layout'>): TowerStairStyle {
+  return map.layout.stairStyle;
 }
 const PURPOSES = [
   'Entrance hall',
@@ -134,11 +134,7 @@ function towerLayout(
     (n) => n !== portalFloor,
   );
   const secretNumber =
-    portalFloor === null
-      ? null
-      : version === '1.0.0'
-        ? count
-        : destinations[random.int(0, destinations.length - 1)];
+    portalFloor === null ? null : destinations[random.int(0, destinations.length - 1)];
   const columns = count <= 4 ? 2 : 3;
   const width = columns * 16,
     height = Math.ceil(count / columns) * 18;
@@ -152,98 +148,79 @@ function towerLayout(
     height: 13,
   }));
   const connections: TowerConnection[] = [];
-  if (version === '1.0.0') {
-    for (let i = 0; i < count - 1; i++) {
-      const from = floors[i],
-        to = floors[i + 1];
-      if (!from || !to) continue;
-      const portal = to.secret;
-      const source = portal ? floors[(portalFloor ?? 1) - 1] : from;
-      if (!source) continue;
-      connections.push({
-        id: portal ? 'P' : String.fromCharCode(65 + i),
-        kind: portal ? 'portal' : 'stairs',
-        from: source.number,
-        to: to.number,
-        departure: { x: source.x + (portal ? 6 : 9), y: source.y + (portal ? 3 : 6) },
-        arrival: { x: to.x + 3, y: to.y + 6 },
-      });
-    }
-  } else {
-    // One aligned shaft runs through all regular floors. The seed chooses its site.
-    const sites = [
+  // One aligned shaft runs through all regular floors. The seed chooses its site.
+  const sites = [
+    { x: 3, y: 4 },
+    { x: 4, y: 3 },
+    { x: 7, y: 2 },
+    { x: 9, y: 3 },
+    { x: 10, y: 5 },
+    { x: 9, y: 6 },
+    { x: 8, y: 8 },
+    { x: 4, y: 7 },
+  ];
+  const shaft = sites[random.int(0, sites.length - 1)] ?? { x: 3, y: 4 };
+  const separate = stairStyle === 'separate';
+  const clear = (p: Point, q: Point) => Math.abs(p.x - q.x) >= 4 || Math.abs(p.y - q.y) >= 4;
+  const downSites = separate
+    ? sites.filter((p) => clear(p, shaft) && sites.some((q) => clear(q, p) && clear(q, shaft)))
+    : [];
+  const down = separate ? (downSites[random.int(0, downSites.length - 1)] ?? shaft) : shaft;
+  const at = (floor: TowerFloor, p: Point): Point => ({ x: floor.x + p.x, y: floor.y + p.y });
+  const regular = floors.filter((f) => !f.secret);
+  for (let i = 0; i < regular.length - 1; i++) {
+    const from = regular[i],
+      to = regular[i + 1];
+    if (!from || !to) continue;
+    connections.push({
+      id: String.fromCharCode(65 + i),
+      kind: 'stairs',
+      from: from.number,
+      to: to.number,
+      departure: at(from, shaft),
+      arrival: at(to, down),
+    });
+  }
+  if (portalFloor !== null) {
+    const source = floors.find((f) => f.number === portalFloor),
+      destination = floors.find((f) => f.secret);
+    const portalSites = [
       { x: 3, y: 4 },
       { x: 4, y: 3 },
-      { x: 7, y: 2 },
-      { x: 9, y: 3 },
-      { x: 10, y: 5 },
-      { x: 9, y: 6 },
+      { x: 6, y: 2 },
+      { x: 8, y: 2 },
+      { x: 10, y: 4 },
+      { x: 10, y: 6 },
       { x: 8, y: 8 },
-      { x: 4, y: 7 },
+      { x: 6, y: 9 },
+      { x: 4, y: 8 },
+      { x: 3, y: 6 },
     ];
-    const shaft = sites[random.int(0, sites.length - 1)] ?? { x: 3, y: 4 };
-    const separate = version === '3.0.0' && stairStyle === 'separate';
-    const clear = (p: Point, q: Point) => Math.abs(p.x - q.x) >= 4 || Math.abs(p.y - q.y) >= 4;
-    const downSites = separate
-      ? sites.filter((p) => clear(p, shaft) && sites.some((q) => clear(q, p) && clear(q, shaft)))
-      : [];
-    const down = separate ? (downSites[random.int(0, downSites.length - 1)] ?? shaft) : shaft;
-    const at = (floor: TowerFloor, p: Point): Point => ({ x: floor.x + p.x, y: floor.y + p.y });
-    const regular = floors.filter((f) => !f.secret);
-    for (let i = 0; i < regular.length - 1; i++) {
-      const from = regular[i],
-        to = regular[i + 1];
-      if (!from || !to) continue;
+    const departures = portalSites.filter((p) => {
+      if (!separate)
+        return Math.abs(p.x - shaft.x) >= 4 || p.y - shaft.y >= 5 || shaft.y - p.y >= 4;
+      const active = connections
+        .filter((c) => c.kind === 'stairs')
+        .flatMap((c) =>
+          c.from === source?.number
+            ? [{ x: c.departure.x - (source?.x ?? 0), y: c.departure.y - (source?.y ?? 0) }]
+            : c.to === source?.number
+              ? [{ x: c.arrival.x - (source?.x ?? 0), y: c.arrival.y - (source?.y ?? 0) }]
+              : [],
+        );
+      return active.every((site) => clear(p, site));
+    });
+    const departure = departures[random.int(0, departures.length - 1)],
+      arrival = portalSites[random.int(0, portalSites.length - 1)];
+    if (source && destination && departure && arrival)
       connections.push({
-        id: String.fromCharCode(65 + i),
-        kind: 'stairs',
-        from: from.number,
-        to: to.number,
-        departure: at(from, shaft),
-        arrival: at(to, down),
+        id: 'P',
+        kind: 'portal',
+        from: source.number,
+        to: destination.number,
+        departure: at(source, departure),
+        arrival: at(destination, arrival),
       });
-    }
-    if (portalFloor !== null) {
-      const source = floors.find((f) => f.number === portalFloor),
-        destination = floors.find((f) => f.secret);
-      const portalSites = [
-        { x: 3, y: 4 },
-        { x: 4, y: 3 },
-        { x: 6, y: 2 },
-        { x: 8, y: 2 },
-        { x: 10, y: 4 },
-        { x: 10, y: 6 },
-        { x: 8, y: 8 },
-        { x: 6, y: 9 },
-        { x: 4, y: 8 },
-        { x: 3, y: 6 },
-      ];
-      const departures = portalSites.filter((p) => {
-        if (!separate)
-          return Math.abs(p.x - shaft.x) >= 4 || p.y - shaft.y >= 5 || shaft.y - p.y >= 4;
-        const active = connections
-          .filter((c) => c.kind === 'stairs')
-          .flatMap((c) =>
-            c.from === source?.number
-              ? [{ x: c.departure.x - (source?.x ?? 0), y: c.departure.y - (source?.y ?? 0) }]
-              : c.to === source?.number
-                ? [{ x: c.arrival.x - (source?.x ?? 0), y: c.arrival.y - (source?.y ?? 0) }]
-                : [],
-          );
-        return active.every((site) => clear(p, site));
-      });
-      const departure = departures[random.int(0, departures.length - 1)],
-        arrival = portalSites[random.int(0, portalSites.length - 1)];
-      if (source && destination && departure && arrival)
-        connections.push({
-          id: 'P',
-          kind: 'portal',
-          from: source.number,
-          to: destination.number,
-          departure: at(source, departure),
-          arrival: at(destination, arrival),
-        });
-    }
   }
   const tiles = Array<boolean>(width * height).fill(false);
   for (const floor of floors)
@@ -258,7 +235,7 @@ function towerLayout(
     connections,
     portalFloor,
     tiles,
-    ...(version === '3.0.0' ? { stairStyle } : {}),
+    stairStyle,
   };
 }
 export function towerFloorAt(map: Pick<Tower, 'layout'>, p: Point): TowerFloor | undefined {
@@ -278,12 +255,8 @@ export function towerFloorTitle(
       : floor.purpose;
 }
 // Stairs, portals and their landings claim their tiles on every floor they touch.
-export function towerConnectionReserved(
-  layout: Tower['layout'],
-  p: Point,
-  version: string,
-): boolean {
-  const spiral = towerStairStyle({ layout, version }) === 'spiral';
+export function towerConnectionReserved(layout: Tower['layout'], p: Point): boolean {
+  const spiral = towerStairStyle({ layout }) === 'spiral';
   return layout.connections.some((c) =>
     [c.departure, c.arrival].some(
       (end) =>
@@ -293,9 +266,9 @@ export function towerConnectionReserved(
     ),
   );
 }
-function reserved(layout: Tower['layout'], p: Point, version: string): boolean {
+function reserved(layout: Tower['layout'], p: Point): boolean {
   return (
-    towerConnectionReserved(layout, p, version) ||
+    towerConnectionReserved(layout, p) ||
     layout.floors.some((f) => Math.abs(f.x + 6 - p.x) <= 1 && Math.abs(f.y + 6 - p.y) <= 1)
   );
 }
@@ -314,16 +287,12 @@ function decorate(
   const laboratory =
     laboratoryFloor == null
       ? undefined
-      : towerLaboratoryProps(layout, laboratoryFloor, (p) =>
-          towerConnectionReserved(layout, p, version),
-        );
+      : towerLaboratoryProps(layout, laboratoryFloor, (p) => towerConnectionReserved(layout, p));
   if (laboratoryFloor != null && !laboratory) return undefined;
   const observatory =
     observatoryFloor == null
       ? undefined
-      : towerObservatoryProps(layout, observatoryFloor, (p) =>
-          towerConnectionReserved(layout, p, version),
-        );
+      : towerObservatoryProps(layout, observatoryFloor, (p) => towerConnectionReserved(layout, p));
   if (observatoryFloor != null && (!observatory || observatoryFloor === laboratoryFloor))
     return undefined;
   const fixedProps = [...(laboratory ?? []), ...(observatory ?? [])];
@@ -344,7 +313,7 @@ function decorate(
     for (let y = floor.y + 2; y < floor.y + 11; y++)
       for (let x = floor.x + 2; x < floor.x + 12; x++) {
         const distance = Math.hypot(x + 0.5 - (floor.x + 7), y + 0.5 - (floor.y + 6.5));
-        if (distance >= 3.8 && distance <= 4.7 && !reserved(layout, { x, y }, version))
+        if (distance >= 3.8 && distance <= 4.7 && !reserved(layout, { x, y }))
           candidates.push({ x, y });
       }
     const budget = { Sparse: 3, Balanced: 6, Cluttered: 9 }[density];
@@ -514,9 +483,7 @@ export function isUsableTower(value: unknown): value is Tower {
     value['type'] !== 'tower' ||
     'objectEdits' in value ||
     'doorStates' in value ||
-    (value['version'] !== '1.0.0' &&
-      value['version'] !== '2.0.0' &&
-      value['version'] !== TOWER_GENERATOR_VERSION) ||
+    value['version'] !== TOWER_GENERATOR_VERSION ||
     typeof value['seed'] !== 'string' ||
     value['seed'] !== value['seed'].trim() ||
     typeof value['surfaceSeed'] !== 'number' ||
@@ -561,12 +528,7 @@ export function isUsableTower(value: unknown): value is Tower {
     !ALL_DENSITIES.some((x) => x === d['density'])
   )
     return false;
-  if (
-    value['version'] === '3.0.0'
-      ? !TOWER_STAIR_STYLES.some((style) => style === l['stairStyle'])
-      : l['stairStyle'] !== undefined
-  )
-    return false;
+  if (!TOWER_STAIR_STYLES.some((style) => style === l['stairStyle'])) return false;
   const portal = l['portalFloor'];
   if (portal !== null && typeof portal !== 'number') return false;
   if (
@@ -578,7 +540,6 @@ export function isUsableTower(value: unknown): value is Tower {
     })
   )
     return false;
-  if (value['version'] === '1.0.0' && portal === l['floors'].length) return false;
   const expected = towerLayout(
     l['floors'].length,
     portal,
@@ -622,12 +583,11 @@ export function isUsableTower(value: unknown): value is Tower {
     return false;
   const occupied = new Set<string>();
   const checkedCells: Pick<Prop, 'x' | 'y' | 'blocking'>[] = [];
-  const version = value['version'];
   const laboratory =
     d['laboratoryFloor'] === undefined
       ? undefined
       : towerLaboratoryProps(expected, d['laboratoryFloor'], (p) =>
-          towerConnectionReserved(expected, p, version),
+          towerConnectionReserved(expected, p),
         );
   // A stored laboratory must be exactly the placement the layout produces.
   if (d['laboratoryFloor'] !== undefined && !laboratory) return false;
@@ -635,7 +595,7 @@ export function isUsableTower(value: unknown): value is Tower {
     d['observatoryFloor'] === undefined
       ? undefined
       : towerObservatoryProps(expected, d['observatoryFloor'], (p) =>
-          towerConnectionReserved(expected, p, version),
+          towerConnectionReserved(expected, p),
         );
   if (d['observatoryFloor'] !== undefined && !observatory) return false;
   const additionTiles = new Map<string, Prop>(
@@ -673,7 +633,7 @@ export function isUsableTower(value: unknown): value is Tower {
         return false;
     } else {
       if (
-        reserved(expected, { x: p['x'], y: p['y'] }, value['version']) ||
+        reserved(expected, { x: p['x'], y: p['y'] }) ||
         p['footprint'] !== undefined ||
         p['rotation'] !== undefined ||
         ![

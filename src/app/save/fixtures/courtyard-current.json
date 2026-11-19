@@ -1,46 +1,46 @@
 {
   "format": "encounter-map-forge-saves",
-  "saveFormatVersion": "24.0.0",
+  "saveFormatVersion": "32.0.0",
   "maps": [
     {
       "id": "courtyard-before-editor-0",
-      "name": "Before editor 0",
+      "name": "Courtyard 0",
       "favorite": false,
       "savedAt": "2026-11-03T12:00:00Z",
-      "saveFormatVersion": "24.0.0",
+      "saveFormatVersion": "32.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "courtyard",
-        "version": "4.0.0",
+        "version": "5.0.0",
         "seed": "ivy-court",
         "layout": {
           "bounds": {
             "x": 6,
-            "y": 4,
-            "width": 28,
-            "height": 22
+            "y": 3,
+            "width": 29,
+            "height": 21
           },
           "approaches": [
             {
-              "x": 13,
-              "y": 4
+              "x": 21,
+              "y": 3
             },
             {
-              "x": 33,
-              "y": 13
+              "x": 34,
+              "y": 9
             },
             {
-              "x": 19,
-              "y": 25
+              "x": 15,
+              "y": 23
             },
             {
               "x": 6,
-              "y": 12
+              "y": 16
             }
           ],
           "encounter": {
             "x": 12,
-            "y": 12,
+            "y": 10,
             "width": 6,
             "height": 6
           },
@@ -171,15 +171,35 @@
             true,
             true,
             true,
-            true,
-            true,
+            false,
+            false,
+            false,
             true,
             true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
             true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
+            false,
+            false,
+            false,
             true,
             true,
             true,
@@ -191,6 +211,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -211,35 +232,14 @@
             true,
             true,
             true,
-            false,
-            false,
-            false,
             true,
             true,
-            false,
             true,
             true,
             true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
             true,
             true,
             false,
-            false,
-            false,
-            true,
             true,
             true,
             true,
@@ -278,8 +278,8 @@
             true,
             true,
             true,
-            false,
             true,
+            false,
             true,
             true,
             true,
@@ -294,7 +294,11 @@
             false,
             true,
             true,
-            true,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
             true,
@@ -315,10 +319,10 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -327,16 +331,13 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
             true,
-            false,
             true,
             true,
-            false,
-            false,
-            false,
             true,
             true,
             true,
@@ -370,9 +371,7 @@
             true,
             true,
             true,
-            true,
             false,
-            true,
             true,
             true,
             true,
@@ -398,7 +397,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -410,11 +408,10 @@
             true,
             true,
             true,
-            true,
-            false,
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -438,7 +435,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -451,11 +447,11 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -478,7 +474,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -496,6 +491,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -518,12 +514,12 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -535,6 +531,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -562,6 +559,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -573,6 +571,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -600,6 +599,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -612,6 +612,7 @@
             true,
             true,
             false,
+            true,
             true,
             true,
             true,
@@ -638,6 +639,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -651,7 +653,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -691,7 +692,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -718,6 +718,7 @@
             true,
             true,
             true,
+            true,
             false,
             true,
             true,
@@ -731,7 +732,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -758,8 +758,8 @@
             true,
             true,
             true,
-            false,
             true,
+            false,
             true,
             true,
             true,
@@ -798,8 +798,8 @@
             true,
             true,
             true,
-            false,
             true,
+            false,
             true,
             true,
             true,
@@ -838,8 +838,8 @@
             true,
             true,
             true,
-            false,
             true,
+            false,
             true,
             true,
             true,
@@ -873,12 +873,16 @@
             true,
             true,
             true,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
+            false,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -887,11 +891,11 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -915,10 +919,10 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -927,11 +931,11 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -952,12 +956,9 @@
             true,
             true,
             true,
-            false,
-            false,
-            false,
-            false,
-            false,
             true,
+            true,
+            true,
             false,
             true,
             true,
@@ -968,10 +969,37 @@
             true,
             true,
             true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
             true,
+            false,
+            false,
+            false,
+            false,
             false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
             true,
@@ -998,7 +1026,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -1011,7 +1038,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -1038,7 +1064,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -1051,34 +1076,9 @@
             true,
             true,
             true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
             true,
             true,
             true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
             true,
             true,
             true,
@@ -1247,17 +1247,18 @@
             true
           ]
         },
-        "surfaceSeed": 2205016690,
+        "surfaceSeed": 2926766745,
         "decoration": {
           "density": "Balanced",
+          "character": "Overgrown",
           "fountain": true,
           "props": [
             {
-              "x": 25,
-              "y": 14,
+              "x": 26,
+              "y": 12,
               "kind": "dry_fountain",
               "blocking": true,
-              "variation": 0.38545917556621134,
+              "variation": 0.4000466833822429,
               "footprint": {
                 "width": 3,
                 "height": 3
@@ -1265,358 +1266,365 @@
               "rotation": 0
             },
             {
+              "x": 9,
+              "y": 19,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.530243638670072
+            },
+            {
+              "x": 25,
+              "y": 5,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.865379550261423
+            },
+            {
+              "x": 16,
+              "y": 6,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.406240712152794
+            },
+            {
+              "x": 31,
+              "y": 13,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.41514837625436485
+            },
+            {
+              "x": 17,
+              "y": 19,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.38469828572124243
+            },
+            {
               "x": 24,
               "y": 21,
               "kind": "broken_column",
               "blocking": true,
-              "variation": 0.5516455373726785
+              "variation": 0.07552447030320764
+            },
+            {
+              "x": 19,
+              "y": 21,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.7953459159471095
+            },
+            {
+              "x": 30,
+              "y": 15,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.28511977242305875
+            },
+            {
+              "x": 32,
+              "y": 5,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.7640917792450637
+            },
+            {
+              "x": 28,
+              "y": 5,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.37295428407378495
+            },
+            {
+              "x": 19,
+              "y": 13,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.5408697132952511
+            },
+            {
+              "x": 24,
+              "y": 9,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.8325452746357769
+            },
+            {
+              "x": 15,
+              "y": 9,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.2989608026109636
+            },
+            {
+              "x": 19,
+              "y": 14,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.04653640394099057
+            },
+            {
+              "x": 28,
+              "y": 9,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.2273482361342758
+            },
+            {
+              "x": 14,
+              "y": 18,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.5600701412186027
+            },
+            {
+              "x": 26,
+              "y": 5,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.7767078487668186
+            },
+            {
+              "x": 30,
+              "y": 6,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.8984828037209809
+            },
+            {
+              "x": 32,
+              "y": 20,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.34485441260039806
+            },
+            {
+              "x": 32,
+              "y": 14,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.6991412378847599
+            },
+            {
+              "x": 8,
+              "y": 21,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.39867560868151486
+            },
+            {
+              "x": 8,
+              "y": 6,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.2920306771993637
+            },
+            {
+              "x": 23,
+              "y": 11,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.6773365323897451
+            },
+            {
+              "x": 11,
+              "y": 9,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.6463102549314499
+            },
+            {
+              "x": 24,
+              "y": 5,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.24732045363634825
+            },
+            {
+              "x": 12,
+              "y": 19,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.7812092329841107
+            },
+            {
+              "x": 32,
+              "y": 16,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.9145992628764361
+            },
+            {
+              "x": 8,
+              "y": 20,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.6091802620794624
+            },
+            {
+              "x": 22,
+              "y": 19,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.6259098795708269
+            },
+            {
+              "x": 19,
+              "y": 5,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.2493495438247919
+            },
+            {
+              "x": 19,
+              "y": 18,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.27851982275024056
+            },
+            {
+              "x": 21,
+              "y": 8,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.757645450765267
+            },
+            {
+              "x": 8,
+              "y": 18,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.18732794490642846
             },
             {
               "x": 31,
               "y": 17,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.6312231470365077
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.4322321868967265
             },
             {
-              "x": 22,
+              "x": 18,
               "y": 20,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.22240799316205084
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.8553490778431296
             },
             {
-              "x": 17,
-              "y": 9,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.7278495342470706
-            },
-            {
-              "x": 29,
+              "x": 24,
               "y": 20,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.3869467359036207
-            },
-            {
-              "x": 22,
-              "y": 22,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.35771927842870355
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.8387276583816856
             },
             {
               "x": 27,
-              "y": 9,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.26018694951198995
+              "y": 6,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.7336482843384147
+            },
+            {
+              "x": 23,
+              "y": 17,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.9877899845596403
+            },
+            {
+              "x": 18,
+              "y": 5,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.16651748213917017
+            },
+            {
+              "x": 21,
+              "y": 19,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.23755336133763194
+            },
+            {
+              "x": 10,
+              "y": 19,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.5015696412883699
+            },
+            {
+              "x": 18,
+              "y": 18,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.789837775984779
+            },
+            {
+              "x": 27,
+              "y": 21,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.8187968293204904
             },
             {
               "x": 14,
-              "y": 10,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.4426715741865337
+              "y": 7,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.9909831583499908
             },
             {
-              "x": 8,
-              "y": 23,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.5530448369681835
+              "x": 19,
+              "y": 6,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.44879983994178474
             },
             {
-              "x": 11,
-              "y": 8,
+              "x": 19,
+              "y": 17,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.6861050566658378
+            },
+            {
+              "x": 32,
+              "y": 7,
               "kind": "moss",
               "blocking": false,
-              "variation": 0.12144879484549165
+              "variation": 0.4272703512106091
             },
             {
-              "x": 8,
-              "y": 8,
-              "kind": "low_rubble",
+              "x": 12,
+              "y": 9,
+              "kind": "moss",
               "blocking": false,
-              "variation": 0.9551583130378276
+              "variation": 0.3586266606580466
             },
             {
               "x": 22,
               "y": 16,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.6808066244702786
-            },
-            {
-              "x": 16,
-              "y": 9,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.6187496811617166
-            },
-            {
-              "x": 16,
-              "y": 19,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.7599449406843632
-            },
-            {
-              "x": 27,
-              "y": 20,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.7290741950273514
-            },
-            {
-              "x": 17,
-              "y": 19,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.012254195287823677
-            },
-            {
-              "x": 20,
-              "y": 12,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.981466660508886
-            },
-            {
-              "x": 15,
-              "y": 22,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.744527388131246
-            },
-            {
-              "x": 8,
-              "y": 7,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.9628819334320724
-            },
-            {
-              "x": 25,
-              "y": 23,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.3082871437072754
-            },
-            {
-              "x": 25,
-              "y": 7,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.48001801152713597
-            },
-            {
-              "x": 18,
-              "y": 7,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.8492410329636186
-            },
-            {
-              "x": 21,
-              "y": 20,
               "kind": "vine",
               "blocking": false,
-              "variation": 0.7186071907635778
+              "variation": 0.6750796476844698
+            },
+            {
+              "x": 31,
+              "y": 19,
+              "kind": "abandoned_brazier",
+              "blocking": true,
+              "variation": 0.5379185110796243
+            },
+            {
+              "x": 9,
+              "y": 7,
+              "kind": "abandoned_brazier",
+              "blocking": true,
+              "variation": 0.6838032798841596
             },
             {
               "x": 26,
-              "y": 21,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.9114134509582072
-            },
-            {
-              "x": 18,
-              "y": 8,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.9766741124913096
-            },
-            {
-              "x": 21,
-              "y": 23,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.016095475060865283
-            },
-            {
-              "x": 22,
-              "y": 14,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.683971406891942
-            },
-            {
-              "x": 8,
-              "y": 15,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.4541045499499887
-            },
-            {
-              "x": 22,
-              "y": 21,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.11836304026655853
-            },
-            {
-              "x": 28,
-              "y": 18,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.676328346831724
-            },
-            {
-              "x": 31,
-              "y": 23,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.2799908402375877
-            },
-            {
-              "x": 9,
-              "y": 6,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.5679908769670874
-            },
-            {
-              "x": 16,
-              "y": 6,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.9100929880514741
-            },
-            {
-              "x": 17,
-              "y": 10,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.40620466601103544
-            },
-            {
-              "x": 19,
-              "y": 8,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.9861846549902111
-            },
-            {
-              "x": 28,
-              "y": 9,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.4457660303451121
-            },
-            {
-              "x": 13,
-              "y": 9,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.3261381711345166
-            },
-            {
-              "x": 24,
-              "y": 6,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.13290637824684381
-            },
-            {
-              "x": 20,
-              "y": 11,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.3339903124142438
-            },
-            {
-              "x": 29,
-              "y": 19,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.168437076266855
-            },
-            {
-              "x": 24,
-              "y": 11,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.8250861912965775
-            },
-            {
-              "x": 19,
-              "y": 12,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.4875144341494888
-            },
-            {
-              "x": 8,
-              "y": 6,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.7856418208684772
-            },
-            {
-              "x": 31,
-              "y": 8,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.3186778018716723
-            },
-            {
-              "x": 11,
-              "y": 16,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.7558679492212832
-            },
-            {
-              "x": 25,
-              "y": 22,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.2524490386713296
-            },
-            {
-              "x": 15,
-              "y": 23,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.15627703862264752
-            },
-            {
-              "x": 17,
-              "y": 23,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.823796552605927
-            },
-            {
-              "x": 31,
-              "y": 19,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.49453881406225264
-            },
-            {
-              "x": 9,
-              "y": 22,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.7109322480391711
-            },
-            {
-              "x": 11,
-              "y": 19,
+              "y": 17,
               "kind": "collapsed_wagon",
               "footprint": {
                 "width": 3,
@@ -1627,22 +1635,22 @@
               "variation": 0.35
             },
             {
-              "x": 15,
-              "y": 18,
+              "x": 30,
+              "y": 16,
               "kind": "spilled_crate",
               "blocking": true,
               "variation": 0.35
             },
             {
-              "x": 15,
-              "y": 21,
+              "x": 30,
+              "y": 19,
               "kind": "wagon_wheel",
               "blocking": false,
               "variation": 0.35
             },
             {
-              "x": 10,
-              "y": 18,
+              "x": 25,
+              "y": 16,
               "kind": "spilled_goods",
               "blocking": false,
               "variation": 0.35
@@ -1655,43 +1663,43 @@
     },
     {
       "id": "courtyard-before-editor-1",
-      "name": "Before editor 1",
+      "name": "Courtyard 1",
       "favorite": false,
       "savedAt": "2026-11-03T12:00:00Z",
-      "saveFormatVersion": "24.0.0",
+      "saveFormatVersion": "32.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "courtyard",
-        "version": "4.0.0",
+        "version": "5.0.0",
         "seed": "ivy-court",
         "layout": {
           "bounds": {
             "x": 6,
-            "y": 4,
-            "width": 28,
-            "height": 22
+            "y": 3,
+            "width": 29,
+            "height": 21
           },
           "approaches": [
             {
-              "x": 13,
-              "y": 4
+              "x": 21,
+              "y": 3
             },
             {
-              "x": 33,
-              "y": 13
+              "x": 34,
+              "y": 9
             },
             {
-              "x": 19,
-              "y": 25
+              "x": 15,
+              "y": 23
             },
             {
               "x": 6,
-              "y": 12
+              "y": 16
             }
           ],
           "encounter": {
             "x": 12,
-            "y": 12,
+            "y": 10,
             "width": 6,
             "height": 6
           },
@@ -1822,15 +1830,35 @@
             true,
             true,
             true,
-            true,
-            true,
+            false,
+            false,
+            false,
             true,
             true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
             true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
+            false,
+            false,
+            false,
             true,
             true,
             true,
@@ -1842,6 +1870,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -1862,35 +1891,14 @@
             true,
             true,
             true,
-            false,
-            false,
-            false,
             true,
             true,
-            false,
             true,
             true,
             true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
             true,
             true,
             false,
-            false,
-            false,
-            true,
             true,
             true,
             true,
@@ -1929,8 +1937,8 @@
             true,
             true,
             true,
-            false,
             true,
+            false,
             true,
             true,
             true,
@@ -1945,7 +1953,11 @@
             false,
             true,
             true,
-            true,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
             true,
@@ -1966,10 +1978,10 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -1978,16 +1990,13 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
             true,
-            false,
             true,
             true,
-            false,
-            false,
-            false,
             true,
             true,
             true,
@@ -2021,9 +2030,7 @@
             true,
             true,
             true,
-            true,
             false,
-            true,
             true,
             true,
             true,
@@ -2049,7 +2056,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2061,11 +2067,10 @@
             true,
             true,
             true,
-            true,
-            false,
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -2089,7 +2094,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2102,11 +2106,11 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -2129,7 +2133,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2147,6 +2150,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -2169,12 +2173,12 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -2186,6 +2190,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -2213,6 +2218,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -2224,6 +2230,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -2251,6 +2258,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -2263,6 +2271,7 @@
             true,
             true,
             false,
+            true,
             true,
             true,
             true,
@@ -2289,6 +2298,7 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
@@ -2302,7 +2312,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2342,7 +2351,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2369,6 +2377,7 @@
             true,
             true,
             true,
+            true,
             false,
             true,
             true,
@@ -2382,7 +2391,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2409,8 +2417,8 @@
             true,
             true,
             true,
-            false,
             true,
+            false,
             true,
             true,
             true,
@@ -2449,8 +2457,8 @@
             true,
             true,
             true,
-            false,
             true,
+            false,
             true,
             true,
             true,
@@ -2489,8 +2497,8 @@
             true,
             true,
             true,
-            false,
             true,
+            false,
             true,
             true,
             true,
@@ -2524,12 +2532,16 @@
             true,
             true,
             true,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
+            false,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2538,11 +2550,11 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2566,10 +2578,10 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2578,11 +2590,11 @@
             true,
             true,
             true,
+            false,
             true,
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2603,12 +2615,9 @@
             true,
             true,
             true,
-            false,
-            false,
-            false,
-            false,
-            false,
             true,
+            true,
+            true,
             false,
             true,
             true,
@@ -2619,10 +2628,37 @@
             true,
             true,
             true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
             true,
+            false,
+            false,
+            false,
+            false,
             false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
             true,
             true,
             true,
@@ -2649,7 +2685,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2662,7 +2697,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2689,7 +2723,6 @@
             true,
             true,
             true,
-            false,
             true,
             true,
             true,
@@ -2702,34 +2735,9 @@
             true,
             true,
             true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
             true,
             true,
             true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
             true,
             true,
             true,
@@ -2898,570 +2906,592 @@
             true
           ]
         },
-        "surfaceSeed": 2205016690,
+        "surfaceSeed": 2926766745,
         "decoration": {
           "density": "Cluttered",
+          "character": "Overgrown",
           "fountain": false,
           "props": [
             {
+              "x": 23,
+              "y": 14,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.023850238882005215
+            },
+            {
               "x": 25,
-              "y": 22,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.2695753395091742
-            },
-            {
-              "x": 24,
-              "y": 7,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.19152009300887585
-            },
-            {
-              "x": 13,
               "y": 21,
               "kind": "broken_column",
               "blocking": true,
-              "variation": 0.7498348006047308
-            },
-            {
-              "x": 18,
-              "y": 18,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.20560949319042265
-            },
-            {
-              "x": 19,
-              "y": 12,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.645325331017375
-            },
-            {
-              "x": 20,
-              "y": 18,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.9708059940021485
-            },
-            {
-              "x": 23,
-              "y": 10,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.37648721085861325
+              "variation": 0.07336180750280619
             },
             {
               "x": 27,
+              "y": 5,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.17108082864433527
+            },
+            {
+              "x": 16,
+              "y": 8,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.9638265809044242
+            },
+            {
+              "x": 30,
+              "y": 13,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.0592112117446959
+            },
+            {
+              "x": 14,
+              "y": 8,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.3016682327724993
+            },
+            {
+              "x": 20,
+              "y": 20,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.6332529971841723
+            },
+            {
+              "x": 23,
+              "y": 6,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.1890919804573059
+            },
+            {
+              "x": 14,
+              "y": 18,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.16270507057197392
+            },
+            {
+              "x": 8,
+              "y": 14,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.4521215639542788
+            },
+            {
+              "x": 8,
+              "y": 21,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.8393236717674881
+            },
+            {
+              "x": 18,
+              "y": 11,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.9896884055342525
+            },
+            {
+              "x": 20,
+              "y": 8,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.9082491674926132
+            },
+            {
+              "x": 18,
+              "y": 14,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.6617765002883971
+            },
+            {
+              "x": 31,
+              "y": 15,
+              "kind": "broken_column",
+              "blocking": true,
+              "variation": 0.450747134629637
+            },
+            {
+              "x": 29,
               "y": 10,
               "kind": "broken_column",
               "blocking": true,
-              "variation": 0.4692999739199877
+              "variation": 0.48758058436214924
             },
             {
-              "x": 13,
-              "y": 19,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.13723514159210026
+              "x": 8,
+              "y": 5,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.2768845909740776
             },
             {
-              "x": 28,
-              "y": 7,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.07125884597189724
+              "x": 24,
+              "y": 20,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.904770664172247
             },
             {
               "x": 9,
-              "y": 15,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.7877982165664434
-            },
-            {
-              "x": 17,
-              "y": 23,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.494811485754326
-            },
-            {
-              "x": 11,
-              "y": 16,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.25645325402729213
-            },
-            {
-              "x": 22,
-              "y": 19,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.9462179341353476
-            },
-            {
-              "x": 16,
-              "y": 18,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.3016549877356738
-            },
-            {
-              "x": 30,
-              "y": 17,
-              "kind": "broken_column",
-              "blocking": true,
-              "variation": 0.6353983781300485
-            },
-            {
-              "x": 11,
-              "y": 8,
+              "y": 5,
               "kind": "vine",
               "blocking": false,
-              "variation": 0.7921576264780015
+              "variation": 0.005002380348742008
             },
             {
-              "x": 27,
-              "y": 23,
+              "x": 21,
+              "y": 21,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.3638311568647623
+            },
+            {
+              "x": 13,
+              "y": 19,
               "kind": "fern",
               "blocking": false,
-              "variation": 0.04257814073935151
-            },
-            {
-              "x": 26,
-              "y": 23,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.7398071279749274
-            },
-            {
-              "x": 28,
-              "y": 21,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.19613774144090712
+              "variation": 0.9904807212296873
             },
             {
               "x": 31,
               "y": 21,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.825936181936413
-            },
-            {
-              "x": 14,
-              "y": 21,
               "kind": "moss",
               "blocking": false,
-              "variation": 0.23913395311683416
-            },
-            {
-              "x": 21,
-              "y": 17,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.13823568262159824
-            },
-            {
-              "x": 23,
-              "y": 18,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.28035356011241674
-            },
-            {
-              "x": 15,
-              "y": 20,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.24149337853305042
+              "variation": 0.06455920008011162
             },
             {
               "x": 26,
-              "y": 19,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.936802762793377
-            },
-            {
-              "x": 26,
-              "y": 9,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.8908978658728302
-            },
-            {
-              "x": 20,
-              "y": 15,
+              "y": 5,
               "kind": "low_rubble",
               "blocking": false,
-              "variation": 0.46643163706175983
+              "variation": 0.8423571237362921
             },
             {
               "x": 15,
-              "y": 8,
-              "kind": "fern",
+              "y": 9,
+              "kind": "vine",
               "blocking": false,
-              "variation": 0.446301233721897
-            },
-            {
-              "x": 17,
-              "y": 22,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.6932953228242695
-            },
-            {
-              "x": 24,
-              "y": 10,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.9432641542516649
+              "variation": 0.6256030157674104
             },
             {
               "x": 10,
-              "y": 15,
-              "kind": "fern",
+              "y": 5,
+              "kind": "low_rubble",
               "blocking": false,
-              "variation": 0.17819358152337372
+              "variation": 0.07893430767580867
             },
             {
-              "x": 21,
-              "y": 19,
-              "kind": "moss",
+              "x": 15,
+              "y": 18,
+              "kind": "fern",
               "blocking": false,
-              "variation": 0.7638268086593598
+              "variation": 0.5591735942289233
+            },
+            {
+              "x": 19,
+              "y": 13,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.6227450391743332
+            },
+            {
+              "x": 8,
+              "y": 20,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.26159234601072967
             },
             {
               "x": 28,
-              "y": 12,
+              "y": 18,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.8608206103090197
+            },
+            {
+              "x": 11,
+              "y": 9,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.8835480157285929
+            },
+            {
+              "x": 12,
+              "y": 17,
               "kind": "fern",
               "blocking": false,
-              "variation": 0.10466746264137328
+              "variation": 0.9955990165472031
             },
             {
-              "x": 22,
-              "y": 10,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.5306437218096107
-            },
-            {
-              "x": 14,
-              "y": 22,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.05947297113016248
-            },
-            {
-              "x": 18,
+              "x": 9,
               "y": 13,
               "kind": "moss",
               "blocking": false,
-              "variation": 0.823400487890467
-            },
-            {
-              "x": 20,
-              "y": 11,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.5590832869056612
+              "variation": 0.9487054303754121
             },
             {
               "x": 16,
               "y": 6,
-              "kind": "moss",
+              "kind": "low_rubble",
               "blocking": false,
-              "variation": 0.12250791792757809
+              "variation": 0.3519786107353866
             },
             {
               "x": 18,
-              "y": 11,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.4412926200311631
-            },
-            {
-              "x": 22,
-              "y": 12,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.9811510876752436
-            },
-            {
-              "x": 26,
-              "y": 14,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.24767054058611393
-            },
-            {
-              "x": 30,
               "y": 20,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.15365517348982394
-            },
-            {
-              "x": 24,
-              "y": 16,
               "kind": "vine",
               "blocking": false,
-              "variation": 0.1455746062565595
+              "variation": 0.8558006153907627
+            },
+            {
+              "x": 9,
+              "y": 9,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.08181448327377439
+            },
+            {
+              "x": 8,
+              "y": 8,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.3696382958441973
             },
             {
               "x": 11,
-              "y": 14,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.2627468169666827
-            },
-            {
-              "x": 22,
-              "y": 6,
+              "y": 19,
               "kind": "fern",
               "blocking": false,
-              "variation": 0.9638751232996583
-            },
-            {
-              "x": 25,
-              "y": 9,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.43788467976264656
-            },
-            {
-              "x": 20,
-              "y": 7,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.9967303096782416
-            },
-            {
-              "x": 26,
-              "y": 12,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.7102926727384329
-            },
-            {
-              "x": 21,
-              "y": 14,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.4298123468179256
-            },
-            {
-              "x": 26,
-              "y": 8,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.628036618232727
-            },
-            {
-              "x": 10,
-              "y": 9,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.8136323138605803
-            },
-            {
-              "x": 25,
-              "y": 6,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.8226026196498424
-            },
-            {
-              "x": 30,
-              "y": 16,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.8343878374435008
-            },
-            {
-              "x": 25,
-              "y": 15,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.03219223394989967
-            },
-            {
-              "x": 15,
-              "y": 21,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.009516688995063305
-            },
-            {
-              "x": 30,
-              "y": 10,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.3272308171726763
-            },
-            {
-              "x": 14,
-              "y": 9,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.7102128248661757
-            },
-            {
-              "x": 21,
-              "y": 10,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.4678241580259055
-            },
-            {
-              "x": 21,
-              "y": 18,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.9063805404584855
-            },
-            {
-              "x": 21,
-              "y": 12,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.016755057498812675
-            },
-            {
-              "x": 23,
-              "y": 20,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.8049937598407269
-            },
-            {
-              "x": 23,
-              "y": 9,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.0537547601852566
-            },
-            {
-              "x": 13,
-              "y": 18,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.7004133306909353
-            },
-            {
-              "x": 21,
-              "y": 6,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.9545017105992883
+              "variation": 0.28460632474161685
             },
             {
               "x": 11,
               "y": 12,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.9249905538745224
-            },
-            {
-              "x": 8,
-              "y": 14,
-              "kind": "low_rubble",
-              "blocking": false,
-              "variation": 0.7785559103358537
-            },
-            {
-              "x": 29,
-              "y": 8,
               "kind": "vine",
               "blocking": false,
-              "variation": 0.29658978525549173
+              "variation": 0.10439456603489816
             },
             {
-              "x": 23,
-              "y": 23,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.9118538827169687
-            },
-            {
-              "x": 8,
-              "y": 10,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.761487269308418
-            },
-            {
-              "x": 18,
-              "y": 15,
+              "x": 11,
+              "y": 18,
               "kind": "moss",
               "blocking": false,
-              "variation": 0.4319249037653208
-            },
-            {
-              "x": 15,
-              "y": 7,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.37471848726272583
+              "variation": 0.7589685746934265
             },
             {
               "x": 27,
-              "y": 19,
-              "kind": "moss",
-              "blocking": false,
-              "variation": 0.14210669579915702
-            },
-            {
-              "x": 29,
-              "y": 19,
-              "kind": "fern",
-              "blocking": false,
-              "variation": 0.35304043162614107
-            },
-            {
-              "x": 22,
-              "y": 14,
+              "y": 10,
               "kind": "vine",
               "blocking": false,
-              "variation": 0.50589090725407
-            },
-            {
-              "x": 13,
-              "y": 22,
-              "kind": "vine",
-              "blocking": false,
-              "variation": 0.5682984623126686
+              "variation": 0.920528546674177
             },
             {
               "x": 28,
-              "y": 11,
+              "y": 7,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.785245378036052
+            },
+            {
+              "x": 32,
+              "y": 12,
               "kind": "fern",
               "blocking": false,
-              "variation": 0.3388151489198208
+              "variation": 0.39109633141197264
+            },
+            {
+              "x": 25,
+              "y": 20,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.6756392426323146
+            },
+            {
+              "x": 10,
+              "y": 12,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.41963223181664944
+            },
+            {
+              "x": 26,
+              "y": 6,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.8051192034035921
+            },
+            {
+              "x": 16,
+              "y": 5,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.40153375663794577
+            },
+            {
+              "x": 13,
+              "y": 9,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.9338125656358898
+            },
+            {
+              "x": 17,
+              "y": 17,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.002852019155398011
+            },
+            {
+              "x": 28,
+              "y": 12,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.20804584212601185
+            },
+            {
+              "x": 12,
+              "y": 21,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.8881948292255402
+            },
+            {
+              "x": 24,
+              "y": 10,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.12659019767306745
+            },
+            {
+              "x": 25,
+              "y": 15,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.5590785490348935
+            },
+            {
+              "x": 20,
+              "y": 12,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.2315157672856003
+            },
+            {
+              "x": 9,
+              "y": 7,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.9411624714266509
+            },
+            {
+              "x": 24,
+              "y": 9,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.5031655544880778
+            },
+            {
+              "x": 28,
+              "y": 17,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.2531623225659132
+            },
+            {
+              "x": 25,
+              "y": 5,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.20434544095769525
+            },
+            {
+              "x": 19,
+              "y": 21,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.16528630163520575
+            },
+            {
+              "x": 13,
+              "y": 5,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.6272585107944906
+            },
+            {
+              "x": 22,
+              "y": 21,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.7124740462750196
+            },
+            {
+              "x": 27,
+              "y": 6,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.9892746447585523
+            },
+            {
+              "x": 20,
+              "y": 15,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.4346674936823547
             },
             {
               "x": 31,
-              "y": 15,
+              "y": 12,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.8275004089809954
+            },
+            {
+              "x": 24,
+              "y": 21,
               "kind": "moss",
               "blocking": false,
-              "variation": 0.4796943685505539
+              "variation": 0.36580430157482624
+            },
+            {
+              "x": 20,
+              "y": 10,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.8580856313928962
+            },
+            {
+              "x": 32,
+              "y": 21,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.20440130424685776
+            },
+            {
+              "x": 25,
+              "y": 7,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.4010951064992696
+            },
+            {
+              "x": 28,
+              "y": 8,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.9512625450734049
+            },
+            {
+              "x": 19,
+              "y": 9,
+              "kind": "low_rubble",
+              "blocking": false,
+              "variation": 0.686164528131485
+            },
+            {
+              "x": 27,
+              "y": 13,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.5697046450804919
+            },
+            {
+              "x": 9,
+              "y": 8,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.010293023195117712
+            },
+            {
+              "x": 26,
+              "y": 19,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.41648746002465487
             },
             {
               "x": 29,
-              "y": 21,
-              "kind": "fern",
+              "y": 17,
+              "kind": "vine",
               "blocking": false,
-              "variation": 0.43905018642544746
+              "variation": 0.3099824769888073
             },
             {
-              "x": 23,
-              "y": 13,
+              "x": 12,
+              "y": 5,
               "kind": "moss",
               "blocking": false,
-              "variation": 0.11704680393449962
+              "variation": 0.5072531220503151
+            },
+            {
+              "x": 25,
+              "y": 13,
+              "kind": "vine",
+              "blocking": false,
+              "variation": 0.7579697971232235
+            },
+            {
+              "x": 19,
+              "y": 7,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.7992331318091601
+            },
+            {
+              "x": 31,
+              "y": 6,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.981354545801878
+            },
+            {
+              "x": 19,
+              "y": 8,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.6881654341705143
+            },
+            {
+              "x": 8,
+              "y": 10,
+              "kind": "moss",
+              "blocking": false,
+              "variation": 0.48851826624013484
+            },
+            {
+              "x": 21,
+              "y": 8,
+              "kind": "fern",
+              "blocking": false,
+              "variation": 0.9130878348369151
+            },
+            {
+              "x": 12,
+              "y": 7,
+              "kind": "abandoned_brazier",
+              "blocking": true,
+              "variation": 0.24457551049999893
+            },
+            {
+              "x": 14,
+              "y": 6,
+              "kind": "abandoned_brazier",
+              "blocking": true,
+              "variation": 0.8332624316681176
+            },
+            {
+              "x": 27,
+              "y": 20,
+              "kind": "abandoned_brazier",
+              "blocking": true,
+              "variation": 0.0003762049600481987
             }
           ],
           "revision": 0

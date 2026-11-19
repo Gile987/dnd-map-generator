@@ -26,7 +26,7 @@ import {
 import { isUsableMap } from './map-schema';
 import { editorFixture } from '../../../scripts/editor-test-support';
 
-test('a version-2 well sidecar round-trips through format 30 and every earlier format rejects it', () => {
+test('a version-2 well sidecar round-trips through the current format', () => {
   const { prepared, target } = courtyardGroupFixture('well');
   const moved = accept(prepared, { kind: 'move-group', id: 'well', target, rotation: 0 });
   expect(moved.objectEdits?.version).toBe(2);
@@ -40,13 +40,9 @@ test('a version-2 well sidecar round-trips through format 30 and every earlier f
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)?.map).toEqual(moved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-  for (let v = 1; v <= 29; v++) {
-    expect(saveVocabulary(`${v}.0.0`)?.courtyardEditVersions?.includes(2) ?? false).toBe(false);
-    expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
-  }
 });
 
-test('format 25 explicitly supports Courtyard edits while canonical generators and old formats reject them', () => {
+test('current format round-trips Courtyard edits while canonical generators reject sidecars', () => {
   const { prepared, target } = courtyardGroupFixture('wagon');
   const edited = accept(prepared, { kind: 'move-group', id: 'wagon', target, rotation: 3 });
   const saved = makeSavedMap(
@@ -59,11 +55,6 @@ test('format 25 explicitly supports Courtyard edits while canonical generators a
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-  for (let v = 1; v <= 24; v++) {
-    expect(saveVocabulary(`${v}.0.0`)?.courtyardEditVersions).toBeUndefined();
-    expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
-  }
-  expect(saveVocabulary('25.0.0')?.courtyardEditVersions).toEqual([1]);
   expect(saveVocabulary(SAVE_FORMAT_VERSION)?.courtyardEditVersions).toEqual([1, 2]);
   expect(isUsableMap(edited)).toBe(false);
   expectTypeOf<AuthoredCourtyard>().not.toExtend<RuinedCourtyard>();

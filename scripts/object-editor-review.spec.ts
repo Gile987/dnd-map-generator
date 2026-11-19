@@ -6,7 +6,7 @@ import { performance } from 'node:perf_hooks';
 import { createCanvas } from '@napi-rs/canvas';
 import { expect, test } from 'vitest';
 import { editorFixture, validCommand } from './editor-test-support';
-import { DUNGEON_PALETTE_V2 } from '../src/app/engine/object-editor/catalog';
+import { DUNGEON_PALETTE } from '../src/app/engine/object-editor/catalog';
 import { applyObjectCommand } from '../src/app/engine/object-editor/commands';
 import { renderMap } from '../src/app/rendering/render-map';
 import { resolveDungeon } from '../src/app/engine/object-editor/document';
@@ -32,7 +32,7 @@ test('authored artwork is shared by rendering/export, original pixels restore ex
   }
   const timings: Record<string, number> = {};
   mkdirSync('artifacts/object-editor', { recursive: true });
-  for (const item of DUNGEON_PALETTE_V2) {
+  for (const item of DUNGEON_PALETTE) {
     const command = validCommand(cleared, (target) => ({
       kind: 'add',
       propKind: item.kind,

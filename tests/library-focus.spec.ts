@@ -36,7 +36,7 @@ for (const width of [1440, 320]) {
 
     const retryChooser = page.waitForEvent('filechooser');
     await page.keyboard.press('Space');
-    await (await retryChooser).setFiles('src/app/save/fixtures/forest-v3.json');
+    await (await retryChooser).setFiles('src/app/save/fixtures/forest-current.json');
     await expect(page.locator('.library-message .notice')).toContainText('Imported 3 maps');
     await expect(page.locator('.saved-item')).toHaveCount(4);
     await expect(input).toHaveValue('');

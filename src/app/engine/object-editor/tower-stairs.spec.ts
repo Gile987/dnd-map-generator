@@ -1,8 +1,5 @@
 import { towerStairFootprint } from '../tower-connection-geometry';
 import { shapeContains } from '../feature-reservation';
-import legacySeparate from '../../save/fixtures/tower-v1.json';
-import legacySpiral from '../../save/fixtures/tower-v2.json';
-import { parseBundle } from '../../save/save-format';
 import { editableTowerStairs } from './tower-stairs';
 import { parseTowerEdits } from './parse-tower-edits';
 import { expect, test } from 'vitest';
@@ -140,32 +137,6 @@ test('a stairs-only edit can be saved, returned to its original position, and re
   expect(acceptTower(moved, { kind: 'move', id: stair.id, target: stair })).toEqual(base);
   expect(acceptTower(moved, { kind: 'reset' })).toEqual(base);
 });
-
-test.each([legacySeparate, legacySpiral])(
-  'historical Tower $saveFormatVersion landings can be edited without upgrading the generator',
-  (fixture) => {
-    const bundle = parseBundle(JSON.stringify(fixture));
-    if (!bundle.ok) throw Error(bundle.error);
-    for (const saved of bundle.maps) {
-      const base = saved.map;
-      if (base.type !== 'tower') throw Error('Expected Tower');
-      const prepared = clearTower(base),
-        stair = editableTowerStairs(prepared)[0];
-      if (!stair) throw Error('Missing historic stairs');
-      const command = validTowerCommand(
-          prepared,
-          stair.floor,
-          (target) => ({ kind: 'move', id: stair.id, target }),
-          stair,
-        ),
-        moved = acceptTower(prepared, command);
-      expect(moved.version).toBe(base.version);
-      expect(towerBase(moved)).toEqual(base);
-      expect(parseTowerEdits(towerBase(moved), moved.objectEdits)).toEqual(moved);
-      expect(acceptTower(moved, { kind: 'reset' })).toEqual(base);
-    }
-  },
-);
 
 test.each(['spiral', 'separate'] as const)(
   '%s stairs accept clear ground beside furniture outside the visible caption, while actual overlap still rejects',

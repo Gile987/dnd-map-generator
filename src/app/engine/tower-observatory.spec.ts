@@ -84,12 +84,12 @@ test('observatories preserve reachable space, unrelated floors and exact removal
             assertSpace(map, observatoryFloor);
             assertSpace(map, settings.laboratoryFloor ?? 2);
             const props = towerObservatoryProps(map.layout, observatoryFloor, (p) =>
-              towerConnectionReserved(map.layout, p, map.version),
+              towerConnectionReserved(map.layout, p),
             );
             expect(props).toHaveLength(4);
             for (const prop of props ?? []) {
               expect(map.decoration.props).toContainEqual(prop);
-              expect(towerConnectionReserved(map.layout, prop, map.version)).toBe(false);
+              expect(towerConnectionReserved(map.layout, prop)).toBe(false);
             }
             const outside = (m: Tower) =>
               m.decoration.props.filter((p) => !props?.some((q) => p.x === q.x && p.y === q.y));

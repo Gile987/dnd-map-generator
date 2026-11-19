@@ -143,8 +143,6 @@ export function validateCourtyard(map: RuinedCourtyard): string | undefined {
     return 'Invalid collapsed wagon selection.';
   if (map.decoration.well !== undefined && map.decoration.well !== true)
     return 'Invalid stone well selection.';
-  if (map.decoration.brazier !== undefined && map.decoration.brazier !== true)
-    return 'Invalid abandoned brazier selection.';
   const layoutError = validateCourtyardLayout(map.layout);
   if (layoutError) return layoutError;
   if (!isDetailRevision(map.decoration.revision))

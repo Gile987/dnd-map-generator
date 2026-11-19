@@ -4,7 +4,6 @@ import {
   makeSavedMap,
   parseBundle,
   parseSavedMap,
-  saveVocabulary,
   serializeBundle,
   SAVE_FORMAT_VERSION,
 } from './save-format';
@@ -25,19 +24,10 @@ const record = makeSavedMap(
   '2026-10-26T12:00:00.000Z',
 );
 
-test('format 9 preserves courtyard models and artwork inputs exactly through records and backups', () => {
+test('current format preserves courtyard models and artwork inputs exactly through records and backups', () => {
   expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(record)?.map).toBe(map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
-  for (const version of ['1.0.0', '2.0.0', '3.0.0', '4.0.0', '5.0.0', '6.0.0', '7.0.0', '8.0.0']) {
-    expect(parseSavedMap({ ...record, saveFormatVersion: version })).toBeUndefined();
-    const vocabulary = saveVocabulary(version);
-    if (!vocabulary) throw new Error('Missing historical vocabulary');
-    expect(vocabulary.mapTypes).not.toContain('courtyard');
-    expect(vocabulary.propKinds).not.toContain('dry_fountain');
-    expect(vocabulary.propKinds).not.toContain('low_rubble');
-    expect(vocabulary.propFootprints?.['dry_fountain']).toBeUndefined();
-  }
 });
 
 test('bounds unknown courtyard fields before geometry and rejects inconsistent movement or additions', () => {

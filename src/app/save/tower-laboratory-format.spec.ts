@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { generateTower, changeTowerAppearance, towerStairStyle } from '../engine/tower';
+import { generateTower } from '../engine/tower';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
 import { generateCourtyard } from '../engine/courtyard-generate';
@@ -8,12 +8,9 @@ import {
   parseSavedMap,
   parseBundle,
   serializeBundle,
-  saveVocabulary,
   SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
-import oldTower from './fixtures/tower-v1.json';
-import sharedTower from './fixtures/tower-v2.json';
 function laboratory() {
   const r = generateTower({
     seed: 'laboratory-format',
@@ -41,11 +38,6 @@ test('the current format preserves laboratories while pre-laboratory vocabularie
   expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
-  for (let v = 1; v <= 14; v++) {
-    expect(saveVocabulary(`${v}.0.0`)?.propKinds).not.toContain('cauldron');
-    expect(saveVocabulary(`${v}.0.0`)?.towerLaboratoryFloors).toBeUndefined();
-    expect(parseSavedMap({ ...record, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
-  }
   expect(record).toEqual(before);
 });
 test('corrupt laboratory placements and metadata are rejected without discarding the valid record', () => {
@@ -84,31 +76,6 @@ test('corrupt laboratory placements and metadata are rejected without discarding
     expect(parseSavedMap({ ...record, map: candidate })).toBeUndefined();
   }
   expect(parseSavedMap(record)?.map).toBe(record.map);
-});
-test('old tower snapshots acquire a laboratory only after an explicit appearance change', () => {
-  for (const fixture of [oldTower, sharedTower]) {
-    const before = structuredClone(fixture),
-      parsed = parseBundle(JSON.stringify(fixture));
-    if (!parsed.ok) throw new Error(parsed.error);
-    for (const record of parsed.maps) {
-      const map = record.map;
-      if (map.type !== 'tower' || map.objectEdits) throw new Error('Expected tower');
-      expect(map.decoration).not.toHaveProperty('laboratoryFloor');
-      const changed = changeTowerAppearance(map, {
-        seed: map.seed,
-        floorCount: map.layout.floors.length,
-        portalFloor: map.layout.portalFloor,
-        density: map.decoration.density,
-        stairStyle: towerStairStyle(map),
-        laboratoryFloor: 1,
-      });
-      expect(changed.decoration.laboratoryFloor).toBe(1);
-      expect(changed.layout).toBe(map.layout);
-      expect(changed.version).toBe(map.version);
-      expect(isUsableMap(changed)).toBe(true);
-    }
-    expect(fixture).toEqual(before);
-  }
 });
 test('laboratory metadata and cauldrons cannot be imported as other map types', () => {
   const results = [

@@ -15,13 +15,12 @@ import {
   parseSavedMap,
   parseBundle,
   serializeBundle,
-  saveVocabulary,
   SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
 import { courtyardEditorFixture } from '../../../scripts/courtyard-editor-test-support';
 
-test('format 26 introduces independent Forest edit version 1 and prior vocabularies remain closed', () => {
+test('current format round-trips Forest edits', () => {
   const { base, prepared, target } = forestGroupFixture('fallen-tree');
   const edited = accept(prepared, { kind: 'move-group', id: 'fallen-tree', target, rotation: 3 });
   const saved = makeSavedMap(
@@ -35,11 +34,6 @@ test('format 26 introduces independent Forest edit version 1 and prior vocabular
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   expect(isUsableMap(edited)).toBe(false);
-  for (let v = 1; v <= 25; v++) {
-    expect(saveVocabulary(`${v}.0.0`)?.forestEditVersions).toBeUndefined();
-    expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
-  }
-  expect(saveVocabulary('26.0.0')?.forestEditVersions).toEqual([1]);
   expect(parseForestEdits(base, edited.objectEdits)).toEqual(edited);
 });
 

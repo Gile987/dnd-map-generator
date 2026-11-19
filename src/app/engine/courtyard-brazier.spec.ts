@@ -134,17 +134,4 @@ test('braziers validate as ordinary blocking props with no canonical pinning', (
     },
   };
   expect(validateCourtyard(moved)).toBeUndefined();
-  // A historical format-31 marker stays valid but changes nothing.
-  expect(
-    validateCourtyard({
-      ...map,
-      decoration: { ...map.decoration, brazier: true },
-    }),
-  ).toBeUndefined();
-  expect(
-    validateCourtyard({
-      ...map,
-      decoration: { ...map.decoration, brazier: false as unknown as true },
-    }),
-  ).toBe('Invalid abandoned brazier selection.');
 });

@@ -1,3 +1,4 @@
+import { SAVE_FORMAT_VERSION } from './save-format';
 import { describe, expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing, shuffleForestDetails } from '../engine/forest-generate';
@@ -43,7 +44,7 @@ function expectRejected(map: unknown): void {
   expect(parseSavedMap(record(map))).toBeUndefined();
   const bundle = JSON.stringify({
     format: 'encounter-map-forge-saves',
-    saveFormatVersion: '2.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: [record(map), record(dungeon, 'valid')],
   });
   const parsed = parseBundle(bundle);

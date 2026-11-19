@@ -14,14 +14,16 @@ async function save(page: Page, name: string): Promise<void> {
 }
 
 function fixtureRecord(): Record<string, unknown> {
-  const fixture: unknown = JSON.parse(readFileSync('src/app/save/fixtures/forest-v3.json', 'utf8'));
+  const fixture: unknown = JSON.parse(
+    readFileSync('src/app/save/fixtures/forest-current.json', 'utf8'),
+  );
   if (
     typeof fixture !== 'object' ||
     fixture === null ||
     !('maps' in fixture) ||
     !Array.isArray(fixture.maps)
   )
-    throw new Error('Expected legacy fixture');
+    throw new Error('Expected current fixture');
   const record: unknown = fixture.maps[0];
   if (typeof record !== 'object' || record === null) throw new Error('Expected saved record');
   return { ...record };
@@ -113,7 +115,7 @@ test('tabs synchronize rename, favorite, duplicate, import, and delete without r
     .getByRole('button', { name: 'Delete', exact: true })
     .click();
   await expect(item(other, 'Renamed across tabs')).toHaveCount(0);
-  await other.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-v3.json');
+  await other.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-current.json');
   await expect(page.locator('.saved-item')).toHaveCount(5);
   await page.reload();
   await expect(page.locator('.saved-item')).toHaveCount(5);
@@ -284,7 +286,7 @@ for (const failure of [
     await page.goto('/');
     await save(page, 'Keep before import');
     const before = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
-    const fixture = readFileSync('src/app/save/fixtures/forest-v3.json');
+    const fixture = readFileSync('src/app/save/fixtures/forest-current.json');
     let buffer = fixture;
     if (failure.kind === 'unreadable file') {
       await page.evaluate(() => {
@@ -331,7 +333,7 @@ test('unsupported backup headers reject valid records without changing the libra
   await page.goto('/');
   await save(page, 'Keep before version rejection');
   const before = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
-  const fixture = readFileSync('src/app/save/fixtures/forest-v3.json', 'utf8');
+  const fixture = readFileSync('src/app/save/fixtures/forest-current.json', 'utf8');
   const bundle: Record<string, unknown> = JSON.parse(fixture);
   const input = page.locator('.import-label input');
   for (const saveFormatVersion of ['1', '1.0.0.99', '1.9.0', '0.0.0', '2.0.0.0', '01.0.0']) {
@@ -349,7 +351,7 @@ test('unsupported backup headers reject valid records without changing the libra
     await expect(item(page, 'Keep before version rejection')).toBeVisible();
     expect(await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY)).toBe(before);
   }
-  await input.setInputFiles('src/app/save/fixtures/forest-v3.json');
+  await input.setInputFiles('src/app/save/fixtures/forest-current.json');
   await expect(page.locator('.library-message .notice')).toHaveText('Imported 3 maps.');
   await expect(page.locator('.library-message .error')).toBeEmpty();
   await page.reload();
@@ -377,7 +379,7 @@ for (const failure of ['QuotaExceededError', 'SecurityError'] as const) {
       },
       { key: SAVE_STORAGE_KEY, failure },
     );
-    await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-v3.json');
+    await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-current.json');
     await expect(page.locator('.library-message .error')).toHaveText(
       'Your browser could not write to local storage. It may be full or blocked.',
     );
@@ -388,7 +390,7 @@ for (const failure of ['QuotaExceededError', 'SecurityError'] as const) {
     await expect(page.locator('.import-label input')).toHaveValue('');
     await expect(page.locator('.import-label input')).toBeEnabled();
     await page.evaluate(() => document.dispatchEvent(new Event('allow-library-write')));
-    await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-v3.json');
+    await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-current.json');
     await expect(page.locator('.saved-item')).toHaveCount(4);
     await expect(page.locator('.library-message .error')).toBeEmpty();
     await expect(page.locator('.library-message .notice')).toContainText('Imported 3 maps');

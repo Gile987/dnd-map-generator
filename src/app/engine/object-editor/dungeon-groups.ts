@@ -1,6 +1,6 @@
 import { contains } from '../model';
-import type { Dungeon, Point, Prop } from '../model';
-import { areaAround, areaContains } from '../feature-reservation';
+import type { Dungeon } from '../model';
+import { areaAround } from '../feature-reservation';
 import type { ReservedArea } from '../feature-reservation';
 import { propBounds } from '../prop-footprint';
 import { ritualCenter } from '../dungeon-ritual';
@@ -14,10 +14,6 @@ export interface DungeonGroup {
   readonly members: readonly string[];
   readonly area: ReservedArea;
 }
-export interface GroupMove extends Point {
-  readonly id: DungeonGroupId;
-}
-
 export function dungeonGroups(base: Dungeon): readonly DungeonGroup[] {
   const indexed = base.decoration.props.map((prop, index) => ({ prop, id: `base-${index}` }));
   const groups: DungeonGroup[] = [];
@@ -71,14 +67,4 @@ export function dungeonGroups(base: Dungeon): readonly DungeonGroup[] {
       });
   }
   return groups;
-}
-
-export function translatedGroup(group: DungeonGroup, move?: Point): DungeonGroup {
-  return move ? { ...group, area: { ...group.area, x: move.x, y: move.y } } : group;
-}
-export function groupAt(groups: readonly DungeonGroup[], point: Point): DungeonGroup | undefined {
-  return groups.find((group) => areaContains(group.area, point));
-}
-export function translateGroupProp(prop: Prop, group: DungeonGroup, move: Point): Prop {
-  return { ...prop, x: prop.x + move.x - group.area.x, y: prop.y + move.y - group.area.y };
 }

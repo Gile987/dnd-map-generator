@@ -10,7 +10,6 @@ import {
   SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
-import oldStudy from './fixtures/study-v9.json';
 import { generateForestClearing } from '../engine/forest-generate';
 
 function record() {
@@ -28,39 +27,18 @@ function record() {
     '2026-11-02T12:00:00Z',
   );
 }
-test('format 25 persists the immutable base plus bounded edits through record, backup and sharing roundtrips', () => {
+test('current format persists the immutable base plus bounded edits through record, backup and sharing roundtrips', () => {
   const saved = record(),
     before = structuredClone(saved);
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
+  expect(saveVocabulary(SAVE_FORMAT_VERSION)?.objectEditVersions).toEqual([4, 5]);
   expect(parseSavedMap(saved)).toEqual(saved);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   expect(saved).toEqual(before);
-  expect(saveVocabulary('19.0.0')?.objectEditVersions).toEqual([1]);
-  expect(saveVocabulary('20.0.0')?.objectEditVersions).toEqual([1, 2]);
-  expect(saveVocabulary('21.0.0')?.objectEditVersions).toEqual([1, 2, 3]);
-  expect(saveVocabulary('22.0.0')?.objectEditVersions).toEqual([1, 2, 3, 4]);
-  expect(saveVocabulary('23.0.0')?.objectEditVersions).toEqual([1, 2, 3, 4]);
   expect(parseSavedMap({ ...saved, saveFormatVersion: '21.0.0' })).toBeUndefined();
   expect(parseSavedMap({ ...saved, saveFormatVersion: '20.0.0' })).toBeUndefined();
   expect(parseSavedMap({ ...saved, saveFormatVersion: '19.0.0' })).toBeUndefined();
-  expect(isUsableMap(saved.map)).toBe(false); // Not a canonical generator snapshot.
-  for (let v = 1; v <= 18; v++) {
-    expect(saveVocabulary(`${v}.0.0`)?.objectEditVersions).toBeUndefined();
-    expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
-  }
-});
-test('historical and current unedited snapshots stay unedited and preserve original map bodies', () => {
-  const result = parseBundle(JSON.stringify(oldStudy));
-  if (!result.ok) throw new Error(result.error);
-  for (const saved of result.maps) {
-    expect(saved.map).not.toHaveProperty('objectEdits');
-    expect(parseSavedMap(saved)?.map).toBe(saved.map);
-  }
-  const saved = record();
-  expect(
-    parseSavedMap({ ...saved, saveFormatVersion: '18.0.0', map: editorFixture() })?.map,
-  ).not.toHaveProperty('objectEdits');
-  expect(parseBundle(serializeBundle(result.maps))).toEqual(result);
+  expect(isUsableMap(saved.map)).toBe(false);
 });
 test('malformed and future editing data are rejected, counted and never silently stripped', () => {
   const saved = record();

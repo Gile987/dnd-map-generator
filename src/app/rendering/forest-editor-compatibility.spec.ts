@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createCanvas } from '@napi-rs/canvas';
 import { expect, test } from 'vitest';
-import fixture from '../save/fixtures/forest-editor-v25.json';
+import fixture from '../save/fixtures/forest-additions-current.json';
 import { parseBundle } from '../save/save-format';
 import { renderMap } from './render-map';
 import { forestEditorFixture } from '../../../scripts/forest-editor-test-support';

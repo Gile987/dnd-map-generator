@@ -8,7 +8,6 @@ import { dungeonBase, dungeonInstances } from './document';
 import { dungeonGroups } from './dungeon-groups';
 import { individualObjectLock } from './dungeon-authoring-rules';
 import { parseDungeonEdits } from './parse-edits';
-import { makeSavedMap, parseSavedMap } from '../../save/save-format';
 
 function accept(document: DungeonDocument, command: ObjectCommand): DungeonDocument {
   const result = applyObjectCommand(document, command);
@@ -39,28 +38,6 @@ test('a barrel can cover a rug, and moving the rug away never carries the barrel
   expect(dungeonInstances(moved).find((i) => i.id === barrel.id)?.prop).toEqual(barrel.prop);
   expect(base).toEqual(before);
   expect(dungeonBase(moved)).toEqual(base);
-});
-
-test('old v2 documents retain their frozen rules and only adopt layering after a real change', () => {
-  const base = editorFixture(),
-    rug = dungeonInstances(base).find((i) => i.prop.kind === 'rug');
-  if (!rug) throw Error('Missing rug');
-  const prepared = clear(base, rug.id);
-  const old = parseDungeonEdits(base, { ...prepared.objectEdits, version: 2 });
-  if (!old) throw Error('Missing v2 document');
-  const saved = makeSavedMap(
-    old,
-    'Old edits',
-    'data:image/png;base64,AAAA',
-    'old-edits',
-    '2026-11-02T12:00:00Z',
-  );
-  expect(parseSavedMap({ ...saved, saveFormatVersion: '20.0.0' })?.map).toEqual(old);
-  const noop = applyObjectCommand(old, { kind: 'move', id: rug.id, target: rug.prop });
-  expect(noop.ok && noop.document).toBe(old);
-  const edited = accept(old, { kind: 'add', propKind: 'barrel', target: rug.prop });
-  expect(edited.objectEdits?.version).toBe(4);
-  expect(parseDungeonEdits(base, { ...edited.objectEdits, version: 2 })).toBeUndefined();
 });
 
 test('addition access cannot be closed by surrounding its solid object, and removal permits recovery', () => {

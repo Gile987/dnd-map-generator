@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import fixture from '../src/app/save/fixtures/courtyard-v24.json';
+import fixture from '../src/app/save/fixtures/courtyard-current.json';
 import { SAVE_STORAGE_KEY } from '../src/app/save/save-format';
 
 test('the deferred library reports loading, then accepts keyboard navigation and saves', async ({

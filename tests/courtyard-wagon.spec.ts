@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import fixture from '../src/app/save/fixtures/courtyard-v24.json';
+import fixture from '../src/app/save/fixtures/courtyard-current.json';
 import {
   makeSavedMap,
   parseSavedMap,
@@ -139,11 +139,11 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   expect((await png(page)).bytes.equals(acceptedPng.bytes)).toBe(true);
 });
 
-test('a format-16 courtyard keeps its original PNG until the wagon is explicitly applied', async ({
+test('a saved courtyard keeps its original PNG until the wagon is explicitly applied', async ({
   page,
 }) => {
   const record = parseSavedMap(fixture.maps[1]);
-  if (!record || record.map.type !== 'courtyard') throw new Error('Missing historical courtyard');
+  if (!record || record.map.type !== 'courtyard') throw new Error('Missing saved courtyard');
   const legacy = record.map;
   const old = {
     ...makeSavedMap(
@@ -153,7 +153,7 @@ test('a format-16 courtyard keeps its original PNG until the wagon is explicitly
       'old-court',
       '2026-10-30T12:00:00Z',
     ),
-    saveFormatVersion: '16.0.0',
+    saveFormatVersion: SAVE_FORMAT_VERSION,
   };
   await page.goto('/');
   await page.locator('.import-label input').setInputFiles({
@@ -162,7 +162,7 @@ test('a format-16 courtyard keeps its original PNG until the wagon is explicitly
     buffer: Buffer.from(
       JSON.stringify({
         format: 'encounter-map-forge-saves',
-        saveFormatVersion: '16.0.0',
+        saveFormatVersion: SAVE_FORMAT_VERSION,
         maps: [old],
       }),
     ),

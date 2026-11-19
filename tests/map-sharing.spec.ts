@@ -28,8 +28,8 @@ const courtyard = generateCourtyard({
   density: 'Balanced',
   fountain: true,
 });
-const legacy = parseBundle(readFileSync('src/app/save/fixtures/forest-v3.json', 'utf8'));
-if (!dungeon.ok || !courtyard.ok || !legacy.ok || !legacy.maps[0])
+const restored = parseBundle(readFileSync('src/app/save/fixtures/forest-current.json', 'utf8'));
+if (!dungeon.ok || !courtyard.ok || !restored.ok || !restored.maps[0])
   throw new Error('Missing share fixtures');
 
 function saved(map: GeneratedMap, name: string, id: string): SavedMap {
@@ -42,7 +42,7 @@ function saved(map: GeneratedMap, name: string, id: string): SavedMap {
 }
 const records = [
   saved(dungeon.map, 'Forgotten study', 'study'),
-  { ...legacy.maps[0], name: 'Historical clearing' },
+  { ...restored.maps[0], name: 'Saved clearing' },
   saved(courtyard.map, 'Ivy court', 'court'),
 ];
 if (records.some((record) => !parseSavedMap(record))) throw new Error('Invalid share fixture');
@@ -184,7 +184,7 @@ test('readable maps remain exportable during library recovery', async ({ page })
   await seed(page, [...records, null]);
   const stored = await disk(page);
   await expect(page.getByRole('button', { name: 'Save map', exact: true })).toBeDisabled();
-  const exported = await file(page, share(item(page, 'Historical clearing')));
+  const exported = await file(page, share(item(page, 'Saved clearing')));
   expect(parseBundle(exported.bytes.toString())).toMatchObject({ ok: true, maps: [records[1]] });
   expect(await disk(page)).toBe(stored);
 });

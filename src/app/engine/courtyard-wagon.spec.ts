@@ -69,10 +69,11 @@ function assertSpace(map: RuinedCourtyard) {
         expect(blocked.has(y * 40 + x)).toBe(false);
 }
 
-test('wagons coexist with fountains across densities/seeds, preserve circulation and restore original decoration exactly', () => {
-  const rotations = new Set<number>(),
-    positions = new Set<string>();
-  for (const density of ALL_DENSITIES)
+test.each(ALL_DENSITIES)(
+  'wagons at %s density coexist with fountains, preserve circulation and restore decoration exactly',
+  (density) => {
+    const rotations = new Set<number>(),
+      positions = new Set<string>();
     for (const fountain of [false, true]) {
       let successes = 0;
       for (let n = 0; n < 15; n++) {
@@ -109,9 +110,10 @@ test('wagons coexist with fountains across densities/seeds, preserve circulation
       }
       expect(successes).toBeGreaterThanOrEqual(12);
     }
-  expect(rotations).toEqual(new Set([0, 1]));
-  expect(positions.size).toBeGreaterThan(5);
-});
+    expect(rotations).toEqual(new Set([0, 1]));
+    expect(positions.size).toBeGreaterThan(5);
+  },
+);
 
 test('impossible sites and invalid settings refuse without a partial wagon', () => {
   const r = generateCourtyard({

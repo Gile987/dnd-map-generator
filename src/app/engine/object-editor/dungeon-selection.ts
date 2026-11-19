@@ -16,11 +16,7 @@ export function dungeonSelections(document: DungeonDocument): readonly DungeonSe
     ...groups.map((group) => ({
       id: `group-${group.id}`,
       groupId: group.id,
-      rotation: groupRotation(
-        document.objectEdits && document.objectEdits.version !== 1
-          ? document.objectEdits.groups.find((g) => g.id === group.id)
-          : undefined,
-      ),
+      rotation: groupRotation(document.objectEdits?.groups.find((g) => g.id === group.id)),
       label: group.label,
       position: group.area,
       area: group.area,
@@ -32,7 +28,7 @@ export function dungeonSelections(document: DungeonDocument): readonly DungeonSe
       .filter((item) => !groups.some((group) => group.members.includes(item.id)))
       .map((item) => ({
         id: item.id,
-        label: dungeonCapability(item.prop.kind, 2)?.label ?? item.prop.kind,
+        label: dungeonCapability(item.prop.kind)?.label ?? item.prop.kind,
         position: item.prop,
         area: authoredObjectArea(item.prop),
         props: [item.prop],

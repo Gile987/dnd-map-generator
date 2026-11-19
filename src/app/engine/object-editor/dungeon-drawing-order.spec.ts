@@ -85,7 +85,7 @@ test('custom order survives movement and insertion, and deletion removes obsolet
   expect(parseDungeonEdits(dungeonBase(surfaced), surfaced.objectEdits)).toEqual(surfaced);
 });
 
-test('format 24 introduces authored order and later formats retain it; malformed permutations and future edit versions are rejected', () => {
+test('current saves preserve authored order; malformed permutations and future edit versions are rejected', () => {
   const { base, covered } = layeredRugFixture();
   const edits = covered.objectEdits;
   if (edits?.version !== 5) throw Error('Missing order');
@@ -98,8 +98,7 @@ test('format 24 introduces authored order and later formats retain it; malformed
   );
   expect(parseSavedMap(saved)?.map).toEqual(covered);
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
-  expect(saveVocabulary('23.0.0')?.objectEditVersions).toEqual([1, 2, 3, 4]);
-  expect(saveVocabulary('24.0.0')?.objectEditVersions).toEqual([1, 2, 3, 4, 5]);
+  expect(saveVocabulary(SAVE_FORMAT_VERSION)?.objectEditVersions).toEqual([4, 5]);
   for (let v = 1; v <= 23; v++)
     expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
   for (const order of [

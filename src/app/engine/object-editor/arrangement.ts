@@ -6,8 +6,8 @@ import type { ObjectGroup, ObjectGroupTransform } from './object-group';
 import type { ObjectSelection } from './object-selection';
 import { transformedGroupProp } from './group-rotation';
 
-/** Shared sidecar shape for new map adapters. Historical Dungeon versions keep
- * their independent schemas and semantics. */
+/** Shared sidecar shape for Forest, Courtyard, and Tower adapters. Dungeon
+ * retains its own placement and drawing-order schemas. */
 export interface ArrangementEdits<Id extends string> {
   readonly version: 1;
   readonly nextId: number;

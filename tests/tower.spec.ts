@@ -1,4 +1,3 @@
-import towerV1 from '../src/app/save/fixtures/tower-v1.json';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -278,43 +277,6 @@ test('new seeds vary the shared stairwell, portal endpoints and secret floor, in
   await expect(page.getByLabel('Secret portal', { exact: true })).toHaveValue('none');
   await page.getByRole('button', { name: 'Reset changes', exact: true }).click();
   await expect(page.getByLabel('Secret portal', { exact: true })).toHaveValue('8');
-});
-
-test('original Tower-v1 saves retain their old connections, artwork and undo behavior in the browser', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.locator('.import-label input').setInputFiles({
-    name: 'tower-v1.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(JSON.stringify(towerV1)),
-  });
-  const card = page
-    .locator('.saved-item')
-    .filter({ has: page.getByText('Tower v1 4', { exact: true }) });
-  await expect(card).toBeVisible();
-  await card.getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Wizard’s Tower', exact: true })).toBeVisible();
-  await settled(page);
-  const original = await snapshot(page, 'Legacy tower');
-  expect(original.map).toEqual(towerV1.maps[0]?.map);
-  await page.getByLabel('Show secrets', { exact: true }).check();
-  const before = await png(page);
-  expect(before.name).toContain('-v1.0.0-gm-secrets.png');
-  await page.getByRole('button', { name: 'Shuffle details', exact: true }).click();
-  await expect(page.locator('#map-summary')).toContainText('r2');
-  await settled(page);
-  const shuffled = await snapshot(page, 'Legacy shuffled');
-  expect(shuffled.map.version).toBe('1.0.0');
-  expect(shuffled.map.layout).toEqual(original.map.layout);
-  await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
-  await settled(page);
-  expect((await png(page)).bytes).toEqual(before.bytes);
-  await page.getByLabel('World seed').fill('updated-tower');
-  await page.getByRole('button', { name: 'Generate tower', exact: true }).click();
-  await expect(page.locator('#map-summary')).toContainText('updated-tower');
-  await settled(page);
-  expect((await snapshot(page, 'New generation')).map.version).toBe('3.0.0');
 });
 
 test('staircase style is a pending choice and both drawings survive saves, history, exports and reset', async ({

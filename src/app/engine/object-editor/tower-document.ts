@@ -50,9 +50,7 @@ export function towerGroups(base: Tower): readonly ObjectGroup<TowerGroupId>[] {
     ['observatory', 'Tower observatory', base.decoration.observatoryFloor, towerObservatoryProps],
   ] as const) {
     if (floor === undefined) continue;
-    const expected = pack(base.layout, floor, (p) =>
-      towerConnectionReserved(base.layout, p, base.version),
-    );
+    const expected = pack(base.layout, floor, (p) => towerConnectionReserved(base.layout, p));
     if (!expected) continue;
     const items = base.decoration.props.flatMap((prop, i) =>
       expected.some((p) => p.x === prop.x && p.y === prop.y && p.kind === prop.kind)

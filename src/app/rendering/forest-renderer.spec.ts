@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { createCanvas } from '@napi-rs/canvas';
 import { describe, expect, test } from 'vitest';
 import { changeForestCharacter, generateForestClearing } from '../engine/forest-generate';
@@ -7,7 +5,6 @@ import { ALL_FOREST_CHARACTERS } from '../engine/model';
 import type { ForestClearing, ForestSettings } from '../engine/model';
 import { renderForest } from './forest-renderer';
 import { EXPORT_HEIGHT, EXPORT_WIDTH, PIXELS_PER_TILE } from './resolution';
-import { parseBundle } from '../save/save-format';
 
 function exportPng(map: ForestClearing, grid: boolean): Buffer {
   const canvas = createCanvas(EXPORT_WIDTH, EXPORT_HEIGHT);
@@ -22,28 +19,6 @@ function generatedForest(settings: ForestSettings): ForestClearing {
 }
 
 describe('forest renderer determinism', () => {
-  test.each([
-    ['emerald-path', true, '7d596bccb348c2700a419d9932a325261c7cf60eda8b62003877c6d572557b2d'],
-    ['emerald-path', false, '64dd5ab9723e0103611194ead457745edf1b8a867c73db9ac7ee15f65c3d3fa0'],
-    ['woodland-glade', true, 'e9a46a586082ef11f2e99c33745fcd231ab78111ca79a04dfd170068dfeedb5e'],
-    ['woodland-glade', false, '4da5779841658939c8032b308337c7e205df61132c7270bdf78dd53a9cf4b8ca'],
-    ['ancient-grove', true, '548fac580ed464d83c02df04734071e0a178ef554b1721577b2f6f410dcfecad'],
-    ['ancient-grove', false, '72bd4347f70f34475a513c9702222943ee689e987506631663729098fe71f742'],
-  ] as const)('preserves v3 artwork for %s with grid=%s', (seed, grid, expected) => {
-    const parsed = parseBundle(
-      readFileSync(new URL('../save/fixtures/forest-v3.json', import.meta.url), 'utf8'),
-    );
-    if (!parsed.ok) throw new Error(parsed.error);
-    const map = parsed.maps.find((entry) => entry.map.seed === seed)?.map;
-    if (!map || map.type !== 'forest' || !!map.objectEdits)
-      throw new Error(`Legacy forest ${seed} is missing`);
-    const canvas = createCanvas(EXPORT_WIDTH, EXPORT_HEIGHT);
-    const ctx = canvas.getContext('2d');
-    renderForest(ctx, map, { grid, pixelsPerTile: PIXELS_PER_TILE });
-    const pixels = ctx.getImageData(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT).data;
-    expect(createHash('sha256').update(pixels).digest('hex')).toBe(expected);
-  });
-
   test.each([
     [
       'woodland-glade',
