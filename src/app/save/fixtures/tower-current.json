@@ -1,6 +1,6 @@
 {
   "format": "encounter-map-forge-saves",
-  "saveFormatVersion": "26.0.0",
+  "saveFormatVersion": "32.0.0",
   "exportedAt": "2026-11-05T12:00:00Z",
   "maps": [
     {
@@ -8,7 +8,7 @@
       "name": "3-separate",
       "favorite": false,
       "savedAt": "2026-11-05T12:00:00Z",
-      "saveFormatVersion": "26.0.0",
+      "saveFormatVersion": "32.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "tower",
@@ -1438,7 +1438,7 @@
       "name": "3-spiral",
       "favorite": false,
       "savedAt": "2026-11-05T12:00:00Z",
-      "saveFormatVersion": "26.0.0",
+      "saveFormatVersion": "32.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "tower",
@@ -2861,7 +2861,7 @@
       "name": "8-separate",
       "favorite": false,
       "savedAt": "2026-11-05T12:00:00Z",
-      "saveFormatVersion": "26.0.0",
+      "saveFormatVersion": "32.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "tower",
@@ -6056,7 +6056,7 @@
       "name": "8-spiral",
       "favorite": false,
       "savedAt": "2026-11-05T12:00:00Z",
-      "saveFormatVersion": "26.0.0",
+      "saveFormatVersion": "32.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "tower",

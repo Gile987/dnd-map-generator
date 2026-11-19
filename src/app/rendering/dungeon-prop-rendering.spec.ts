@@ -4,7 +4,7 @@ import { expect, test } from 'vitest';
 import { editorFixture } from '../../../scripts/editor-test-support';
 import type { Dungeon, DungeonDocument } from '../engine/model';
 import { applyObjectCommand } from '../engine/object-editor/commands';
-import { DUNGEON_PALETTE_V2 } from '../engine/object-editor/catalog';
+import { DUNGEON_PALETTE } from '../engine/object-editor/catalog';
 import { dungeonBase, dungeonInstances } from '../engine/object-editor/document';
 import { individualObjectLock } from '../engine/object-editor/dungeon-authoring-rules';
 import { makeSavedMap, parseSavedMap } from '../save/save-format';
@@ -18,7 +18,7 @@ function pixels(map: DungeonDocument) {
     .digest('hex');
 }
 
-test.each(DUNGEON_PALETTE_V2.map((item) => item.kind))(
+test.each(DUNGEON_PALETTE.map((item) => item.kind))(
   '%s uses exactly the generated drawing at its chosen wall-side grid position, including after save/reopen',
   (kind) => {
     const base = editorFixture(),

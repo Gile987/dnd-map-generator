@@ -1,7 +1,7 @@
 import { createCanvas } from '@napi-rs/canvas';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import fixture from '../src/app/save/fixtures/forest-v4-surfaces.json';
+import fixture from '../src/app/save/fixtures/forest-characters-current.json';
 import { parseBundle } from '../src/app/save/save-format';
 import { ALL_FOREST_CHARACTERS } from '../src/app/engine/model';
 import { forestSurfacePatches } from '../src/app/rendering/forest-surface';
@@ -15,8 +15,7 @@ test.each(ALL_FOREST_CHARACTERS)(
     const old = parsed.maps.find(
       (record) => record.map.type === 'forest' && record.map.decoration.character === character,
     )?.map;
-    if (!old || old.type !== 'forest' || !!old.objectEdits)
-      throw new Error('Missing historical forest');
+    if (!old || old.type !== 'forest' || !!old.objectEdits) throw new Error('Missing saved forest');
     const map = { ...old, decoration: { ...old.decoration, forestSurface: 1 as const } };
     const patches = forestSurfacePatches(map);
     const first = patches.find((p) => p.kind !== 'ash');

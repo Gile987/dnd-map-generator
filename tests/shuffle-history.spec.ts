@@ -172,16 +172,16 @@ test('histories stay independent and reset only when settings are applied, a sav
   await expect(redo).toBeDisabled();
 });
 
-test('undo restores a historical forest snapshot and its original pixels without regeneration', async ({
+test('undo restores a saved forest snapshot and its original pixels without regeneration', async ({
   page,
 }) => {
   await page.goto('/');
-  const fixture = readFileSync('src/app/save/fixtures/forest-v3.json');
+  const fixture = readFileSync('src/app/save/fixtures/forest-current.json');
   const bundle: { maps: { name: string }[] } = JSON.parse(fixture.toString());
   const first = bundle.maps[0];
-  if (!first) throw new Error('Missing legacy map');
+  if (!first) throw new Error('Missing saved map');
   await page.setInputFiles('.import-label input', {
-    name: 'legacy.json',
+    name: 'current-forest.json',
     mimeType: 'application/json',
     buffer: fixture,
   });
@@ -191,15 +191,17 @@ test('undo restores a historical forest snapshot and its original pixels without
     .filter({ has: page.getByText(first.name, { exact: true }) })
     .getByRole('button', { name: 'Open', exact: true })
     .click();
-  const original = await snapshot(page, 'Historical original');
-  expect(original.version).toBe('3.0.0');
+  const original = await snapshot(page, 'Saved original');
+  expect(original.version).toBe('4.0.0');
   const exported = await png(page);
   const revision = original.decoration.revision;
   await shuffle(page, revision + 1);
   await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
-  expect(await snapshot(page, 'Historical undo')).toEqual(original);
-  expect(await png(page)).toEqual(exported);
+  expect(await snapshot(page, 'Saved undo')).toEqual(original);
+  const restored = await png(page);
+  expect(restored.name).toBe(exported.name);
+  expect(restored.bytes.equals(exported.bytes)).toBe(true);
 });
 
 test('export disables both history directions and recovers without losing history or drafts', async ({

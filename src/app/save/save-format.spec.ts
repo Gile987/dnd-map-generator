@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
@@ -59,9 +58,7 @@ const forestResult = generateForestClearing({
 });
 if (!dungeon.ok) throw new Error(dungeon.error);
 if (!forestResult.ok) throw new Error(forestResult.error);
-// Historical vocabulary checks use the pre-surface shape without weakening the parser.
-const { forestSurface, ...legacyDecoration } = forestResult.map.decoration;
-const forest = { ...forestResult, map: { ...forestResult.map, decoration: legacyDecoration } };
+const forest = forestResult;
 
 const THUMB = 'data:image/png;base64,AAAA';
 
@@ -101,7 +98,7 @@ function bundle(maps: unknown[], saveFormatVersion: unknown = SAVE_FORMAT_VERSIO
 }
 
 describe('save format', () => {
-  test('study snapshots round-trip in current and historical formats and cannot claim an earlier vocabulary', () => {
+  test('study snapshots round-trip and reject malformed arrangements', () => {
     const generated = generateDungeon({
       seed: 'mosslit-sanctum',
       roomCount: 6,
@@ -111,28 +108,7 @@ describe('save format', () => {
     });
     if (!generated.ok) throw new Error(generated.error);
     const saved = record(generated.map);
-    const historical = {
-      ...saved,
-      map: {
-        ...generated.map,
-        decoration: { ...generated.map.decoration, studySurface: undefined },
-      },
-    };
-    expect(parseSavedMap({ ...historical, saveFormatVersion: '4.0.0' })).toEqual(historical);
     expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-    for (const saveFormatVersion of ['1.0.0', '2.0.0', '3.0.0']) {
-      expect(parseSavedMap({ ...historical, saveFormatVersion })).toBeUndefined();
-      expect(
-        parseSavedMap({
-          ...historical,
-          saveFormatVersion,
-          map: {
-            ...historical.map,
-            decoration: { ...historical.map.decoration, scene: 'None', props: [] },
-          },
-        }),
-      ).toBeUndefined();
-    }
     const props = generated.map.decoration.props;
     const invalids = [
       { ...generated.map.decoration, scene: 'Unknown' },
@@ -208,8 +184,8 @@ describe('save format', () => {
   });
 
   test('save vocabulary is pinned per format version and rejects extra components', () => {
-    expect(saveVocabulary('1.0.0')).toBeDefined();
-    expect(saveVocabulary('2.0.0')).toBeDefined();
+    expect(saveVocabulary(SAVE_FORMAT_VERSION)).toBeDefined();
+    expect(saveVocabulary('2.0.0')).toBeUndefined();
     expect(saveVocabulary('0.9.0')).toBeUndefined();
     expect(saveVocabulary('99.0.0')).toBeUndefined();
     expect(saveVocabulary('1.0.0.99')).toBeUndefined();
@@ -217,27 +193,12 @@ describe('save format', () => {
     expect(saveVocabulary('banana')).toBeUndefined();
   });
 
-  test('format vocabularies use fixed values independent of live engine lists', () => {
-    const format1 = saveVocabulary('1.0.0');
-    const format2 = saveVocabulary('2.0.0');
-    if (!format1 || !format2) throw new Error('Expected vocabularies');
-
-    expect(format1.mapTypes).toEqual(['dungeon', 'forest']);
-    expect(format2.mapTypes).toEqual(['dungeon', 'forest']);
-    expect(format2.mapTypes).not.toBe(format1.mapTypes);
-    expect(format2.densities).toEqual(['Sparse', 'Balanced', 'Cluttered']);
-    expect(format2.presets).toEqual(['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary']);
-    expect(format2.forestCharacters).toEqual(['Verdant', 'Autumn', 'Pines', 'Fey']);
-    expect(format2.propKinds).toEqual(format1.propKinds);
-    expect(format2.propKinds).not.toBe(format1.propKinds);
-  });
-
-  test('fixed historical schemas reject options from an extended engine vocabulary', () => {
-    const format1 = saveVocabulary('1.0.0');
-    const format2 = saveVocabulary('2.0.0');
-    if (!format1 || !format2) throw new Error('Expected vocabularies');
+  test('the current schema rejects options from an extended engine vocabulary', () => {
+    const current = saveVocabulary(SAVE_FORMAT_VERSION);
+    if (!current) throw new Error('Expected vocabulary');
 
     const extendedVocabulary: SaveVocabulary = {
+      ...current,
       mapTypes: ['dungeon', 'forest', 'cave'],
       densities: ['Sparse', 'Balanced', 'Cluttered', 'Dense'],
       presets: ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary', 'FuturePreset'],
@@ -264,123 +225,50 @@ describe('save format', () => {
       ],
     };
 
-    const futureTypeMap = { ...forest.map, type: 'cave' };
+    const futureTypeMap = {
+      ...forest.map,
+      type: 'cave',
+      decoration: { ...forest.map.decoration, forestSurface: undefined },
+    };
     expect(mapUsesVocabulary(futureTypeMap, extendedVocabulary)).toBe(true);
-    expect(mapUsesVocabulary(futureTypeMap, format1)).toBe(false);
-    expect(mapUsesVocabulary(futureTypeMap, format2)).toBe(false);
+    expect(mapUsesVocabulary(futureTypeMap, current)).toBe(false);
 
     const futurePresetMap = corruptRecord(
       dungeon.map,
       (m) => (m.decoration.preset = 'FuturePreset'),
     )['map'];
     expect(mapUsesVocabulary(futurePresetMap, extendedVocabulary)).toBe(true);
-    expect(mapUsesVocabulary(futurePresetMap, format1)).toBe(false);
-    expect(mapUsesVocabulary(futurePresetMap, format2)).toBe(false);
+    expect(mapUsesVocabulary(futurePresetMap, current)).toBe(false);
 
     const futureCharacterMap = corruptRecord(
       forest.map,
       (m) => (m.decoration.character = 'Meadow'),
     )['map'];
     expect(mapUsesVocabulary(futureCharacterMap, extendedVocabulary)).toBe(true);
-    expect(mapUsesVocabulary(futureCharacterMap, format1)).toBe(false);
-    expect(mapUsesVocabulary(futureCharacterMap, format2)).toBe(false);
+    expect(mapUsesVocabulary(futureCharacterMap, current)).toBe(false);
 
     const futureDensityMap = corruptRecord(dungeon.map, (m) => (m.decoration.density = 'Dense'))[
       'map'
     ];
     expect(mapUsesVocabulary(futureDensityMap, extendedVocabulary)).toBe(true);
-    expect(mapUsesVocabulary(futureDensityMap, format1)).toBe(false);
-    expect(mapUsesVocabulary(futureDensityMap, format2)).toBe(false);
+    expect(mapUsesVocabulary(futureDensityMap, current)).toBe(false);
 
     const futurePropMap = corruptRecord(dungeon.map, (m) => {
       m.decoration.props = [{ x: 1, y: 1, kind: 'dragon', blocking: false, variation: 0.5 }];
     })['map'];
     expect(mapUsesVocabulary(futurePropMap, extendedVocabulary)).toBe(true);
-    expect(mapUsesVocabulary(futurePropMap, format1)).toBe(false);
-    expect(mapUsesVocabulary(futurePropMap, format2)).toBe(false);
+    expect(mapUsesVocabulary(futurePropMap, current)).toBe(false);
   });
 
   describe('supported save-format versions', () => {
-    for (const header of [
-      '1.0.0',
-      '2.0.0',
-      '3.0.0',
-      '4.0.0',
-      '5.0.0',
-      '6.0.0',
-      '7.0.0',
-      '8.0.0',
-      '9.0.0',
-      '10.0.0',
-      '11.0.0',
-      '12.0.0',
-      '13.0.0',
-      '14.0.0',
-      '15.0.0',
-      '16.0.0',
-      '17.0.0',
-      '18.0.0',
-      '19.0.0',
-      '20.0.0',
-      '21.0.0',
-      '22.0.0',
-      '23.0.0',
-      '24.0.0',
-      '25.0.0',
-      '26.0.0',
-      '27.0.0',
-      '28.0.0',
-      '29.0.0',
-      '30.0.0',
-      '31.0.0',
-    ]) {
-      test.each([
-        '1.0.0',
-        '2.0.0',
-        '3.0.0',
-        '4.0.0',
-        '5.0.0',
-        '6.0.0',
-        '7.0.0',
-        '8.0.0',
-        '9.0.0',
-        '10.0.0',
-        '11.0.0',
-        '12.0.0',
-        '13.0.0',
-        '14.0.0',
-        '15.0.0',
-        '16.0.0',
-        '17.0.0',
-        '18.0.0',
-        '19.0.0',
-        '20.0.0',
-        '21.0.0',
-        '22.0.0',
-        '23.0.0',
-        '24.0.0',
-        '25.0.0',
-        '26.0.0',
-        '27.0.0',
-        '28.0.0',
-        '29.0.0',
-        '30.0.0',
-        '31.0.0',
-      ])(
-        `accepts header ${header} with record version %s and preserves the map`,
-        (saveFormatVersion) => {
-          const saved = record(dungeon.map, { saveFormatVersion });
-          expect(parseBundle(bundle([saved], header))).toEqual({
-            ok: true,
-            maps: [{ ...saved, saveFormatVersion: SAVE_FORMAT_VERSION }],
-            skipped: 0,
-          });
-        },
-      );
-    }
+    test('accepts the current header and record without rewriting the map', () => {
+      const saved = record(dungeon.map);
+      expect(parseBundle(bundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
+    });
 
     test.each(
       [
+        ...Array.from({ length: 31 }, (_, index) => `${index + 1}.0.0`),
         undefined,
         null,
         2,
@@ -424,7 +312,8 @@ describe('save format', () => {
         expect(parseSavedMap(unsupported)).toBeUndefined();
         expect(parseBundle(bundle([unsupported]))).toEqual({
           ok: false,
-          error: 'None of the maps in that backup could be read. They may use a newer save format.',
+          error:
+            'None of the maps in that backup could be read. They may use an unsupported save format.',
         });
         expect(parseBundle(bundle([good, { ...unsupported, id: 'unsupported-record' }]))).toEqual({
           ok: true,
@@ -452,15 +341,13 @@ describe('save format', () => {
         (m) => (m.decoration.preset = 'FuturePreset'),
       )['map'] as GeneratedMap;
       expect(isUsableMap(futureDungeon)).toBe(true);
-      expect(parseSavedMap(record(futureDungeon, { saveFormatVersion: '1.0.0' }))).toBeUndefined();
-      expect(parseSavedMap(record(futureDungeon, { saveFormatVersion: '2.0.0' }))).toBeUndefined();
+      expect(parseSavedMap(record(futureDungeon))).toBeUndefined();
 
       const futureForest = corruptRecord(forest.map, (m) => (m.decoration.character = 'Meadow'))[
         'map'
       ] as GeneratedMap;
       expect(isUsableMap(futureForest)).toBe(true);
-      expect(parseSavedMap(record(futureForest, { saveFormatVersion: '1.0.0' }))).toBeUndefined();
-      expect(parseSavedMap(record(futureForest, { saveFormatVersion: '2.0.0' }))).toBeUndefined();
+      expect(parseSavedMap(record(futureForest))).toBeUndefined();
     } finally {
       (ALL_PRESETS as DecorationPreset[]).length = 0;
       (ALL_PRESETS as DecorationPreset[]).push(...originalPresets);
@@ -501,35 +388,6 @@ describe('save format', () => {
     expect(parseSavedMap(withRoute([start, end]))).toBeUndefined();
   });
 
-  test('migrates actual v3 forest saves without changing their saved models', () => {
-    const text = readFileSync(new URL('./fixtures/forest-v3.json', import.meta.url), 'utf8');
-    const original: unknown = JSON.parse(text);
-    if (typeof original !== 'object' || original === null || !('maps' in original))
-      throw new Error('Legacy fixture has no maps');
-    const maps = original.maps;
-    if (!Array.isArray(maps)) throw new Error('Legacy fixture has no map records');
-    const snapshot = structuredClone(maps);
-    const parsed = parseBundle(text);
-    if (!parsed.ok) throw new Error(parsed.error);
-    expect(parsed.skipped).toBe(0);
-    expect(parsed.maps).toHaveLength(3);
-    parsed.maps.forEach((entry, i) => {
-      const legacy: unknown = maps[i];
-      if (typeof legacy !== 'object' || legacy === null || !('map' in legacy))
-        throw new Error('Legacy fixture has no map');
-      expect(parseSavedMap(legacy)).toEqual(entry);
-      expect(entry.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
-      expect(entry.map.type).toBe('forest');
-      if (entry.map.type !== 'forest') throw new Error('Expected forest');
-      const { character, ...decoration } = entry.map.decoration;
-      expect(character).toBe('Verdant');
-      expect({ ...entry.map, decoration }).toEqual(legacy.map);
-      expect(entry.map.version).toBe('3.0.0');
-    });
-    expect(maps).toEqual(snapshot);
-    expect(parseBundle(serializeBundle(parsed.maps))).toEqual(parsed);
-  });
-
   test.each(ALL_FOREST_CHARACTERS)(
     'writes %s records and backups as the current save format so older readers reject them',
     (character) => {
@@ -550,21 +408,6 @@ describe('save format', () => {
     },
   );
 
-  test('upgrades the initial I19 format-1 character records without changing their artwork', () => {
-    const result = generateForestClearing({
-      seed: 'early-fey',
-      density: 'Balanced',
-      character: 'Fey',
-    });
-    if (!result.ok) throw new Error(result.error);
-    const { forestSurface, ...decoration } = result.map.decoration;
-    expect(forestSurface).toBe(1);
-    const initial = record({ ...result.map, decoration }, { saveFormatVersion: '1.0.0' });
-    const parsed = parseSavedMap(initial);
-    expect(parsed).toEqual({ ...initial, saveFormatVersion: SAVE_FORMAT_VERSION });
-    expect(initial.saveFormatVersion).toBe('1.0.0');
-  });
-
   test('requires a character on current forest models before they are considered usable', () => {
     const invalid = corruptRecord(forest.map, (m) => {
       delete m.decoration['character'];
@@ -576,15 +419,6 @@ describe('save format', () => {
         decoration: { ...forest.map.decoration, character: undefined },
       }),
     ).toBe(false);
-  });
-
-  test('keeps format-1 dungeon saves readable while upgrading their record version', () => {
-    const legacy = record(dungeon.map, { saveFormatVersion: '1.0.0' });
-    expect(parseBundle(bundle([legacy], '1.0.0'))).toEqual({
-      ok: true,
-      maps: [{ ...legacy, saveFormatVersion: SAVE_FORMAT_VERSION }],
-      skipped: 0,
-    });
   });
 
   test('rejects forest maps with an unknown character', () => {
@@ -624,7 +458,9 @@ describe('save format', () => {
       error: 'That backup uses a save format this version of Encounter Map Forge cannot read.',
     });
     expect(
-      parseBundle(JSON.stringify({ format: BACKUP_FORMAT, saveFormatVersion: '1.0.0' })),
+      parseBundle(
+        JSON.stringify({ format: BACKUP_FORMAT, saveFormatVersion: SAVE_FORMAT_VERSION }),
+      ),
     ).toEqual({
       ok: false,
       error: 'That backup is not a valid map library.',
@@ -636,7 +472,8 @@ describe('save format', () => {
 
     expect(parseBundle(bundle([bad]))).toEqual({
       ok: false,
-      error: 'None of the maps in that backup could be read. They may use a newer save format.',
+      error:
+        'None of the maps in that backup could be read. They may use an unsupported save format.',
     });
   });
 

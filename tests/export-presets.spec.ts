@@ -154,16 +154,16 @@ test('obsolete preset encodes cannot replace the selected image and failed previ
   ).not.toBeChecked();
 });
 
-test('legacy forest artwork exports with the original bytes and its saved version', async ({
+test('saved current Forest artwork exports with the original bytes and generator version', async ({
   page,
 }) => {
   await page.goto('/');
-  const fixture = await readFile('src/app/save/fixtures/forest-v3.json');
+  const fixture = await readFile('src/app/save/fixtures/forest-current.json');
   const bundle: { maps: { name: string }[] } = JSON.parse(fixture.toString());
   const first = bundle.maps[0];
-  if (!first) throw new Error('Missing legacy map');
+  if (!first) throw new Error('Missing saved map');
   await page.setInputFiles('.import-label input', {
-    name: 'legacy.json',
+    name: 'current-forest.json',
     mimeType: 'application/json',
     buffer: fixture,
   });
@@ -184,7 +184,7 @@ test('legacy forest artwork exports with the original bytes and its saved versio
   await ready(dialog, 2560, 1920);
   const exported = await download(page, dialog.getByRole('button', { name: 'Download PNG' }));
   expect(exported.bytes).toEqual(original.bytes);
-  expect(exported.name).toContain('-v3.0.0-owlbear-40x30-64px-grid-off.png');
+  expect(exported.name).toContain('-v4.0.0-owlbear-40x30-64px-grid-off.png');
   await dialog.getByRole('combobox').selectOption('foundry');
   await ready(dialog, 4000, 3000);
 });

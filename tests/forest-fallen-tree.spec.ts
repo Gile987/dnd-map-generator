@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { parseSavedMap, SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
-import fixture from '../src/app/save/fixtures/forest-v3.json';
+import fixture from '../src/app/save/fixtures/forest-current.json';
 import { openAdditions, setAddition } from './additions';
 
 const TREE = 'Fallen ancient tree';
@@ -143,12 +143,12 @@ test('fallen trees coexist with camps and standing stones, preserve accepted map
   expect((await png(page)).bytes).toEqual(image.bytes);
 });
 
-test('historical Forest artwork stays exact through import and pending tree selection, then opts in explicitly', async ({
+test('saved Forest artwork stays exact through import and pending tree selection, then opts in explicitly', async ({
   page,
 }) => {
   await page.goto('/');
   await page.locator('.import-label input').setInputFiles({
-    name: 'forest-v3.json',
+    name: 'forest-current.json',
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(fixture)),
   });

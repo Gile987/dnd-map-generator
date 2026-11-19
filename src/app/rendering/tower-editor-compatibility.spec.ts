@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createCanvas } from '@napi-rs/canvas';
 import { expect, test } from 'vitest';
-import fixture from '../save/fixtures/tower-editor-v26.json';
+import fixture from '../save/fixtures/tower-current.json';
 import baselines from './tower-editor-baselines.json';
 import { parseBundle } from '../save/save-format';
 import { renderMap } from './render-map';

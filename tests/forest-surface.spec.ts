@@ -34,21 +34,21 @@ async function download(page: Page, label: string) {
 }
 
 for (const character of ['Verdant', 'Autumn', 'Pines', 'Fey']) {
-  test(`${character} historical forest survives save, shuffle undo and pin comparison with exact PNGs`, async ({
+  test(`${character} saved forest survives save, shuffle undo and pin comparison with exact PNGs`, async ({
     page,
   }) => {
     await page.goto('/');
     await page.setInputFiles(
       '.import-label input',
-      'src/app/save/fixtures/forest-v4-surfaces.json',
+      'src/app/save/fixtures/forest-characters-current.json',
     );
     await expect(page.locator('.library-message .notice')).toHaveText('Imported 4 maps.');
     const item = page.locator('.saved-item').filter({
-      has: page.locator('.saved-name').getByText(`Historical ${character} camp`, { exact: true }),
+      has: page.locator('.saved-name').getByText(`${character} camp`, { exact: true }),
     });
     await item.getByRole('button', { name: 'Open', exact: true }).click();
     const original = await snapshot(page, 'Original forest');
-    expect(original.decoration).not.toHaveProperty('forestSurface');
+    expect(original.decoration).toHaveProperty('forestSurface', 1);
     expect(original.decoration.character).toBe(character);
     const before = await download(page, 'Quick export PNG');
     await page.getByRole('button', { name: 'Pin this map', exact: true }).click();
@@ -68,14 +68,14 @@ for (const character of ['Verdant', 'Autumn', 'Pines', 'Fey']) {
     expect(after.bytes).not.toEqual(before.bytes);
     await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
     await expect(page.locator('#map-summary')).toContainText('r0');
-    expect(await snapshot(page, 'Restored historical forest')).toEqual(original);
+    expect(await snapshot(page, 'Restored saved forest')).toEqual(original);
     expect((await download(page, 'Quick export PNG')).bytes).toEqual(before.bytes);
     await page.getByRole('button', { name: /^Redo (shuffle|change)$/, exact: true }).click();
     await expect(page.locator('#map-summary')).toContainText('r1');
     expect(await snapshot(page, 'Restored surface forest')).toEqual(shuffled);
     expect((await download(page, 'Quick export PNG')).bytes).toEqual(after.bytes);
     await page.getByRole('button', { name: 'Pinned', exact: true }).click();
-    expect(await snapshot(page, 'Pinned historical forest')).toEqual(original);
+    expect(await snapshot(page, 'Pinned saved forest')).toEqual(original);
     expect((await download(page, 'Quick export PNG')).bytes).toEqual(before.bytes);
     await expect(page.getByLabel('World seed')).toHaveValue('unapplied-surface-draft');
   });

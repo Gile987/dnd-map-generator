@@ -8,11 +8,10 @@ import {
   parseSavedMap,
   serializeBundle,
   parseBundle,
-  saveVocabulary,
   SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
-import fixture from './fixtures/forest-v3.json';
+import fixture from './fixtures/forest-current.json';
 
 function saved() {
   const r = generateForestClearing({
@@ -32,23 +31,15 @@ function saved() {
     '2026-11-02T12:00:00Z',
   );
 }
-test('format 18 preserves a complete tree and freezes earlier vocabularies', () => {
+test('current format preserves a complete fallen tree', () => {
   const record = saved(),
     before = structuredClone(record);
   expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
-  expect(parseSavedMap({ ...record, saveFormatVersion: '18.0.0' })?.map).toBe(record.map);
   expect(parseSavedMap(record)?.map).toBe(record.map);
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
-  for (let v = 1; v <= 17; v++) {
-    const vocabulary = saveVocabulary(`${v}.0.0`);
-    expect(vocabulary?.forestFallenTrees).toBeUndefined();
-    expect(vocabulary?.propKinds).not.toContain('fallen_trunk');
-    expect(vocabulary?.propFootprints?.['fallen_trunk']).toBeUndefined();
-    expect(parseSavedMap({ ...record, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
-  }
   expect(record).toEqual(before);
 });
-test('historical Forest models retain absent tree metadata through loading and backup and opt in explicitly', () => {
+test('saved Forests acquire a fallen tree only through an explicit appearance action', () => {
   const before = structuredClone(fixture),
     parsed = parseBundle(JSON.stringify(fixture));
   if (!parsed.ok) throw new Error(parsed.error);

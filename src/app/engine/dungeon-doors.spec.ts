@@ -1,6 +1,5 @@
 import { expect, test } from 'vitest';
 import { editorFixture, rotationFixture, validCommand } from '../../../scripts/editor-test-support';
-import oldEdits from '../save/fixtures/dungeon-editor-v1.json';
 import {
   dungeonDoorAt,
   dungeonDoorId,
@@ -117,13 +116,10 @@ test('bounded door state rejects malformed, unknown, duplicate and future data; 
     ...makeSavedMap(base, 'Old', 'data:image/png;base64,AAAA', 'old', '2026-11-03T12:00:00Z'),
     saveFormatVersion: '22.0.0',
   };
-  expect(parseSavedMap(old)?.map).toEqual(base);
-  expect(parseSavedMap(old)?.map).not.toHaveProperty('doorStates');
+  expect(parseSavedMap(old)).toBeUndefined();
 });
 
-test('door states coexist with frozen v1 object edits and rotated additions without upgrading or losing either sidecar', () => {
-  const legacy = parseBundle(JSON.stringify(oldEdits));
-  if (!legacy.ok) throw Error(legacy.error);
+test('door states coexist with current object edits and rotated additions without losing either sidecar', () => {
   const { prepared, target } = rotationFixture('ritual');
   const rotated = applyObjectCommand(prepared, {
     kind: 'move-group',
@@ -132,7 +128,7 @@ test('door states coexist with frozen v1 object edits and rotated additions with
     rotation: 1,
   });
   if (!rotated.ok) throw Error(rotated.error);
-  for (const map of [...legacy.maps.map((saved) => saved.map), rotated.document]) {
+  for (const map of [prepared, rotated.document]) {
     if (map.type !== 'dungeon') throw Error('Missing dungeon');
     const door = dungeonDoors(map.layout)[0];
     if (!door) throw Error('Missing door');

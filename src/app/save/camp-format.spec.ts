@@ -16,11 +16,8 @@ function campRecord() {
     scene: 'Abandoned camp',
   });
   if (!result.ok) throw new Error(result.error);
-  // Historical vocabulary cases retain an unmarked snapshot.
-  const { forestSurface, ...decoration } = result.map.decoration;
-  expect(forestSurface).toBe(1);
   return makeSavedMap(
-    { ...result.map, decoration },
+    result.map,
     'Camp',
     'data:image/png;base64,AAAA',
     'camp',
@@ -32,20 +29,8 @@ test('a camp round-trips through current format without changing its saved model
   const record = campRecord();
   expect(record.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(parseSavedMap(record)).toEqual(record);
-  expect(parseSavedMap({ ...record, saveFormatVersion: '3.0.0' })).toEqual(record);
-  expect(parseSavedMap({ ...record, saveFormatVersion: '4.0.0' })).toEqual(record);
+
   expect(parseBundle(serializeBundle([record]))).toEqual({ ok: true, maps: [record], skipped: 0 });
-  for (const saveFormatVersion of ['1.0.0', '2.0.0']) {
-    expect(parseSavedMap({ ...record, saveFormatVersion })).toBeUndefined();
-    // Even removing the new prop kinds cannot sneak scene metadata into an old vocabulary.
-    expect(
-      parseSavedMap({
-        ...record,
-        saveFormatVersion,
-        map: { ...record.map, decoration: { ...record.map.decoration, scene: 'None', props: [] } },
-      }),
-    ).toBeUndefined();
-  }
 });
 
 test.each([

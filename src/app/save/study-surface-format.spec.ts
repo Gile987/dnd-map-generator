@@ -1,5 +1,4 @@
 import { expect, test } from 'vitest';
-import fixture from './fixtures/study-v9.json';
 import { generateDungeon } from '../engine/generate';
 import { generateForestClearing } from '../engine/forest-generate';
 import { generateCourtyard } from '../engine/courtyard-generate';
@@ -30,27 +29,11 @@ function record() {
   );
 }
 
-test('format 10 preserves new surface artwork through backup round trips', () => {
+test('current format preserves new surface artwork through backup round trips', () => {
   const saved = record();
   expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
   expect(saved.map.decoration).toHaveProperty('studySurface', 1);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-  for (let version = 1; version <= 9; version++) {
-    expect(parseSavedMap({ ...saved, saveFormatVersion: `${version}.0.0` })).toBeUndefined();
-  }
-});
-
-test('historical study models upgrade only the record version and never acquire surface marks', () => {
-  const snapshot = structuredClone(fixture);
-  for (let version = 4; version <= 10; version++) {
-    const stored = { ...fixture.maps[0], saveFormatVersion: `${version}.0.0` };
-    expect(parseSavedMap(stored)).toEqual({ ...stored, saveFormatVersion: SAVE_FORMAT_VERSION });
-  }
-  const parsed = parseBundle(JSON.stringify(fixture));
-  if (!parsed.ok) throw new Error(parsed.error);
-  expect(parsed.maps[0]?.map.decoration).not.toHaveProperty('studySurface');
-  expect(parseBundle(serializeBundle(parsed.maps))).toEqual(parsed);
-  expect(fixture).toEqual(snapshot);
 });
 
 test.each([0, 2, '1', null, true, {}, []])(

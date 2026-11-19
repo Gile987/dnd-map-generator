@@ -12,8 +12,6 @@ import { individualObjectLock } from './dungeon-authoring-rules';
 import { propCells } from '../prop-footprint';
 import { areaContains, areasOverlap } from '../feature-reservation';
 import { currentDungeonGroups } from './dungeon-authoring-rules';
-import oldEdits from '../../save/fixtures/dungeon-editor-v1.json';
-import { parseBundle } from '../../save/save-format';
 
 function accept(doc: DungeonDocument, id: string, target: Point, group = false): DungeonDocument {
   const result = applyObjectCommand(doc, { kind: group ? 'move-group' : 'move', id, target });
@@ -58,31 +56,6 @@ function independentAccess(doc: DungeonDocument) {
   expect(visited.size).toBe(map.layout.tiles.filter(Boolean).length - blocked.size);
 }
 
-test('opening old edits and rejected/no-op commands retain v1; a real successful change explicitly adopts v2', () => {
-  const parsed = parseBundle(JSON.stringify(oldEdits));
-  if (!parsed.ok) throw Error(parsed.error);
-  const doc = parsed.maps[0]?.map;
-  if (doc?.type !== 'dungeon' || doc.objectEdits?.version !== 1) throw Error('Missing v1 fixture');
-  const before = structuredClone(doc),
-    added = doc.objectEdits.added[0];
-  if (!added) throw Error('Missing old added object');
-  const noop = applyObjectCommand(doc, { kind: 'move', id: added.id, target: added.prop });
-  expect(noop.ok && noop.document).toBe(doc);
-  expect(applyObjectCommand(doc, { kind: 'move', id: added.id, target: { x: 0, y: 0 } }).ok).toBe(
-    false,
-  );
-  const changed = applyObjectCommand(
-    doc,
-    validCommand(doc, (target) => ({ kind: 'add', propKind: 'moss', target })),
-  );
-  if (!changed.ok) throw Error(changed.error);
-  expect(changed.document.objectEdits?.version).toBe(4);
-  expect(parseDungeonEdits(dungeonBase(doc), changed.document.objectEdits)).toEqual(
-    changed.document,
-  );
-  expect(doc).toEqual(before);
-});
-
 test('the reported barrel-shaped move into open passage floor is valid, while blocking the actual route remains invalid', () => {
   const base = editorFixture(),
     source = dungeonInstances(base).find(
@@ -93,17 +66,6 @@ test('the reported barrel-shaped move into open passage floor is valid, while bl
   const target = { x: 21, y: 9 };
   expect(isFloor(base.layout, target.x, target.y)).toBe(true);
   expect(base.layout.rooms.some((room) => contains(room, target))).toBe(false);
-  const legacy = {
-    ...base,
-    objectEdits: {
-      version: 1 as const,
-      nextId: 1,
-      moves: [{ id: source.id, ...target }],
-      removed: [],
-      added: [],
-    },
-  };
-  expect(authoredPlacementError(legacy)).toBe('Place the object inside a room.');
   const edited = accept(atStart, source.id, target);
   expect(dungeonInstances(edited).find((i) => i.id === source.id)?.prop).toMatchObject(target);
   independentAccess(edited);
@@ -121,19 +83,6 @@ test('wall-side objects can move along and between solid walls without a blanket
     { x: 16, y: 26 },
     { x: 20, y: 26 },
   ]) {
-    const legacy = {
-      ...base,
-      objectEdits: {
-        version: 1 as const,
-        nextId: 1,
-        moves: [{ id: source.id, ...target }],
-        removed: [],
-        added: [],
-      },
-    };
-    expect(authoredPlacementError(legacy)).toBe(
-      'Leave one square between the object and solid walls.',
-    );
     const edited = accept(base, source.id, target);
     independentAccess(edited);
     expect(parseDungeonEdits(base, edited.objectEdits)).toEqual(edited);
@@ -250,14 +199,14 @@ test('neighboring additions can share empty circulation floor without allowing o
   const document = {
     ...base,
     objectEdits: {
-      version: 2 as const,
+      version: 4 as const,
       nextId: 1,
       moves: [],
       added: [],
       removed,
       groups: [
-        { id: 'statue' as const, x: 26, y: 8 },
-        { id: 'table' as const, x: 30, y: 8 },
+        { id: 'statue' as const, x: 26, y: 8, rotation: 0 as const },
+        { id: 'table' as const, x: 30, y: 8, rotation: 0 as const },
       ],
     },
   };

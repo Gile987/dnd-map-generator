@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createCanvas } from '@napi-rs/canvas';
 import { expect, test } from 'vitest';
-import fixture from '../save/fixtures/forest-v4-surfaces.json';
+import fixture from '../save/fixtures/forest-characters-current.json';
 import { parseBundle } from '../save/save-format';
 import { ALL_DENSITIES, ALL_FOREST_CHARACTERS, indexOf, isWalkable } from '../engine/model';
 import type { ForestCharacter, ForestClearing } from '../engine/model';
@@ -17,7 +17,7 @@ import { circleReserve } from '../engine/forest-landmark';
 import { forestSurfacePatches } from './forest-surface';
 import { renderForest } from './forest-renderer';
 
-function legacy(character: ForestCharacter): ForestClearing {
+function savedForest(character: ForestCharacter): ForestClearing {
   const parsed = parseBundle(JSON.stringify(fixture));
   if (!parsed.ok) throw new Error(parsed.error);
   const map = parsed.maps.find(
@@ -35,26 +35,10 @@ function pixels(map: ForestClearing, grid: boolean, scale = 64) {
   return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 }
 
-test.each([
-  ['Verdant', false, '5a231812535f19a5718a05b615b61a789983c7f820043d7a5f5e21510203c317'],
-  ['Verdant', true, 'f54593e543ea9d7351e9236f239ab39638edd4a82e462392dfd813fa7afb18ce'],
-  ['Autumn', false, '5f6878ddd89ef3006566c6be29763ead22e181e07eebf652d23e70e85ed8dd8e'],
-  ['Autumn', true, 'a86229c40629f1dc13aa42a30cbaca3025749ab4ffc7ed4f047d00c1e17a98b4'],
-  ['Pines', false, 'daace7d0c6dc9cddd95f3fda451063d0a2d9b30df82b5a3cde77d74b3c5d85d0'],
-  ['Pines', true, '94677507d53825edb5920eb8de111a59375f3f933db12f31bb0d71bb59ded095'],
-  ['Fey', false, 'f8ea803201661124a43a1310acc2bf543e2a6c21a05c553266a90012357de96b'],
-  ['Fey', true, '6fbb86b0e66fb42846c7b3dd1b83d70a9fefa0b006b3ed7801bcc3c0f7d29141'],
-] as const)('preserves captured %s camp/circle artwork, grid=%s', (character, grid, hash) => {
-  const map = legacy(character);
-  expect(map.decoration).not.toHaveProperty('forestSurface');
-  expect(forestSurfacePatches(map)).toEqual([]);
-  expect(createHash('sha256').update(pixels(map, grid)).digest('hex')).toBe(hash);
-});
-
 test.each(ALL_FOREST_CHARACTERS)(
-  '%s new forests retain captured placement and consume no extra engine randomness',
+  '%s current forest snapshots retain deterministic placement through generation and shuffling',
   (character) => {
-    const old = legacy(character);
+    const old = savedForest(character);
     const result = generateForestClearing({
       seed: old.seed,
       character,
@@ -63,9 +47,9 @@ test.each(ALL_FOREST_CHARACTERS)(
       landmark: 'standing-stone-circle',
     });
     if (!result.ok) throw new Error(result.error);
-    const { forestSurface, ...decoration } = result.map.decoration;
+    const { forestSurface } = result.map.decoration;
     expect(forestSurface).toBe(1);
-    expect({ ...result.map, decoration }).toEqual(old);
+    expect(result.map).toEqual(old);
     const before = structuredClone(old);
     const shuffled = shuffleForestDetails(old);
     expect(shuffled.decoration.forestSurface).toBe(1);
@@ -142,7 +126,9 @@ test.each(ALL_FOREST_CHARACTERS)(
 test.each([64, 70, 100])(
   'surface pixels stay inside marked ground tiles and leave paths untouched at %s px/tile',
   (scale) => {
-    const old = legacy('Autumn');
+    const current = savedForest('Autumn');
+    const { forestSurface: _surface, ...decoration } = current.decoration;
+    const old = { ...current, decoration };
     const map: ForestClearing = { ...old, decoration: { ...old.decoration, forestSurface: 1 } };
     const patches = forestSurfacePatches(map);
     const allowed = new Set(patches.map((p) => indexOf(Math.floor(p.x), Math.floor(p.y))));

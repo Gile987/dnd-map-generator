@@ -7,7 +7,7 @@ import type {
   PropKind,
   RuinedCourtyard,
 } from './model';
-import { Random, shuffleInPlace, courtyardStreamSeed, streamSeed } from './random';
+import { Random, shuffleInPlace, courtyardStreamSeed } from './random';
 import { nextDetailRevision } from './decoration-revision';
 import { propCells } from './prop-footprint';
 import { placeCollapsedWagon } from './courtyard-wagon';
@@ -73,7 +73,7 @@ function createLayout(random: Random): CourtyardLayout {
 
 // Accents only ever draw from the supported kinds. Overgrown keeps the original
 // four-way roster, so its decoration stream and RNG consumption are exactly the
-// historical ones; the other characters reweight the same kinds with their own.
+// default mix; the other characters reweight the same kinds with their own.
 const ACCENT_ROSTERS: Readonly<Record<CourtyardCharacter, readonly PropKind[]>> = {
   Overgrown: ['low_rubble', 'moss', 'fern', 'vine'],
   Sunbleached: [
@@ -106,17 +106,14 @@ function decorateBase(
   seed: string,
   settings: DecorationInputs,
   revision: number,
-  version: string,
 ): RuinedCourtyard['decoration'] {
   const fountainFlag = settings.fountain ? 'fountain' : 'open';
-  // Appearance changes and shuffles retain the accepted layout's generation rules.
-  const seedStream = version === COURTYARD_GENERATOR_VERSION ? courtyardStreamSeed : streamSeed;
-  // Overgrown must reproduce historical courtyards, so it keeps the legacy
-  // argument list. Other characters consume a distinct stream.
+  // Overgrown uses the default stream arguments. Other characters include their
+  // name so each accepted character has a distinct deterministic stream.
   const random = new Random(
     settings.character === DEFAULT_COURTYARD_CHARACTER
-      ? seedStream(seed, 'courtyard-decoration', settings.density, fountainFlag, revision)
-      : seedStream(
+      ? courtyardStreamSeed(seed, 'courtyard-decoration', settings.density, fountainFlag, revision)
+      : courtyardStreamSeed(
           seed,
           'courtyard-decoration',
           settings.character,
@@ -186,10 +183,7 @@ function decorateBase(
   // Abandoned braziers are ordinary blocking objects that spawn beside ruined
   // masonry. Their draws follow the accents so earlier prop positions are
   // unaffected by the kind's introduction.
-  const brazierTarget =
-    version === COURTYARD_GENERATOR_VERSION
-      ? { Sparse: 1, Balanced: 2, Cluttered: 3 }[settings.density]
-      : 0;
+  const brazierTarget = { Sparse: 1, Balanced: 2, Cluttered: 3 }[settings.density];
   let braziers = 0;
   for (const p of candidates) {
     if (braziers >= brazierTarget) break;
@@ -230,11 +224,10 @@ function decorate(
   seed: string,
   settings: Pick<CourtyardSettings, 'density' | 'fountain' | 'character' | 'wagon' | 'well'>,
   revision: number,
-  version = COURTYARD_GENERATOR_VERSION,
 ):
   | { ok: true; decoration: RuinedCourtyard['decoration'] }
   | { ok: false; missing: 'well' | 'wagon' } {
-  const base = decorateBase(layout, seed, settings, revision, version);
+  const base = decorateBase(layout, seed, settings, revision);
   // The fountain reserve always stays clear, whether the fountain is selected or not.
   const reserve = courtyardProtectedCells(layout),
     site = fountainSite(layout);
@@ -341,7 +334,7 @@ export function changeCourtyardAppearance(
     })
   )
     return map;
-  const attempt = decorate(map.layout, map.seed, settings, map.decoration.revision, map.version);
+  const attempt = decorate(map.layout, map.seed, settings, map.decoration.revision);
   if (!attempt.ok) return map;
   const next = { ...map, decoration: attempt.decoration };
   return validateCourtyard(next) ? map : next;
@@ -360,7 +353,6 @@ export function shuffleCourtyardDetails(map: RuinedCourtyard): RuinedCourtyard {
       well: map.decoration.well,
     },
     revision,
-    map.version,
   );
   if (!attempt.ok) return map;
   const next = { ...map, decoration: attempt.decoration };

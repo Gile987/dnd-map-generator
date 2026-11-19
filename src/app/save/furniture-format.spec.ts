@@ -31,7 +31,7 @@ function record(seed = 'mosslit-sanctum') {
 }
 
 test.each(QUARTER_TURNS)(
-  'current and format-8 records preserve rotation %s and its exact saved footprint',
+  'current records preserve rotation %s and its exact saved footprint',
   (rotation) => {
     let saved = record();
     for (
@@ -46,27 +46,14 @@ test.each(QUARTER_TURNS)(
     );
     expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
     expect(parseSavedMap(saved)).toEqual(saved);
-    expect(parseSavedMap({ ...saved, saveFormatVersion: '8.0.0' })).toEqual(saved);
+
     expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
   },
 );
 
-test('historical vocabularies reject furniture metadata, kinds, and footprint fields', () => {
+test('the current vocabulary fixes furniture footprints independently of live geometry', () => {
   const saved = record();
-  for (const saveFormatVersion of ['1.0.0', '2.0.0', '3.0.0', '4.0.0', '5.0.0', '6.0.0', '7.0.0']) {
-    expect(parseSavedMap({ ...saved, saveFormatVersion })).toBeUndefined();
-    expect(
-      parseSavedMap({
-        ...saved,
-        saveFormatVersion,
-        map: {
-          ...saved.map,
-          decoration: { ...saved.map.decoration, props: [], furniture: 'None' },
-        },
-      }),
-    ).toBeUndefined();
-  }
-  const vocabulary = saveVocabulary('8.0.0');
+  const vocabulary = saveVocabulary(SAVE_FORMAT_VERSION);
   if (!vocabulary) throw new Error('Missing vocabulary');
   const forged = {
     ...saved.map,

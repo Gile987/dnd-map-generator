@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 import { parseSavedMap, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
 import type { DungeonDocument, Point } from '../src/app/engine/model';
 import { dungeonBase, dungeonInstances } from '../src/app/engine/object-editor/document';
-import { dungeonObjectLock } from '../src/app/engine/object-editor/dungeon-rules';
+import { individualObjectLock } from '../src/app/engine/object-editor/dungeon-authoring-rules';
 import { applyObjectCommand } from '../src/app/engine/object-editor/commands';
 import { validCommand } from '../scripts/editor-test-support';
 
@@ -40,7 +40,7 @@ async function position(page: Page, target: Point) {
 }
 function movable(map: DungeonDocument) {
   const item = dungeonInstances(map).find(
-    (item) => !dungeonObjectLock(dungeonBase(map), item.prop),
+    (item) => !individualObjectLock(dungeonBase(map), item.id, item.prop),
   );
   if (!item) throw new Error('No movable object');
   return item;
@@ -326,7 +326,8 @@ test('removing a blocker makes room for a catalog replacement and both actions a
   await page.goto('/');
   const before = await snapshot(page, 'Replacement base');
   const source = dungeonInstances(before.map).find(
-    (item) => item.prop.blocking && !dungeonObjectLock(dungeonBase(before.map), item.prop),
+    (item) =>
+      item.prop.blocking && !individualObjectLock(dungeonBase(before.map), item.id, item.prop),
   );
   if (!source) throw new Error('Missing blocker');
   const removed = applyObjectCommand(before.map, { kind: 'remove', id: source.id });
@@ -389,7 +390,7 @@ test.describe('small touch workspace', () => {
       true,
     );
     const locked = dungeonInstances(base.map).find((item) =>
-      dungeonObjectLock(dungeonBase(base.map), item.prop),
+      individualObjectLock(dungeonBase(base.map), item.id, item.prop),
     );
     if (!locked) throw new Error('No protected item');
     await page

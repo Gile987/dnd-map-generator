@@ -4,13 +4,12 @@ import {
   makeSavedMap,
   parseBundle,
   parseSavedMap,
-  saveVocabulary,
   serializeBundle,
   SAVE_FORMAT_VERSION,
 } from './save-format';
 import { isUsableMap } from './map-schema';
 
-test('format 14 round-trips both staircase styles and older vocabularies reject their metadata', () => {
+test('current format round-trips both staircase styles and rejects invalid connections', () => {
   for (const stairStyle of TOWER_STAIR_STYLES)
     for (let count = 3; count <= 8; count++)
       for (const portalFloor of [null, 1, count - 1]) {
@@ -41,10 +40,6 @@ test('format 14 round-trips both staircase styles and older vocabularies reject 
           maps: [saved],
           skipped: 0,
         });
-        for (let v = 1; v <= 12; v++) {
-          expect(saveVocabulary(`${v}.0.0`)?.mapTypes).not.toContain('tower');
-          expect(parseSavedMap({ ...saved, saveFormatVersion: `${v}.0.0` })).toBeUndefined();
-        }
         expect(
           parseSavedMap({ ...saved, map: { ...map, layout: { ...map.layout, connections: [] } } }),
         ).toBeUndefined();

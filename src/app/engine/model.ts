@@ -168,9 +168,6 @@ export interface RuinedCourtyard {
     readonly density: Density;
     readonly character: CourtyardCharacter;
     readonly fountain: boolean;
-    /** Historical format-31 marker; braziers are ordinary objects since
-     * courtyard generator 5.0.0 and the marker is no longer emitted. */
-    readonly brazier?: true;
     readonly wagon?: true;
     readonly well?: true;
     readonly revision: number;
@@ -301,7 +298,7 @@ export interface Decoration {
   readonly density: Density;
   readonly preset: DecorationPreset;
   readonly scene?: DungeonScene;
-  /** Absent in historical studies, which retain their original floor artwork. */
+  /** Present when the map includes a study. */
   readonly studySurface?: 1;
   readonly landmark?: DungeonLandmark;
   readonly furniture?: DungeonFurniture;
@@ -310,7 +307,7 @@ export interface Decoration {
 
 export interface ForestDecoration {
   readonly fallenTree?: true;
-  /** Missing on historical maps, whose original floor artwork is retained. */
+  /** Current forest surface artwork. */
   readonly forestSurface?: 1;
   readonly props: readonly Prop[];
   readonly density: Density;

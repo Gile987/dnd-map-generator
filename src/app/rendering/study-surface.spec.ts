@@ -1,7 +1,6 @@
-import { createHash } from 'node:crypto';
 import { createCanvas } from '@napi-rs/canvas';
 import { expect, test } from 'vitest';
-import fixture from '../save/fixtures/study-v9.json';
+import fixture from '../save/fixtures/study-current.json';
 import { parseBundle } from '../save/save-format';
 import { ALL_DENSITIES, ALL_PRESETS, contains, indexOf } from '../engine/model';
 import type { Dungeon } from '../engine/model';
@@ -12,7 +11,7 @@ import { reservedTiles } from '../engine/dungeon-space';
 import { renderMap } from './render-map';
 import { studySurfaceMarks } from './study-surface';
 
-function legacyStudy(): Dungeon {
+function savedStudy(): Dungeon {
   const parsed = parseBundle(JSON.stringify(fixture));
   if (
     !parsed.ok ||
@@ -31,18 +30,8 @@ function pixels(map: Dungeon, grid: boolean, scale = 64) {
   return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 }
 
-test.each([
-  [false, '34c85f287f183ad4e7d876a7142d0cda63eb45cc7e5883569cbcb3585706f9ed'],
-  [true, 'fcb1eb06d6903a1a69415ebe41718654f781704397f5d11a516b7e048a7b8d71'],
-] as const)('preserves captured format-9 study artwork, grid=%s', (grid, hash) => {
-  const map = legacyStudy();
-  expect(map.decoration).not.toHaveProperty('studySurface');
-  expect(studySurfaceMarks(map)).toEqual([]);
-  expect(createHash('sha256').update(pixels(map, grid)).digest('hex')).toBe(hash);
-});
-
-test('new study artwork preserves the independently captured model and generator draws', () => {
-  const old = legacyStudy();
+test('study generation and shuffling preserve current saved models', () => {
+  const old = savedStudy();
   const result = generateDungeon({
     seed: old.seed,
     roomCount: 6,
@@ -51,9 +40,9 @@ test('new study artwork preserves the independently captured model and generator
     scene: 'Forgotten study',
   });
   if (!result.ok) throw new Error(result.error);
-  const { studySurface, ...decoration } = result.map.decoration;
+  const { studySurface } = result.map.decoration;
   expect(studySurface).toBe(1);
-  expect({ ...result.map, decoration }).toEqual(old);
+  expect(result.map).toEqual(old);
   const before = structuredClone(old);
   const shuffled = shuffleDetails(old);
   expect(shuffled.decoration.studySurface).toBe(1);
@@ -127,7 +116,9 @@ test.each(ALL_PRESETS)(
 test.each([64, 70, 100])(
   'only study objects and marked floor tiles change at %s pixels per tile',
   (scale) => {
-    const old = legacyStudy();
+    const current = savedStudy();
+    const { studySurface: _surface, ...decoration } = current.decoration;
+    const old = { ...current, decoration };
     const map: Dungeon = { ...old, decoration: { ...old.decoration, studySurface: 1 } };
     const marks = studySurfaceMarks(map);
     expect(new Set(marks.map((mark) => mark.kind))).toEqual(new Set(['wear', 'paper', 'ink']));

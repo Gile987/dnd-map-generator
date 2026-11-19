@@ -28,8 +28,8 @@ const courtyard = generateCourtyard({
   density: 'Balanced',
   fountain: true,
 });
-const legacy = parseBundle(readFileSync('src/app/save/fixtures/forest-v3.json', 'utf8'));
-if (!dungeon.ok || !courtyard.ok || !legacy.ok || !legacy.maps[0])
+const restored = parseBundle(readFileSync('src/app/save/fixtures/forest-current.json', 'utf8'));
+if (!dungeon.ok || !courtyard.ok || !restored.ok || !restored.maps[0])
   throw new Error('Missing undo fixtures');
 
 function saved(map: GeneratedMap, name: string, favorite: boolean): SavedMap {
@@ -48,7 +48,7 @@ function saved(map: GeneratedMap, name: string, favorite: boolean): SavedMap {
 }
 const records = [
   saved(dungeon.map, 'Amber vault', true),
-  { ...legacy.maps[0], name: 'Legacy clearing' },
+  { ...restored.maps[0], name: 'Legacy clearing' },
   saved(courtyard.map, 'Ivy court', true),
 ];
 if (records.some((record) => !parseSavedMap(record))) throw new Error('Invalid undo fixture');
@@ -90,6 +90,16 @@ async function png(page: Page) {
   return readFile(path);
 }
 
+async function expectPng(page: Page, expected: Buffer): Promise<void> {
+  const actual = await png(page);
+  const matches = actual.equals(expected);
+  if (!matches) {
+    await test.info().attach('expected.png', { body: expected, contentType: 'image/png' });
+    await test.info().attach('actual.png', { body: actual, contentType: 'image/png' });
+  }
+  expect(matches).toBe(true);
+}
+
 for (const record of records) {
   test(`${record.map.type} undo restores the exact saved record, artwork, and PNG`, async ({
     page,
@@ -120,11 +130,11 @@ for (const record of records) {
     ]);
     await expect(page.getByLabel('World seed')).toHaveValue('unapplied-undo-draft');
     expect(await canvas.evaluate((el) => (el as HTMLCanvasElement).toDataURL())).toBe(pixels);
-    expect(await png(page)).toEqual(exported);
+    await expectPng(page, exported);
     await page.reload();
     await item(page, record.name).getByRole('button', { name: 'Open', exact: true }).click();
     await expect(page.locator('.seed-summary')).toHaveText(record.map.seed);
-    expect(await png(page)).toEqual(exported);
+    await expectPng(page, exported);
   });
 }
 

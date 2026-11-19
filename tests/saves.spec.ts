@@ -71,11 +71,11 @@ test('imports a v3 library, reopens its original settings, and exports current-f
   page,
 }) => {
   await page.goto('/');
-  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-v3.json');
+  await page.setInputFiles('.import-label input', 'src/app/save/fixtures/forest-current.json');
   await expect(page.locator('.saved-item')).toHaveCount(3);
   await expect(page.locator('.library-message .notice')).toContainText('Imported 3 maps');
   await page.reload();
-  await itemByName(page, 'ancient-grove legacy clearing')
+  await itemByName(page, 'ancient-grove clearing')
     .getByRole('button', { name: 'Open', exact: true })
     .click();
   await expect(page.locator('#character-selection strong')).toHaveText(
@@ -92,7 +92,7 @@ test('imports a v3 library, reopens its original settings, and exports current-f
     saveFormatVersion: SAVE_FORMAT_VERSION,
     maps: Array.from({ length: 3 }, () => ({
       saveFormatVersion: SAVE_FORMAT_VERSION,
-      map: { version: '3.0.0', decoration: { character: 'Verdant' } },
+      map: { version: '4.0.0', decoration: { character: 'Verdant' } },
     })),
   });
 });

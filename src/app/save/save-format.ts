@@ -4,7 +4,7 @@ import type { MapDocument } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '31.0.0';
+export const SAVE_FORMAT_VERSION = '32.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -30,317 +30,92 @@ export type ParseResult =
   | { readonly ok: true; readonly maps: readonly SavedMap[]; readonly skipped: number }
   | { readonly ok: false; readonly error: string };
 
-const FORMAT_2_VOCABULARY: SaveVocabulary = {
-  mapTypes: ['dungeon', 'forest'],
-  densities: ['Sparse', 'Balanced', 'Cluttered'],
-  presets: ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'],
-  forestCharacters: ['Verdant', 'Autumn', 'Pines', 'Fey'],
-  // Historical formats may hold courtyards that predate characters; naming the
-  // list here lets the Overgrown normalization load them after validation.
-  courtyardCharacters: ['Overgrown', 'Sunbleached', 'Frostbound', 'Desecrated'],
-  propKinds: [
-    'crate',
-    'barrel',
-    'rubble',
-    'rug',
-    'sconce',
-    'moss',
-    'sarcophagus',
-    'vine',
-    'broken_column',
-    'tree',
-    'boulder',
-    'fern',
-    'mushroom',
-    'bush',
-    'log',
-    'stump',
-    'flower',
-  ],
-};
-
-const FORMAT_1_VOCABULARY: SaveVocabulary = {
-  mapTypes: ['dungeon', 'forest'],
+const CURRENT_VOCABULARY: SaveVocabulary = {
+  mapTypes: ['dungeon', 'forest', 'courtyard', 'tower'],
   densities: ['Sparse', 'Balanced', 'Cluttered'],
   presets: ['Mosslit', 'Crypt', 'Storehouse', 'Sanctuary'],
   forestCharacters: ['Verdant', 'Autumn', 'Pines', 'Fey'],
   courtyardCharacters: ['Overgrown', 'Sunbleached', 'Frostbound', 'Desecrated'],
-  propKinds: [
-    'crate',
-    'barrel',
-    'rubble',
-    'rug',
-    'sconce',
-    'moss',
-    'sarcophagus',
-    'vine',
-    'broken_column',
-    'tree',
-    'boulder',
-    'fern',
-    'mushroom',
-    'bush',
-    'log',
-    'stump',
-    'flower',
-  ],
-};
-
-const FORMAT_3_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_2_VOCABULARY,
   forestScenes: ['None', 'Abandoned camp'],
-  propKinds: [...FORMAT_2_VOCABULARY.propKinds, 'tent', 'bedroll', 'fire_ring', 'supply_bundle'],
-};
-
-const FORMAT_4_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_3_VOCABULARY,
-  dungeonScenes: ['None', 'Forgotten study'],
-  propKinds: [...FORMAT_3_VOCABULARY.propKinds, 'desk', 'bookshelf', 'scroll_case'],
-};
-
-const FORMAT_5_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_4_VOCABULARY,
-  forestLandmarks: ['None', 'Suggested landmark'],
-  propKinds: [...FORMAT_4_VOCABULARY.propKinds, 'standing_stone'],
-};
-
-const FORMAT_6_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_5_VOCABULARY,
   forestLandmarks: ['None', 'standing-stone-circle'],
-};
-
-const FORMAT_7_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_6_VOCABULARY,
+  dungeonScenes: ['None', 'Forgotten study'],
   dungeonLandmarks: ['None', 'weathered-statue'],
-  propKinds: [...FORMAT_6_VOCABULARY.propKinds, 'weathered_statue'],
-};
-
-const FORMAT_8_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_7_VOCABULARY,
   dungeonFurniture: ['None', 'dining-table'],
-  propKinds: [...FORMAT_7_VOCABULARY.propKinds, 'dining_table'],
-  propFootprints: { dining_table: { width: 2, height: 1, rotations: [0, 1, 2, 3] } },
-};
-
-const FORMAT_9_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_8_VOCABULARY,
-  mapTypes: [...FORMAT_8_VOCABULARY.mapTypes, 'courtyard'],
   courtyardFountains: [false, true],
-  propKinds: [...FORMAT_8_VOCABULARY.propKinds, 'low_rubble', 'dry_fountain'],
-  propFootprints: {
-    ...FORMAT_8_VOCABULARY.propFootprints,
-    dry_fountain: { width: 3, height: 3, rotations: [0] },
-  },
-};
-
-const FORMAT_10_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_9_VOCABULARY,
+  courtyardWagons: [true],
+  courtyardWells: [true],
+  forestFallenTrees: [true],
   studySurfaces: [1],
-};
-
-const FORMAT_11_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_10_VOCABULARY,
+  forestSurfaces: [1],
+  towerStairStyles: ['separate', 'spiral'],
+  towerLaboratoryFloors: [1, 2, 3, 4, 5, 6, 7, 8],
+  towerObservatoryFloors: [1, 2, 3, 4, 5, 6, 7, 8],
   dungeonRituals: [false, true],
+  objectEditVersions: [4, 5],
+  doorStateVersions: [1],
+  courtyardEditVersions: [1, 2],
+  forestEditVersions: [1],
+  towerEditVersions: [1, 2],
   propKinds: [
-    ...FORMAT_10_VOCABULARY.propKinds,
+    'crate',
+    'barrel',
+    'rubble',
+    'rug',
+    'sconce',
+    'moss',
+    'sarcophagus',
+    'vine',
+    'broken_column',
+    'tree',
+    'boulder',
+    'fern',
+    'mushroom',
+    'bush',
+    'log',
+    'stump',
+    'flower',
+    'tent',
+    'bedroll',
+    'fire_ring',
+    'supply_bundle',
+    'desk',
+    'bookshelf',
+    'scroll_case',
+    'standing_stone',
+    'weathered_statue',
+    'dining_table',
+    'low_rubble',
+    'dry_fountain',
     'ritual_altar',
     'ritual_candles',
     'ritual_offering',
-  ],
-};
-
-const FORMAT_12_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_11_VOCABULARY,
-  forestSurfaces: [1],
-};
-
-const FORMAT_13_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_12_VOCABULARY,
-  mapTypes: [...FORMAT_12_VOCABULARY.mapTypes, 'tower'],
-};
-
-const FORMAT_14_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_13_VOCABULARY,
-  towerStairStyles: ['separate', 'spiral'],
-};
-
-const FORMAT_15_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_14_VOCABULARY,
-  towerLaboratoryFloors: [1, 2, 3, 4, 5, 6, 7, 8],
-  propKinds: [...FORMAT_14_VOCABULARY.propKinds, 'cauldron'],
-};
-
-const FORMAT_16_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_15_VOCABULARY,
-  towerObservatoryFloors: [1, 2, 3, 4, 5, 6, 7, 8],
-  propKinds: [
-    ...FORMAT_15_VOCABULARY.propKinds,
+    'cauldron',
     'telescope',
     'star_chart_table',
     'instrument_cabinet',
     'star_charts',
-  ],
-};
-
-const FORMAT_17_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_16_VOCABULARY,
-  courtyardWagons: [true],
-  propKinds: [
-    ...FORMAT_16_VOCABULARY.propKinds,
     'collapsed_wagon',
     'wagon_wheel',
     'spilled_crate',
     'spilled_goods',
-  ],
-  propFootprints: {
-    ...FORMAT_16_VOCABULARY.propFootprints,
-    collapsed_wagon: { width: 3, height: 2, rotations: [0, 1] },
-  },
-};
-
-const FORMAT_18_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_17_VOCABULARY,
-  forestFallenTrees: [true],
-  propKinds: [
-    ...FORMAT_17_VOCABULARY.propKinds,
     'fallen_trunk',
     'fallen_roots',
     'fallen_branch',
     'fallen_fungi',
+    'stone_well',
+    'abandoned_brazier',
   ],
   propFootprints: {
-    ...FORMAT_17_VOCABULARY.propFootprints,
+    dining_table: { width: 2, height: 1, rotations: [0, 1, 2, 3] },
+    dry_fountain: { width: 3, height: 3, rotations: [0] },
+    collapsed_wagon: { width: 3, height: 2, rotations: [0, 1] },
     fallen_trunk: { width: 4, height: 1, rotations: [0, 1] },
-  },
-};
-
-const FORMAT_19_VOCABULARY: SaveVocabulary = { ...FORMAT_18_VOCABULARY, objectEditVersions: [1] };
-
-const FORMAT_20_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_19_VOCABULARY,
-  objectEditVersions: [1, 2],
-};
-
-const FORMAT_21_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_20_VOCABULARY,
-  objectEditVersions: [1, 2, 3],
-};
-
-const FORMAT_22_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_21_VOCABULARY,
-  objectEditVersions: [1, 2, 3, 4],
-};
-
-const FORMAT_23_VOCABULARY: SaveVocabulary = { ...FORMAT_22_VOCABULARY, doorStateVersions: [1] };
-
-const FORMAT_24_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_23_VOCABULARY,
-  objectEditVersions: [1, 2, 3, 4, 5],
-};
-
-const FORMAT_25_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_24_VOCABULARY,
-  courtyardEditVersions: [1],
-};
-
-const FORMAT_26_VOCABULARY: SaveVocabulary = { ...FORMAT_25_VOCABULARY, forestEditVersions: [1] };
-
-const FORMAT_27_VOCABULARY: SaveVocabulary = { ...FORMAT_26_VOCABULARY, towerEditVersions: [1] };
-
-const FORMAT_28_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_27_VOCABULARY,
-  towerEditVersions: [1, 2],
-};
-
-const FORMAT_29_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_28_VOCABULARY,
-  courtyardCharacters: ['Overgrown', 'Sunbleached', 'Frostbound', 'Desecrated'],
-};
-
-const FORMAT_30_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_29_VOCABULARY,
-  courtyardWells: [true],
-  propKinds: [...FORMAT_29_VOCABULARY.propKinds, 'stone_well'],
-  propFootprints: {
-    ...FORMAT_29_VOCABULARY.propFootprints,
     stone_well: { width: 2, height: 2, rotations: [0] },
   },
-  courtyardEditVersions: [1, 2],
-};
-
-const FORMAT_31_VOCABULARY: SaveVocabulary = {
-  ...FORMAT_30_VOCABULARY,
-  courtyardBraziers: [true],
-  propKinds: [...FORMAT_30_VOCABULARY.propKinds, 'abandoned_brazier'],
 };
 
 export function saveVocabulary(version: unknown): SaveVocabulary | undefined {
-  switch (version) {
-    case '31.0.0':
-      return FORMAT_31_VOCABULARY;
-    case '30.0.0':
-      return FORMAT_30_VOCABULARY;
-    case '29.0.0':
-      return FORMAT_29_VOCABULARY;
-    case '28.0.0':
-      return FORMAT_28_VOCABULARY;
-    case '27.0.0':
-      return FORMAT_27_VOCABULARY;
-    case '26.0.0':
-      return FORMAT_26_VOCABULARY;
-    case '25.0.0':
-      return FORMAT_25_VOCABULARY;
-    case '24.0.0':
-      return FORMAT_24_VOCABULARY;
-    case '23.0.0':
-      return FORMAT_23_VOCABULARY;
-    case '22.0.0':
-      return FORMAT_22_VOCABULARY;
-    case '21.0.0':
-      return FORMAT_21_VOCABULARY;
-    case '20.0.0':
-      return FORMAT_20_VOCABULARY;
-    case '19.0.0':
-      return FORMAT_19_VOCABULARY;
-    case '18.0.0':
-      return FORMAT_18_VOCABULARY;
-    case '17.0.0':
-      return FORMAT_17_VOCABULARY;
-    case '16.0.0':
-      return FORMAT_16_VOCABULARY;
-    case '15.0.0':
-      return FORMAT_15_VOCABULARY;
-    case '14.0.0':
-      return FORMAT_14_VOCABULARY;
-    case '13.0.0':
-      return FORMAT_13_VOCABULARY;
-    case '12.0.0':
-      return FORMAT_12_VOCABULARY;
-    case '11.0.0':
-      return FORMAT_11_VOCABULARY;
-    case '10.0.0':
-      return FORMAT_10_VOCABULARY;
-    case '9.0.0':
-      return FORMAT_9_VOCABULARY;
-    case '1.0.0':
-      return FORMAT_1_VOCABULARY;
-    case '2.0.0':
-      return FORMAT_2_VOCABULARY;
-    case '3.0.0':
-      return FORMAT_3_VOCABULARY;
-    case '8.0.0':
-      return FORMAT_8_VOCABULARY;
-    case '7.0.0':
-      return FORMAT_7_VOCABULARY;
-    case '6.0.0':
-      return FORMAT_6_VOCABULARY;
-    case '5.0.0':
-      return FORMAT_5_VOCABULARY;
-    case '4.0.0':
-      return FORMAT_4_VOCABULARY;
-    default:
-      return undefined;
-  }
+  return version === SAVE_FORMAT_VERSION ? CURRENT_VOCABULARY : undefined;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -357,8 +132,8 @@ export function parseSavedMap(value: unknown): SavedMap | undefined {
   if (typeof thumbnail !== 'string' || !thumbnail.startsWith('data:image/')) return undefined;
   const vocabulary = saveVocabulary(saveFormatVersion);
   if (!vocabulary) return undefined;
-  const normalizedMap = parseSavedMapBody(map, vocabulary);
-  if (!normalizedMap) return undefined;
+  const parsedMap = parseSavedMapBody(map, vocabulary);
+  if (!parsedMap) return undefined;
   return {
     id,
     name,
@@ -366,7 +141,7 @@ export function parseSavedMap(value: unknown): SavedMap | undefined {
     savedAt,
     saveFormatVersion: SAVE_FORMAT_VERSION,
     thumbnail,
-    map: normalizedMap,
+    map: parsedMap,
   };
 }
 
@@ -401,7 +176,7 @@ export function parseBundle(text: string): ParseResult {
       ok: false,
       error:
         skipped > 0
-          ? 'None of the maps in that backup could be read. They may use a newer save format.'
+          ? 'None of the maps in that backup could be read. They may use an unsupported save format.'
           : 'That backup does not contain any maps.',
     };
   }

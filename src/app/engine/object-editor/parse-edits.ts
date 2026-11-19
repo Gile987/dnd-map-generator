@@ -4,13 +4,11 @@ import { individualObjectLock } from './dungeon-authoring-rules';
 import { dungeonGroups } from './dungeon-groups';
 import { QUARTER_TURNS } from '../prop-footprint';
 import type { GroupTransform } from './group-rotation';
-import type { GroupMove } from './dungeon-groups';
 import { isBlockingProp, isDungeonPropKind, isTilePosition } from '../model';
 import type { Dungeon, PropKind } from '../model';
 import { dungeonCapability } from './catalog';
 import { authoredPlacementError, MAX_AUTHORED_OBJECTS } from './commands';
 import type { AuthoredDungeon, ObjectEdits, ObjectMove, AddedObject } from './document';
-import { dungeonObjectLock } from './dungeon-rules';
 
 function object(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -32,28 +30,16 @@ function position(
 export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeon | undefined {
   if (
     !object(value) ||
-    !keys(
-      value,
-      value['version'] === 2 ||
-        value['version'] === 3 ||
-        value['version'] === 4 ||
-        value['version'] === 5
-        ? [
-            'version',
-            'nextId',
-            'moves',
-            'added',
-            'removed',
-            'groups',
-            ...(value['version'] === 5 ? ['order'] : []),
-          ]
-        : ['version', 'nextId', 'moves', 'added', 'removed'],
-    ) ||
-    (value['version'] !== 1 &&
-      value['version'] !== 2 &&
-      value['version'] !== 3 &&
-      value['version'] !== 4 &&
-      value['version'] !== 5) ||
+    !keys(value, [
+      'version',
+      'nextId',
+      'moves',
+      'added',
+      'removed',
+      'groups',
+      ...(value['version'] === 5 ? ['order'] : []),
+    ]) ||
+    (value['version'] !== 4 && value['version'] !== 5) ||
     typeof value['nextId'] !== 'number' ||
     !Number.isSafeInteger(value['nextId']) ||
     value['nextId'] < 1 ||
@@ -65,47 +51,24 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
     value['added'].length > MAX_AUTHORED_OBJECTS
   )
     return undefined;
-  const groups: GroupMove[] = [];
   const transforms: GroupTransform[] = [];
-  if (
-    value['version'] === 2 ||
-    value['version'] === 3 ||
-    value['version'] === 4 ||
-    value['version'] === 5
-  ) {
-    if (!Array.isArray(value['groups']) || value['groups'].length > 4) return undefined;
-    const available = dungeonGroups(base),
-      seen = new Set<string>();
-    for (const move of value['groups']) {
-      if (
-        !object(move) ||
-        !keys(
-          move,
-          value['version'] === 4 || value['version'] === 5
-            ? ['id', 'x', 'y', 'rotation']
-            : ['id', 'x', 'y'],
-        ) ||
-        !position(move)
-      )
-        return undefined;
-      const rotation = QUARTER_TURNS.find((q) => q === move['rotation']);
-      if ((value['version'] === 4 || value['version'] === 5) && rotation === undefined)
-        return undefined;
-      const group = available.find((group) => group.id === move['id']);
-      if (
-        !group ||
-        seen.has(group.id) ||
-        (group.area.x === move.x &&
-          group.area.y === move.y &&
-          ((value['version'] !== 4 && value['version'] !== 5) || move['rotation'] === 0))
-      )
-        return undefined;
-      seen.add(group.id);
-      const groupPosition = { id: group.id, x: move.x, y: move.y };
-      groups.push(groupPosition);
-      if ((value['version'] === 4 || value['version'] === 5) && rotation !== undefined)
-        transforms.push({ ...groupPosition, rotation });
-    }
+  if (!Array.isArray(value['groups']) || value['groups'].length > 4) return undefined;
+  const available = dungeonGroups(base),
+    seen = new Set<string>();
+  for (const move of value['groups']) {
+    if (!object(move) || !keys(move, ['id', 'x', 'y', 'rotation']) || !position(move))
+      return undefined;
+    const rotation = QUARTER_TURNS.find((q) => q === move['rotation']);
+    if (rotation === undefined) return undefined;
+    const group = available.find((group) => group.id === move['id']);
+    if (
+      !group ||
+      seen.has(group.id) ||
+      (group.area.x === move.x && group.area.y === move.y && rotation === 0)
+    )
+      return undefined;
+    seen.add(group.id);
+    transforms.push({ id: group.id, x: move.x, y: move.y, rotation });
   }
   const moves: ObjectMove[] = [],
     added: AddedObject[] = [],
@@ -114,13 +77,7 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
   for (const id of value['removed']) {
     if (typeof id !== 'string' || !/^base-(0|[1-9]\d*)$/.test(id) || ids.has(id)) return undefined;
     const prop = base.decoration.props[Number(id.slice(5))];
-    if (
-      !prop ||
-      (value['version'] === 1
-        ? dungeonObjectLock(base, prop)
-        : individualObjectLock(base, id, prop))
-    )
-      return undefined;
+    if (!prop || individualObjectLock(base, id, prop)) return undefined;
     ids.add(id);
     removed.push(id);
   }
@@ -137,9 +94,7 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
     const source = base.decoration.props[Number(move['id'].slice(5))];
     if (
       !source ||
-      (value['version'] === 1
-        ? dungeonObjectLock(base, source)
-        : individualObjectLock(base, move['id'], source)) ||
+      individualObjectLock(base, move['id'], source) ||
       (source.x === move.x && source.y === move.y)
     )
       return undefined;
@@ -163,7 +118,7 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
       !position(prop) ||
       typeof prop['kind'] !== 'string' ||
       !isDungeonPropKind(prop['kind'] as PropKind) ||
-      !dungeonCapability(prop['kind'] as PropKind, value['version'])?.editable ||
+      !dungeonCapability(prop['kind'] as PropKind)?.editable ||
       prop['blocking'] !== isBlockingProp(prop['kind'] as PropKind) ||
       prop['variation'] !== 0.5
     )
@@ -196,17 +151,13 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
       order.some((id) => !availableIds.includes(id)))
   )
     return undefined;
-  if (!moves.length && !added.length && !removed.length && !groups.length && !order.length)
+  if (!moves.length && !added.length && !removed.length && !transforms.length && !order.length)
     return undefined;
   const common = { nextId: value['nextId'], moves, added, removed };
   const edits: ObjectEdits =
-    value['version'] === 1
-      ? { ...common, version: 1 }
-      : value['version'] === 5
-        ? { ...common, version: 5, groups: transforms, order }
-        : value['version'] === 4
-          ? { ...common, version: 4, groups: transforms }
-          : { ...common, version: value['version'], groups };
+    value['version'] === 5
+      ? { ...common, version: 5, groups: transforms, order }
+      : { ...common, version: 4, groups: transforms };
   const result = { ...base, objectEdits: edits };
   if (order.length) {
     const defaults = orderedDungeonObjects(dungeonInstances(result));

@@ -3,11 +3,11 @@ import { generateDungeon } from '../generate';
 import { ALL_PRESETS, DUNGEON_PROP_KINDS, contains, indexOf, DENSITY_BUDGETS } from '../model';
 import type { Dungeon, DungeonDocument, MapDocument } from '../model';
 import type { ResolvedDungeon } from './document';
-import { DUNGEON_OBJECTS_V1, DUNGEON_PALETTE } from './catalog';
+import { DUNGEON_OBJECTS, DUNGEON_PALETTE } from './catalog';
 import { applyObjectCommand } from './commands';
 import type { ObjectCommand } from './commands';
 import { dungeonBase, dungeonInstances, resolveDungeon } from './document';
-import { dungeonObjectLock } from './dungeon-rules';
+import { individualObjectLock } from './dungeon-authoring-rules';
 import { propCells } from '../prop-footprint';
 import { parseDungeonEdits } from './parse-edits';
 
@@ -19,7 +19,7 @@ function accept(document: DungeonDocument, command: ObjectCommand): DungeonDocum
 }
 
 test('the frozen Dungeon capability catalog accounts for every kind and exposes only audited independent items', () => {
-  expect(Object.keys(DUNGEON_OBJECTS_V1).sort()).toEqual([...DUNGEON_PROP_KINDS].sort());
+  expect(Object.keys(DUNGEON_OBJECTS).sort()).toEqual([...DUNGEON_PROP_KINDS].sort());
   expect(DUNGEON_PALETTE.map((p) => p.kind)).toEqual([
     'crate',
     'barrel',
@@ -27,15 +27,18 @@ test('the frozen Dungeon capability catalog accounts for every kind and exposes 
     'sarcophagus',
     'broken_column',
     'moss',
+    'rug',
   ]);
-  for (const c of Object.values(DUNGEON_OBJECTS_V1)) if (!c.editable) expect(c.reason).toBeTruthy();
+  for (const c of Object.values(DUNGEON_OBJECTS)) if (!c.editable) expect(c.reason).toBeTruthy();
 });
 
 describe.each(ALL_PRESETS)('%s authored documents', (preset) => {
   test('movement retains identity, variation, base geometry, immutable inputs and exact reset', () => {
     const base = editorFixture(preset),
       before = structuredClone(base);
-    const source = dungeonInstances(base).find((item) => !dungeonObjectLock(base, item.prop));
+    const source = dungeonInstances(base).find(
+      (item) => !individualObjectLock(base, item.id, item.prop),
+    );
     if (!source) throw new Error('No movable item');
     const move = validCommand(
       base,
@@ -146,7 +149,9 @@ test('refused placement, overlap, protected source, unsupported item and malform
   expect(
     applyObjectCommand(base, { kind: 'move', id: 'base-9999999999', target: { x: 10, y: 10 } }).ok,
   ).toBe(false);
-  const locked = dungeonInstances(base).find((item) => dungeonObjectLock(base, item.prop));
+  const locked = dungeonInstances(base).find((item) =>
+    individualObjectLock(base, item.id, item.prop),
+  );
   if (locked)
     expect(
       applyObjectCommand(base, { kind: 'move', id: locked.id, target: { x: 10, y: 10 } }).ok,
@@ -210,7 +215,9 @@ test('protected additions remain exact and neither moved nor inserted objects ca
     });
     if (!result.ok) throw new Error(result.error);
     const base = result.map;
-    const locked = dungeonInstances(base).filter((item) => dungeonObjectLock(base, item.prop));
+    const locked = dungeonInstances(base).filter((item) =>
+      individualObjectLock(base, item.id, item.prop),
+    );
     expect(locked.length).toBeGreaterThan(0);
     for (const item of locked)
       expect(
@@ -227,7 +234,7 @@ test('protected additions remain exact and neither moved nor inserted objects ca
 
 test('the command boundary stores only coordinates from structurally richer pointer/inspector targets', () => {
   const base = editorFixture(),
-    source = dungeonInstances(base).find((item) => !dungeonObjectLock(base, item.prop));
+    source = dungeonInstances(base).find((item) => !individualObjectLock(base, item.id, item.prop));
   if (!source) throw new Error('Missing source');
   const command = validCommand(
     base,
@@ -247,7 +254,7 @@ test('the command boundary stores only coordinates from structurally richer poin
 test('removing eligible blockers permits replacements without changing density and removed identities roundtrip atomically', () => {
   const base = editorFixture(),
     source = dungeonInstances(base).find(
-      (item) => item.prop.blocking && !dungeonObjectLock(base, item.prop),
+      (item) => item.prop.blocking && !individualObjectLock(base, item.id, item.prop),
     );
   if (!source) throw new Error('Missing blocker');
   const removed = accept(base, { kind: 'remove', id: source.id });

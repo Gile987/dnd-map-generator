@@ -1,14 +1,8 @@
 import { selectedAddition, setAddition } from './additions';
-import { generateForestClearing } from '../src/app/engine/forest-generate';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import {
-  makeSavedMap,
-  parseSavedMap,
-  SAVE_STORAGE_KEY,
-  SAVE_FORMAT_VERSION,
-} from '../src/app/save/save-format';
+import { parseSavedMap, SAVE_STORAGE_KEY, SAVE_FORMAT_VERSION } from '../src/app/save/save-format';
 import { PNG } from './png';
 
 async function snapshot(page: Page, name: string) {
@@ -144,7 +138,7 @@ test('a landmark that cannot fit preserves an imported map and recovers with a n
     maps: {
       map: { layout: { tiles: boolean[]; route: number[] }; decoration: { props: unknown[] } };
     }[];
-  } = JSON.parse(readFileSync('src/app/save/fixtures/forest-v3.json', 'utf8'));
+  } = JSON.parse(readFileSync('src/app/save/fixtures/forest-current.json', 'utf8'));
   const record = fixture.maps[0];
   if (!record) throw new Error('Expected fixture map');
   record.map.layout.route = record.map.layout.tiles.flatMap((floor, tile) => (floor ? [tile] : []));
@@ -171,73 +165,3 @@ test('a landmark that cannot fit preserves an imported map and recovers with a n
     'standing-stone-circle',
   );
 });
-
-for (const source of ['library', 'backup'] as const) {
-  test(`format-5 landmarks from ${source} restore the catalog ID and export current-format backups`, async ({
-    page,
-  }) => {
-    const result = generateForestClearing({
-      seed: 'mosslit-sanctum',
-      character: 'Verdant',
-      density: 'Balanced',
-      landmark: 'standing-stone-circle',
-    });
-    if (!result.ok) throw new Error(result.error);
-    const { forestSurface, ...decoration } = result.map.decoration;
-    expect(forestSurface).toBe(1);
-    const historical = { ...result.map, decoration };
-    const saved = makeSavedMap(
-      historical,
-      'Legacy circle',
-      'data:image/png;base64,AAAA',
-      'legacy-circle',
-      '2026-10-23T10:00:00Z',
-    );
-    const legacy = {
-      ...saved,
-      saveFormatVersion: '5.0.0',
-      map: {
-        ...saved.map,
-        decoration: { ...saved.map.decoration, landmark: 'Suggested landmark' },
-      },
-    };
-    if (source === 'library')
-      await page.addInitScript(
-        ({ key, record }) => localStorage.setItem(key, JSON.stringify([record])),
-        { key: SAVE_STORAGE_KEY, record: legacy },
-      );
-    await page.goto('/');
-    if (source === 'backup') {
-      await page.setInputFiles('.import-label input', {
-        name: 'legacy-circle.json',
-        mimeType: 'application/json',
-        buffer: Buffer.from(
-          JSON.stringify({
-            format: 'encounter-map-forge-saves',
-            saveFormatVersion: '5.0.0',
-            maps: [legacy],
-          }),
-        ),
-      });
-      await expect(page.locator('.library-message .notice')).toHaveText('Imported 1 map.');
-    }
-    await page.locator('.saved-item').getByRole('button', { name: 'Open', exact: true }).click();
-    await expect(selectedAddition(page, 'Standing-stone circle')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Generate forest' })).toBeDisabled();
-    expect(await snapshot(page, 'Migrated circle')).toEqual(historical);
-    const download = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Download backup', exact: true }).click();
-    const backup = await download;
-    const bundle: unknown = JSON.parse(readFileSync(await backup.path(), 'utf8'));
-    expect(bundle).toMatchObject({
-      saveFormatVersion: SAVE_FORMAT_VERSION,
-      maps: expect.arrayContaining([
-        expect.objectContaining({
-          id: 'legacy-circle',
-          saveFormatVersion: SAVE_FORMAT_VERSION,
-          map: historical,
-        }),
-      ]),
-    });
-  });
-}

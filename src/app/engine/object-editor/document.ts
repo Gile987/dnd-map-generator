@@ -4,9 +4,9 @@ import type { CourtyardDocument, AuthoredCourtyard } from './courtyard-document'
 import type { DoorStates } from '../dungeon-doors';
 import { groupRotation, transformedGroup, transformedGroupProp } from './group-rotation';
 import type { GroupTransform } from './group-rotation';
-import { dungeonGroups, translatedGroup, translateGroupProp } from './dungeon-groups';
+import { dungeonGroups } from './dungeon-groups';
 import type { ReservedArea } from '../feature-reservation';
-import type { GroupMove, DungeonGroup } from './dungeon-groups';
+import type { DungeonGroup } from './dungeon-groups';
 import type { Dungeon, GeneratedMap, Point, Prop, QuarterTurn } from '../model';
 
 export interface ObjectMove extends Point {
@@ -16,22 +16,12 @@ export interface AddedObject {
   readonly id: string;
   readonly prop: Prop;
 }
-export interface ObjectEditsV1 {
-  readonly version: 1;
+export interface ObjectEditsV4 {
+  readonly version: 4;
   readonly nextId: number;
   readonly removed: readonly string[];
   readonly moves: readonly ObjectMove[];
   readonly added: readonly AddedObject[];
-}
-export interface ObjectEditsV2 extends Omit<ObjectEditsV1, 'version'> {
-  readonly version: 2;
-  readonly groups: readonly GroupMove[];
-}
-export interface ObjectEditsV3 extends Omit<ObjectEditsV2, 'version'> {
-  readonly version: 3;
-}
-export interface ObjectEditsV4 extends Omit<ObjectEditsV3, 'version' | 'groups'> {
-  readonly version: 4;
   readonly groups: readonly GroupTransform[];
 }
 export interface ObjectEditsV5 extends Omit<ObjectEditsV4, 'version'> {
@@ -39,8 +29,7 @@ export interface ObjectEditsV5 extends Omit<ObjectEditsV4, 'version'> {
   /** Complete bottom-to-top instance order, or empty for predictable defaults. */
   readonly order: readonly string[];
 }
-export type ObjectEdits =
-  ObjectEditsV1 | ObjectEditsV2 | ObjectEditsV3 | ObjectEditsV4 | ObjectEditsV5;
+export type ObjectEdits = ObjectEditsV4 | ObjectEditsV5;
 /** The ordinary map fields are the frozen base, never the resolved arrangement. */
 export interface AuthoredDungeon extends Omit<Dungeon, 'objectEdits' | 'doorStates'> {
   readonly objectEdits: ObjectEdits;
@@ -78,12 +67,8 @@ export function dungeonBase(document: DungeonDocument): Dungeon {
 }
 
 export function dungeonInstances(document: DungeonDocument): readonly AddedObject[] {
-  const groups =
-    document.objectEdits && document.objectEdits.version !== 1
-      ? dungeonGroups(dungeonBase(document))
-      : [];
-  const groupMoves =
-    document.objectEdits && document.objectEdits.version !== 1 ? document.objectEdits.groups : [];
+  const groups = document.objectEdits ? dungeonGroups(dungeonBase(document)) : [];
+  const groupMoves = document.objectEdits ? document.objectEdits.groups : [];
   const removed = new Set(document.objectEdits?.removed);
   const moves = new Map(document.objectEdits?.moves.map((move) => [move.id, move]));
   return [
@@ -96,9 +81,7 @@ export function dungeonInstances(document: DungeonDocument): readonly AddedObjec
         id,
         prop:
           group && groupMove
-            ? document.objectEdits?.version === 4 || document.objectEdits?.version === 5
-              ? transformedGroupProp(prop, group, groupMove)
-              : translateGroupProp(prop, group, groupMove)
+            ? transformedGroupProp(prop, group, groupMove)
             : move
               ? { ...prop, x: move.x, y: move.y }
               : prop,
@@ -111,35 +94,24 @@ export function dungeonInstances(document: DungeonDocument): readonly AddedObjec
 export function resolveDungeon(document: DungeonDocument): DungeonDrawing {
   if (!document.objectEdits) return document;
   const items = dungeonInstances(document);
-  const study =
-    document.objectEdits.version !== 1
-      ? dungeonGroups(dungeonBase(document)).find((group) => group.id === 'study')
-      : undefined;
-  const studyMove =
-    document.objectEdits.version !== 1
-      ? document.objectEdits.groups.find((move) => move.id === 'study')
-      : undefined;
+  const study = dungeonGroups(dungeonBase(document)).find((group) => group.id === 'study');
+  const studyMove = document.objectEdits.groups.find((move) => move.id === 'study');
   const artTurns = new Map<Prop, QuarterTurn>();
   const base = dungeonBase(document);
-  if (document.objectEdits.version === 4 || document.objectEdits.version === 5) {
-    const groups = dungeonGroups(base);
-    for (const move of document.objectEdits.groups) {
-      const group = groups.find((g) => g.id === move.id);
-      if (!group) continue;
-      for (const item of items)
-        if (group.members.includes(item.id) && !item.prop.footprint)
-          artTurns.set(item.prop, move.rotation);
-    }
+  const groups = dungeonGroups(base);
+  for (const move of document.objectEdits.groups) {
+    const group = groups.find((g) => g.id === move.id);
+    if (!group) continue;
+    for (const item of items)
+      if (group.members.includes(item.id) && !item.prop.footprint)
+        artTurns.set(item.prop, move.rotation);
   }
   const studyTransform =
-    (document.objectEdits.version === 4 || document.objectEdits.version === 5) && studyMove && study
+    studyMove && study
       ? { base, group: study, move: { ...studyMove, rotation: groupRotation(studyMove) } }
       : undefined;
   const ritual = dungeonGroups(base).find((g) => g.id === 'ritual');
-  const ritualMove =
-    document.objectEdits.version === 4 || document.objectEdits.version === 5
-      ? document.objectEdits.groups.find((g) => g.id === 'ritual')
-      : undefined;
+  const ritualMove = document.objectEdits.groups.find((g) => g.id === 'ritual');
   return {
     ...base,
     objectEdits: 'resolved',
@@ -151,10 +123,7 @@ export function resolveDungeon(document: DungeonDocument): DungeonDrawing {
     ...(ritual && ritualMove ? { ritualTransform: { base, group: ritual, move: ritualMove } } : {}),
     ...(study && studyMove
       ? {
-          studyArea: (document.objectEdits.version === 4 || document.objectEdits.version === 5
-            ? transformedGroup(study, studyMove)
-            : translatedGroup(study, studyMove)
-          ).area,
+          studyArea: transformedGroup(study, studyMove).area,
         }
       : {}),
     decoration: { ...document.decoration, props: items.map((item) => item.prop) },
