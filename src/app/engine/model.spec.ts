@@ -73,6 +73,9 @@ describe('production option constants', () => {
       'spilled_goods',
       'stone_well',
       'abandoned_brazier',
+      'treasure_chest',
+      'supply_sacks',
+      'weapon_rack',
     ]);
   });
 });

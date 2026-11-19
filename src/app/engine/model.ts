@@ -1,3 +1,5 @@
+import { SHARED_PROP_KINDS, sharedPropDefinition } from './shared-props';
+import type { SharedPropKind } from './shared-props';
 import type { MapDocument } from './object-editor/document';
 import type { Tower, TowerSettings } from './tower';
 import { landmarkIdsFor } from './landmark-catalog';
@@ -247,6 +249,7 @@ export const COURTYARD_PROP_KINDS = [
   'dry_fountain',
 ] as const;
 export type PropKind =
+  | SharedPropKind
   | DungeonPropKind
   | ForestPropKind
   | 'low_rubble'
@@ -262,18 +265,21 @@ export type PropKind =
   | (typeof WELL_PROP_KINDS)[number];
 
 export const ALL_PROP_KINDS: readonly PropKind[] = [
-  ...DUNGEON_PROP_KINDS,
-  ...FOREST_PROP_KINDS,
-  'low_rubble',
-  'dry_fountain',
-  'cauldron',
-  'telescope',
-  'star_chart_table',
-  'instrument_cabinet',
-  'star_charts',
-  ...WAGON_PROP_KINDS,
-  ...WELL_PROP_KINDS,
-  'abandoned_brazier',
+  ...new Set<PropKind>([
+    ...DUNGEON_PROP_KINDS,
+    ...FOREST_PROP_KINDS,
+    'low_rubble',
+    'dry_fountain',
+    'cauldron',
+    'telescope',
+    'star_chart_table',
+    'instrument_cabinet',
+    'star_charts',
+    ...WAGON_PROP_KINDS,
+    ...WELL_PROP_KINDS,
+    'abandoned_brazier',
+    ...SHARED_PROP_KINDS,
+  ]),
 ];
 
 export function isDungeonPropKind(kind: PropKind): kind is DungeonPropKind {
@@ -382,21 +388,17 @@ export function contains(room: Room, point: Point): boolean {
 }
 
 export function isBlockingProp(kind: PropKind): boolean {
+  const shared = sharedPropDefinition(kind);
+  if (shared) return shared.blocking;
   return (
     kind === 'ritual_altar' ||
-    kind === 'crate' ||
-    kind === 'barrel' ||
     kind === 'rubble' ||
     kind === 'sarcophagus' ||
     kind === 'broken_column' ||
     kind === 'abandoned_brazier' ||
     kind === 'boulder' ||
-    kind === 'log' ||
-    kind === 'stump' ||
     kind === 'tent' ||
     kind === 'supply_bundle' ||
-    kind === 'desk' ||
-    kind === 'bookshelf' ||
     kind === 'dining_table' ||
     kind === 'weathered_statue' ||
     kind === 'standing_stone' ||

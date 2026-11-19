@@ -4,7 +4,7 @@ import type { MapDocument } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '32.0.0';
+export const SAVE_FORMAT_VERSION = '33.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -104,6 +104,9 @@ const CURRENT_VOCABULARY: SaveVocabulary = {
     'fallen_fungi',
     'stone_well',
     'abandoned_brazier',
+    'treasure_chest',
+    'supply_sacks',
+    'weapon_rack',
   ],
   propFootprints: {
     dining_table: { width: 2, height: 1, rotations: [0, 1, 2, 3] },

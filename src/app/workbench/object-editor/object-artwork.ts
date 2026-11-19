@@ -1,12 +1,19 @@
+import { DUNGEON_PORTABLE_PALETTES } from '../../rendering/portable-props';
 import { FOREST_PALETTES } from '../../rendering/forest-palette';
 import { Directive, computed, input } from '@angular/core';
-import type { PropKind, ForestCharacter, CourtyardCharacter } from '../../engine/model';
+import type {
+  PropKind,
+  ForestCharacter,
+  CourtyardCharacter,
+  DecorationPreset,
+} from '../../engine/model';
 import { isBlockingProp } from '../../engine/model';
 import { drawProp } from '../../rendering/props';
 
 @Directive({ selector: 'img[forgeObjectArtwork]', host: { '[src]': 'source()' } })
 export class ObjectArtwork {
   readonly kind = input.required<PropKind>({ alias: 'forgeObjectArtwork' });
+  readonly dungeonPreset = input<DecorationPreset | undefined>();
   readonly forestCharacter = input<ForestCharacter | undefined>();
   readonly courtyardCharacter = input<CourtyardCharacter | undefined>();
   protected readonly source = computed(() => {
@@ -22,6 +29,7 @@ export class ObjectArtwork {
     ctx.scale(scale, scale);
     ctx.translate(-0.5, -0.5);
     const character = this.forestCharacter();
+    const preset = this.dungeonPreset();
     drawProp(
       ctx,
       {
@@ -33,6 +41,7 @@ export class ObjectArtwork {
       },
       character ? FOREST_PALETTES[character] : undefined,
       this.courtyardCharacter(),
+      preset ? DUNGEON_PORTABLE_PALETTES[preset] : undefined,
     );
     return canvas.toDataURL();
   });

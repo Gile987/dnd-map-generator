@@ -57,7 +57,7 @@ test('strict references, safe IDs, protected components, physical geometry and c
     { ...edits, added: Array(121).fill(edits.added[0]) },
     { ...edits, added: [...edits.added, ...edits.added] },
     { ...edits, added: [{ id: 'added-2', prop: edits.added[0]?.prop }] },
-    ...['tree', 'tent', 'standing_stone', 'fallen_trunk', 'crate'].map((kind) => ({
+    ...['tree', 'tent', 'standing_stone', 'fallen_trunk', 'desk'].map((kind) => ({
       ...edits,
       added: [{ ...edits.added[0], prop: { ...edits.added[0]?.prop, kind } }],
     })),

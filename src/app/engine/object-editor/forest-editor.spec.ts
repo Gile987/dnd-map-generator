@@ -24,21 +24,30 @@ import { parseForestEdits } from './parse-forest-edits';
 import { editorOverlaps, editorOrderedObjects } from './editor-view';
 
 test.each(ALL_FOREST_CHARACTERS)(
-  '%s canonical forests and all seven catalog kinds retain their frozen base and artwork',
+  '%s canonical forests and all catalog kinds retain their frozen base and artwork',
   (character) => {
     const base = forestEditorFixture(character),
       before = structuredClone(base),
       prepared = clearForest(base);
     expect(forestPlacementError(base)).toBeUndefined();
-    expect(FOREST_PALETTE.map((item) => item.kind)).toEqual([
-      'boulder',
-      'log',
-      'stump',
-      'bush',
-      'fern',
-      'mushroom',
-      'flower',
-    ]);
+    expect(FOREST_PALETTE.map((item) => item.kind).sort()).toEqual(
+      [
+        'boulder',
+        'log',
+        'stump',
+        'bush',
+        'fern',
+        'mushroom',
+        'flower',
+        'moss',
+        'crate',
+        'barrel',
+        'bedroll',
+        'treasure_chest',
+        'supply_sacks',
+        'weapon_rack',
+      ].sort(),
+    );
     expect(forestBase(base)).toBe(base);
     expect(resolveForest(base)).toBe(base);
     expect(applyForestCommand(base, { kind: 'reset' })).toEqual({ ok: true, document: base });

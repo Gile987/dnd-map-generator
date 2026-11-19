@@ -49,7 +49,7 @@ test('rejected and no-op commands retain history and a reset is accepted and rec
   expect(session.map()).toBe(base);
   expect(session.shuffleHistory()).toEqual(initial);
   expect(
-    session.editObjects(base, { kind: 'add', propKind: 'crate', target: { x: 1, y: 1 } }).ok,
+    session.editObjects(base, { kind: 'add', propKind: 'desk', target: { x: 1, y: 1 } }).ok,
   ).toBe(false);
   expect(session.map()).toBe(base);
   expect(session.shuffleHistory()).toEqual(initial);

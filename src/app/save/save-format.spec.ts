@@ -268,7 +268,7 @@ describe('save format', () => {
 
     test.each(
       [
-        ...Array.from({ length: 31 }, (_, index) => `${index + 1}.0.0`),
+        ...Array.from({ length: 32 }, (_, index) => `${index + 1}.0.0`),
         undefined,
         null,
         2,

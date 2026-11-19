@@ -78,7 +78,7 @@ test('strict references, capabilities, counters, group transforms and complete p
     { ...edits, added: [...edits.added, ...edits.added] },
     { ...edits, added: Array(121).fill(edits.added[0]) },
     { ...edits, added: [{ id: 'added-2', prop: edits.added[0]?.prop }] },
-    { ...edits, added: [{ ...edits.added[0], prop: { ...edits.added[0]?.prop, kind: 'crate' } }] },
+    { ...edits, added: [{ ...edits.added[0], prop: { ...edits.added[0]?.prop, kind: 'desk' } }] },
     { ...edits, added: [{ ...edits.added[0], prop: { ...edits.added[0]?.prop, blocking: true } }] },
     { ...edits, added: [{ ...edits.added[0], prop: { ...edits.added[0]?.prop, variation: 0.4 } }] },
     { ...edits, moves: [{ id: member, x: 1, y: 1 }] },

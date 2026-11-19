@@ -109,15 +109,15 @@
     <p>
       Drag an item onto the map, or choose it and tap a destination. @if (map().type === 'dungeon')
       { Rugs cover a 3 × 3 area; the other catalog objects occupy one square. Objects can sit on
-      rugs, moss, and empty addition floor. } @else if (map().type === 'tower') { Catalog objects
-      occupy one square. Moss and bedrolls can share floor with objects. Choose the floor for new
-      objects; existing objects stay on their original floor. Stairs are movable from the object
-      list or directly on the map. Portals stay fixed; connection labels must stay clear. } @else if
-      (map().type === 'forest') { Catalog objects occupy one square. Bushes, ferns, mushrooms and
-      flowers can share ground with other objects and grow outside the clearing. Trees stay fixed.
-      Solid objects need walkable ground and must keep the two path entrances connected. Empty
-      addition outlines do not reserve ground. } @else { Catalog objects occupy one square. Moss,
-      low rubble, ferns and vines can share ground with other objects. Use any open ground,
+      rugs, moss, ferns, and empty addition floor. } @else if (map().type === 'tower') { Catalog
+      objects occupy one square. Moss, ferns and bedrolls can share floor with objects. Choose the
+      floor for new objects; existing objects stay on their original floor. Stairs are movable from
+      the object list or directly on the map. Portals stay fixed; connection labels must stay clear.
+      } @else if (map().type === 'forest') { Catalog objects occupy one square. Moss, bushes, ferns,
+      mushrooms and flowers can share ground with other objects and grow outside the clearing. Trees
+      stay fixed. Solid objects need walkable ground and must keep the two path entrances connected.
+      Empty addition outlines do not reserve ground. } @else { Catalog objects occupy one square.
+      Moss, low rubble, ferns and vines can share ground with other objects. Use any open ground,
       including the gathering space and approaches, while keeping walking routes connected. }
       Surfaces move independently.
     </p>
@@ -133,6 +133,7 @@
       >
         <img
           [forgeObjectArtwork]="item.kind"
+          [dungeonPreset]="dungeonPreset()"
           [forestCharacter]="forestCharacter()"
           [courtyardCharacter]="courtyardCharacter()"
           alt=""
