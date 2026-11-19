@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { generateCourtyard } from '../src/app/engine/courtyard-generate';
+import fixture from '../src/app/save/fixtures/courtyard-v24.json';
 import {
   makeSavedMap,
   parseSavedMap,
@@ -68,7 +68,7 @@ test('well drafts coexist with the fountain and wagon, preserve exact layouts an
     WELL,
   );
   expect((await snapshot(page, 'Pending well')).map).toEqual(before.map);
-  expect((await png(page)).bytes).toEqual(beforePng.bytes);
+  expect((await png(page)).bytes.equals(beforePng.bytes)).toBe(true);
   await apply(page);
   const accepted = await snapshot(page, 'Well courtyard'),
     acceptedPng = await png(page);
@@ -83,7 +83,7 @@ test('well drafts coexist with the fountain and wagon, preserve exact layouts an
   const body = accepted.map.decoration.props.find((p) => p.kind === 'stone_well');
   expect(body).toMatchObject({ footprint: { width: 2, height: 2 }, blocking: true, rotation: 0 });
   expect(acceptedPng.name).toContain('-dry-fountain-stone-well');
-  expect(acceptedPng.bytes).not.toEqual(beforePng.bytes);
+  expect(acceptedPng.bytes.equals(beforePng.bytes)).toBe(false);
   await expect(page.locator('forge-preview canvas')).toHaveAttribute(
     'aria-label',
     /stone well blocks two by two/i,
@@ -97,7 +97,7 @@ test('well drafts coexist with the fountain and wagon, preserve exact layouts an
   expect(shuffled.map.decoration.props.find((p) => p.kind === 'stone_well')).toEqual(body);
   await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
-  expect((await png(page)).bytes).toEqual(acceptedPng.bytes);
+  expect((await png(page)).bytes.equals(acceptedPng.bytes)).toBe(true);
   await expect(page.getByLabel('World seed')).toHaveValue('pending-well-seed');
   await setAddition(page, 'Collapsed wagon');
   await page.getByRole('button', { name: 'Generate courtyard', exact: true }).click();
@@ -135,7 +135,7 @@ test('well drafts coexist with the fountain and wagon, preserve exact layouts an
   await card.getByRole('button', { name: 'Open', exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText(WELL);
   await settled(page);
-  expect((await png(page)).bytes).not.toEqual(strip.bytes);
+  expect((await png(page)).bytes.equals(strip.bytes)).toBe(false);
 });
 
 test('the illustrated picker lists the stone well with its own artwork', async ({ page }) => {
@@ -160,16 +160,12 @@ test('the illustrated picker lists the stone well with its own artwork', async (
 test('a format-29 courtyard keeps its original PNG until the well is explicitly applied', async ({
   page,
 }) => {
-  const r = generateCourtyard({
-    character: 'Overgrown',
-    seed: 'fallen-crown',
-    density: 'Balanced',
-    fountain: true,
-  });
-  if (!r.ok) throw new Error(r.error);
+  const record = parseSavedMap(fixture.maps[0]);
+  if (!record || record.map.type !== 'courtyard') throw new Error('Missing historical courtyard');
+  const legacy = record.map;
   const old = {
     ...makeSavedMap(
-      r.map,
+      legacy,
       'Old courtyard',
       'data:image/png;base64,AAAA',
       'old-court',
@@ -194,23 +190,23 @@ test('a format-29 courtyard keeps its original PNG until the well is explicitly 
     .filter({ has: page.locator('.saved-name').getByText('Old courtyard', { exact: true }) });
   await expect(card).toBeVisible();
   await card.getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(page.locator('#map-summary')).toContainText('fallen-crown');
+  await expect(page.locator('#map-summary')).toContainText(legacy.seed);
   await settled(page);
   const before = await snapshot(page, 'Restored old courtyard'),
     image = await png(page);
-  expect(before.map).toEqual(r.map);
+  expect(before.map).toEqual(legacy);
   expect(before.map.decoration).not.toHaveProperty('well');
   await setAddition(page, WELL);
-  expect((await png(page)).bytes).toEqual(image.bytes);
+  expect((await png(page)).bytes.equals(image.bytes)).toBe(true);
   await page.getByRole('button', { name: 'Generate courtyard', exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText(WELL);
   await settled(page);
-  expect((await png(page)).bytes).not.toEqual(image.bytes);
+  expect((await png(page)).bytes.equals(image.bytes)).toBe(false);
   await page.getByRole('button', { name: `Remove ${WELL}`, exact: true }).click();
   await page.getByRole('button', { name: 'Generate courtyard', exact: true }).click();
   await expect(page.locator('#map-summary')).not.toContainText(WELL);
   await settled(page);
-  expect((await png(page)).bytes).toEqual(image.bytes);
+  expect((await png(page)).bytes.equals(image.bytes)).toBe(true);
 });
 
 test('well selection supports keyboard use and retained drafts on small screens', async ({

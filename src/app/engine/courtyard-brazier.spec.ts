@@ -20,13 +20,13 @@ function courtyard(settings: Partial<CourtyardSettings> = {}): RuinedCourtyard {
   return result.map;
 }
 
-function brazier(map: RuinedCourtyard) {
-  const prop = map.decoration.props.find((item) => item.kind === 'abandoned_brazier');
-  if (!prop) throw new Error('Missing abandoned brazier');
-  return prop;
+function braziers(map: RuinedCourtyard): Prop[] {
+  return map.decoration.props.filter((item) => item.kind === 'abandoned_brazier');
 }
 
-test('one seeded brazier stays near masonry and leaves every free courtyard tile reachable', () => {
+const EXPECTED = { Sparse: 1, Balanced: 2, Cluttered: 3 } as const;
+
+test('braziers spawn beside ruined masonry like ordinary objects and keep every tile reachable', () => {
   for (const character of ALL_COURTYARD_CHARACTERS)
     for (const density of ALL_DENSITIES)
       for (const seed of ['ivy-court', 'fallen-crown', 'sunny-court'])
@@ -34,22 +34,34 @@ test('one seeded brazier stays near masonry and leaves every free courtyard tile
           { fountain: false, wagon: false, well: false },
           { fountain: true, wagon: true, well: true },
         ]) {
-          const settings = { seed, character, density, brazier: true, ...additions };
+          const settings = { seed, character, density, ...additions };
           const map = courtyard(settings);
-          const prop = brazier(map);
-          expect(map.decoration.props.filter((item) => item.kind === prop.kind)).toHaveLength(1);
-          expect(map.decoration.brazier).toBe(true);
-          expect(prop.blocking).toBe(true);
-          expect(map.layout.tiles[indexOf(prop.x, prop.y)]).toBe(true);
-          expect(courtyardProtectedCells(map.layout).has(indexOf(prop.x, prop.y))).toBe(false);
-          expect(
-            [
-              indexOf(prop.x - 1, prop.y),
-              indexOf(prop.x + 1, prop.y),
-              indexOf(prop.x, prop.y - 1),
-              indexOf(prop.x, prop.y + 1),
-            ].some((tile) => map.layout.tiles[tile] === false),
-          ).toBe(true);
+          const spawned = braziers(map);
+          if (additions.wagon || additions.well) {
+            // Addition reserves may legitimately claim tiles a brazier would
+            // have taken, so only the range is guaranteed there.
+            expect(spawned.length, `${seed} ${character} ${density}`).toBeLessThanOrEqual(
+              EXPECTED[density],
+            );
+            expect(spawned.length, `${seed} ${character} ${density}`).toBeGreaterThanOrEqual(
+              EXPECTED[density] - 1,
+            );
+          } else {
+            expect(spawned.length, `${seed} ${character} ${density}`).toBe(EXPECTED[density]);
+          }
+          for (const prop of spawned) {
+            expect(prop.blocking).toBe(true);
+            expect(map.layout.tiles[indexOf(prop.x, prop.y)]).toBe(true);
+            expect(courtyardProtectedCells(map.layout).has(indexOf(prop.x, prop.y))).toBe(false);
+            expect(
+              [
+                indexOf(prop.x - 1, prop.y),
+                indexOf(prop.x + 1, prop.y),
+                indexOf(prop.x, prop.y - 1),
+                indexOf(prop.x, prop.y + 1),
+              ].some((tile) => map.layout.tiles[tile] === false),
+            ).toBe(true);
+          }
           expect(validateCourtyard(map)).toBeUndefined();
           expect(courtyard(settings)).toEqual(map);
           const blocked = new Set(
@@ -88,66 +100,51 @@ test('one seeded brazier stays near masonry and leaves every free courtyard tile
         }
 });
 
-test('brazier selection changes appearance only, survives shuffle, and removes exactly', () => {
+test('braziers are ordinary objects: they shuffle with details and survive appearance changes', () => {
   const original = courtyard({ fountain: true, wagon: true, well: true });
-  const before = structuredClone(original);
-  const settings = {
-    density: original.decoration.density,
-    character: original.decoration.character,
-    fountain: original.decoration.fountain,
-    wagon: original.decoration.wagon,
-    well: original.decoration.well,
-    brazier: true,
-  };
-  const added = changeCourtyardAppearance(original, settings);
-  expect(added).not.toBe(original);
-  expect(added.layout).toBe(original.layout);
-  expect(added.surfaceSeed).toBe(original.surfaceSeed);
-  expect(added.decoration.revision).toBe(original.decoration.revision);
-  const shuffled = shuffleCourtyardDetails(added);
-  expect(brazier(shuffled)).toEqual(brazier(added));
+  const spawned = braziers(original);
+  expect(spawned.length).toBe(EXPECTED[original.decoration.density]);
+  expect(original.decoration).not.toHaveProperty('brazier');
+  const shuffled = shuffleCourtyardDetails(original);
+  expect(shuffled.decoration.revision).not.toBe(original.decoration.revision);
+  // Braziers re-decorate like every ordinary kind; count and placement may
+  // change with the revision while validation still holds.
+  expect(braziers(shuffled).length).toBe(EXPECTED[shuffled.decoration.density]);
   expect(validateCourtyard(shuffled)).toBeUndefined();
-  const recolored = changeCourtyardAppearance(shuffled, { ...settings, character: 'Frostbound' });
-  expect(brazier(recolored)).toEqual(brazier(shuffled));
-  const removed = changeCourtyardAppearance(added, { ...settings, brazier: false });
-  expect(removed).toEqual(original);
-  expect(original).toEqual(before);
+  const recolored = changeCourtyardAppearance(original, {
+    density: original.decoration.density,
+    character: 'Frostbound',
+    fountain: original.decoration.fountain,
+  });
+  expect(validateCourtyard(recolored)).toBeUndefined();
+  expect(braziers(recolored).length).toBe(EXPECTED[recolored.decoration.density]);
+  for (const prop of braziers(recolored)) expect(prop.blocking).toBe(true);
 });
 
-test('canonical brazier metadata and placement cannot be forged', () => {
-  const map = courtyard({ brazier: true });
-  const prop = brazier(map);
-  const changes: Partial<Prop>[] = [
-    { x: prop.x + 1 },
-    { variation: 0.5 },
-    { blocking: false },
-    { rotation: 1 },
-  ];
-  for (const change of changes) {
-    const changed = {
-      ...map,
-      decoration: {
-        ...map.decoration,
-        props: map.decoration.props.map((item) => (item === prop ? { ...item, ...change } : item)),
-      },
-    };
-    expect(validateCourtyard(changed)).toBeDefined();
-  }
-  const { brazier: _selection, ...withoutSelection } = map.decoration;
-  expect(validateCourtyard({ ...map, decoration: withoutSelection })).toBeDefined();
+test('braziers validate as ordinary blocking props with no canonical pinning', () => {
+  const map = courtyard();
+  const prop = braziers(map)[0];
+  if (!prop) throw new Error('Missing spawned brazier');
+  // An edited brazier position stays a valid ordinary object.
+  const moved = {
+    ...map,
+    decoration: {
+      ...map.decoration,
+      props: map.decoration.props.map((item) => (item === prop ? { ...item, x: 1, y: 1 } : item)),
+    },
+  };
+  expect(validateCourtyard(moved)).toBeUndefined();
+  // A historical format-31 marker stays valid but changes nothing.
   expect(
     validateCourtyard({
       ...map,
-      decoration: {
-        ...map.decoration,
-        props: map.decoration.props.filter((item) => item !== prop),
-      },
+      decoration: { ...map.decoration, brazier: true },
     }),
-  ).toBeDefined();
+  ).toBeUndefined();
   expect(
     validateCourtyard({
       ...map,
-      decoration: { ...map.decoration, props: [...map.decoration.props, prop] },
+      decoration: { ...map.decoration, brazier: false as unknown as true },
     }),
-  ).toBeDefined();
+  ).toBe('Invalid abandoned brazier selection.');
 });

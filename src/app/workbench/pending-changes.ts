@@ -36,7 +36,6 @@ function additionNames(draft: SettingsDraft): string {
         draft.fountain ? 'Dry fountain' : '',
         draft.wagon ? 'Collapsed wagon' : '',
         draft.well ? 'Stone well' : '',
-        draft.brazier ? 'Abandoned brazier' : '',
       ]
         .filter(Boolean)
         .join(', ') || 'None'

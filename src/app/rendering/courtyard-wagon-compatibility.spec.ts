@@ -4,8 +4,9 @@ import { expect, test } from 'vitest';
 import { generateCourtyard, shuffleCourtyardDetails } from '../engine/courtyard-generate';
 import { renderMap } from './render-map';
 
-// Captured before the wagon implementation, independently of the new decoration
-// path. Models gain only the normalized default courtyard character; pixels are unchanged.
+// Captured for courtyard generator 5.0.0, when spawned braziers became part
+// of ordinary decoration. Earlier baselines protected the pre-brazier artwork;
+// the frozen fixtures and this replacement row now carry that protection.
 test('courtyard models, shuffles and pixels without a wagon retain their committed baseline', () => {
   const models: unknown[] = [],
     pixels = createHash('sha256');
@@ -20,9 +21,9 @@ test('courtyard models, shuffles and pixels without a wagon retain their committ
         pixels.update(c.getContext('2d').getImageData(0, 0, c.width, c.height).data);
       }
   expect(createHash('sha256').update(JSON.stringify(models)).digest('hex')).toBe(
-    'c18be77706dad69153db85edfed85b8fe389e3ae1ea1c36dfb9e1e4e53152bdb',
+    'dd1f5a0bc45070165769fee25d104524e51882ab4743ce645ce81ceff183f9d7',
   );
   expect(pixels.digest('hex')).toBe(
-    'd08ab4235d93635956abfe1f220bbbff09af8876cb14bb0e317b27dcc283b0e6',
+    'a9816acf0e9b324f3d6810697ed4f66917cfcfbb5c7f72d63d8e6b01be9039fb',
   );
 });

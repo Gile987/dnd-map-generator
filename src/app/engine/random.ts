@@ -1,4 +1,4 @@
-import { GENERATOR_VERSION } from './model';
+import { COURTYARD_GENERATOR_VERSION, GENERATOR_VERSION } from './model';
 
 export function hashSeed(text: string): number {
   let hash = 2166136261;
@@ -25,11 +25,21 @@ export type SeedStream =
   | 'courtyard-decoration'
   | 'courtyard-wagon'
   | 'courtyard-well'
-  | 'courtyard-brazier'
   | 'courtyard-surface';
 
 export function streamSeed(seed: string, kind: SeedStream, ...parts: (string | number)[]): number {
   return hashSeed([GENERATOR_VERSION, seed, kind, ...parts].join(':'));
+}
+
+/** Courtyard streams follow their own generator version, so a courtyard
+ * decoration change does not disturb Dungeon or Forest output.
+ */
+export function courtyardStreamSeed(
+  seed: string,
+  kind: SeedStream,
+  ...parts: (string | number)[]
+): number {
+  return hashSeed([COURTYARD_GENERATOR_VERSION, seed, kind, ...parts].join(':'));
 }
 
 export function deriveSeed(base: number, ...parts: (string | number)[]): number {

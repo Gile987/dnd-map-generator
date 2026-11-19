@@ -55,7 +55,7 @@ test('courtyard additions, drafts, shuffle history and type switching preserve a
   expect(accepted.map.layout).toEqual(initial.map.layout);
   expect(accepted.map.surfaceSeed).toBe(initial.map.surfaceSeed);
   const original = await png(page);
-  expect(original.name).toBe('encounter-ivy-court-courtyard-dry-fountain-balanced-r0-v4.0.0.png');
+  expect(original.name).toBe('encounter-ivy-court-courtyard-dry-fountain-balanced-r0-v5.0.0.png');
   await page.getByRole('button', { name: 'Shuffle details', exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText('r1');
   await settled(page);

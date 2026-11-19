@@ -1,5 +1,10 @@
 import { expect, test } from 'vitest';
-import { generateCourtyard } from '../engine/courtyard-generate';
+import {
+  generateCourtyard,
+  changeCourtyardAppearance,
+  shuffleCourtyardDetails,
+} from '../engine/courtyard-generate';
+import fixture from './fixtures/courtyard-v24.json';
 import { applyCourtyardCommand } from '../engine/object-editor/courtyard-commands';
 import { courtyardInstances } from '../engine/object-editor/courtyard-document';
 import { isUsableMap } from './map-schema';
@@ -12,7 +17,7 @@ import {
   SAVE_FORMAT_VERSION,
 } from './save-format';
 
-function courtyard(brazier: boolean) {
+function courtyard() {
   const result = generateCourtyard({
     seed: 'ivy-court',
     density: 'Balanced',
@@ -20,36 +25,42 @@ function courtyard(brazier: boolean) {
     fountain: true,
     wagon: true,
     well: true,
-    brazier,
   });
   if (!result.ok) throw new Error(result.error);
   return result.map;
 }
 
-test('format 31 round-trips the brazier and preserves format 30 without it', () => {
-  const map = courtyard(true);
+test('format 31 keeps the brazier object kind and old formats reject it', () => {
+  const map = courtyard();
   const saved = makeSavedMap(
     map,
-    'Brazier courtyard',
+    'Courtyard with braziers',
     'data:image/png;base64,AAAA',
     'brazier',
-    '2026-11-11T12:00:00Z',
+    '2026-11-12T12:00:00Z',
   );
   expect(SAVE_FORMAT_VERSION).toBe('31.0.0');
-  expect(saved.saveFormatVersion).toBe(SAVE_FORMAT_VERSION);
+  expect(map.decoration).not.toHaveProperty('brazier');
+  expect(map.version).toBe('5.0.0');
   expect(parseSavedMap(saved)?.map).toEqual(map);
   expect(parseBundle(serializeBundle([saved]))).toEqual({ ok: true, maps: [saved], skipped: 0 });
-  expect(saveVocabulary('30.0.0')?.courtyardBraziers).toBeUndefined();
-  expect(saveVocabulary('30.0.0')?.propKinds).not.toContain('abandoned_brazier');
-  expect(saveVocabulary(SAVE_FORMAT_VERSION)?.courtyardBraziers).toEqual([true]);
-  expect(parseSavedMap({ ...saved, saveFormatVersion: '30.0.0' })).toBeUndefined();
-  expect(
-    parseSavedMap({ ...saved, map: courtyard(false), saveFormatVersion: '30.0.0' })?.map,
-  ).toEqual(courtyard(false));
+  expect(saveVocabulary(SAVE_FORMAT_VERSION)?.propKinds).toContain('abandoned_brazier');
+  for (let version = 1; version <= 30; version++) {
+    expect(saveVocabulary(`${version}.0.0`)?.propKinds).not.toContain('abandoned_brazier');
+    expect(parseSavedMap({ ...saved, saveFormatVersion: `${version}.0.0` })).toBeUndefined();
+  }
+  // Historical format-31 records may carry the retired brazier marker; it
+  // stays accepted and changes nothing.
+  const historical = {
+    ...map,
+    version: '4.0.0',
+    decoration: { ...map.decoration, brazier: true as const },
+  };
+  expect(parseSavedMap({ ...saved, map: historical })?.map).toEqual(historical);
 });
 
-test('the editable brazier round-trips and old sidecar vocabularies reject it', () => {
-  const base = courtyard(false);
+test('braziers are ordinary editable objects in the object editor', () => {
+  const base = courtyard();
   const result = applyCourtyardCommand(base, {
     kind: 'add',
     propKind: 'abandoned_brazier',
@@ -65,40 +76,52 @@ test('the editable brazier round-trips and old sidecar vocabularies reject it', 
     'Edited courtyard',
     'data:image/png;base64,AAAA',
     'edited-brazier',
-    '2026-11-11T12:00:00Z',
+    '2026-11-12T12:00:00Z',
   );
   expect(parseSavedMap(saved)?.map).toEqual(edited);
-  expect(parseSavedMap({ ...saved, saveFormatVersion: '30.0.0' })).toBeUndefined();
   expect(isUsableMap(edited)).toBe(false);
+  // Removing the spawned brazier through the editor stays a valid authored state.
+  const index = base.decoration.props.findIndex((prop) => prop.kind === 'abandoned_brazier');
+  if (index < 0) throw new Error('Missing spawned brazier');
+  const removal = applyCourtyardCommand(base, { kind: 'remove', id: `base-${index}` });
+  if (!removal.ok) throw new Error(removal.error);
+  const remaining = courtyardInstances(removal.document);
+  expect(remaining.some((item) => item.id === `base-${index}`)).toBe(false);
+  expect(remaining.filter((item) => item.prop.kind === 'abandoned_brazier')).toHaveLength(
+    base.decoration.props.filter((prop) => prop.kind === 'abandoned_brazier').length - 1,
+  );
 });
 
-test('malformed brazier metadata and duplicate or moved canonical props are rejected', () => {
-  const map = courtyard(true);
-  const saved = makeSavedMap(
-    map,
-    'Brazier courtyard',
-    'data:image/png;base64,AAAA',
-    'brazier-validation',
-    '2026-11-11T12:00:00Z',
-  );
-  const body = map.decoration.props.find((prop) => prop.kind === 'abandoned_brazier');
-  if (!body) throw new Error('Missing brazier');
-  const candidates: unknown[] = [
-    { ...map, decoration: { ...map.decoration, brazier: false } },
-    { ...map, decoration: { ...map.decoration, brazier: 1 } },
-    { ...map, decoration: { ...map.decoration, props: [...map.decoration.props, body] } },
-    {
-      ...map,
-      decoration: {
-        ...map.decoration,
-        props: map.decoration.props.map((prop) =>
-          prop === body ? { ...prop, x: prop.x + 1 } : prop,
-        ),
-      },
-    },
-  ];
-  for (const candidate of candidates) {
-    expect(isUsableMap(candidate)).toBe(false);
-    expect(parseSavedMap({ ...saved, map: candidate })).toBeUndefined();
+test.each(['wagon', 'well'] as const)(
+  'historical courtyards restore their exact model after removing a %s',
+  (addition) => {
+    const bundle = parseBundle(JSON.stringify(fixture));
+    if (!bundle.ok) throw new Error(bundle.error);
+    const map = bundle.maps[1]?.map;
+    if (!map || map.type !== 'courtyard' || map.objectEdits !== undefined)
+      throw new Error('Missing historical courtyard');
+    const before = structuredClone(map);
+    const added = changeCourtyardAppearance(map, { ...map.decoration, [addition]: true });
+    expect(added.decoration[addition]).toBe(true);
+    expect(added.version).toBe(map.version);
+    const removed = changeCourtyardAppearance(added, { ...map.decoration, [addition]: false });
+    expect(removed).toEqual(map);
+    expect(map).toEqual(before);
+  },
+);
+
+test('historical courtyard shuffles keep the original generation version and ordinary vocabulary', () => {
+  const bundle = parseBundle(JSON.stringify(fixture));
+  if (!bundle.ok) throw new Error(bundle.error);
+  for (const record of bundle.maps) {
+    const map = record.map;
+    if (map.type !== 'courtyard' || map.objectEdits !== undefined)
+      throw new Error('Missing historical courtyard');
+    const shuffled = shuffleCourtyardDetails(map);
+    expect(shuffled.version).toBe('4.0.0');
+    expect(shuffled.layout).toBe(map.layout);
+    expect(shuffled.surfaceSeed).toBe(map.surfaceSeed);
+    expect(shuffled.decoration.revision).toBe(map.decoration.revision + 1);
+    expect(shuffled.decoration.props.some((prop) => prop.kind === 'abandoned_brazier')).toBe(false);
   }
 });

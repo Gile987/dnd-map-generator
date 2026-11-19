@@ -4,7 +4,12 @@ import {
   shuffleCourtyardDetails,
   changeCourtyardAppearance,
 } from './courtyard-generate';
-import { validateCourtyard, validateCourtyardSettings } from './courtyard-validation';
+import {
+  validateCourtyard,
+  validateCourtyardSettings,
+  areaCells,
+  fountainSite,
+} from './courtyard-validation';
 import { placeStoneWell } from './courtyard-well';
 import { ALL_DENSITIES } from './model';
 import type { Point, Prop, RuinedCourtyard } from './model';
@@ -12,6 +17,14 @@ import { indexOf, isBlockingProp } from './model';
 import { gridDistances } from './grid-traversal';
 import { courtyardProtectedCells } from './courtyard-validation';
 import { propCells } from './prop-footprint';
+
+/** The canonical reserve inputs validation uses for the well. */
+function fountainReserveOf(map: RuinedCourtyard): Set<number> {
+  const site = fountainSite(map.layout);
+  return new Set(
+    areaCells({ x: site.x - 1, y: site.y - 1, width: 5, height: 5 }).map((p) => indexOf(p.x, p.y)),
+  );
+}
 
 const CHARACTER = 'Overgrown' as const;
 
@@ -82,7 +95,12 @@ describe('stone well generation', () => {
         const map = courtyard({ density, fountain });
         assertWellSpace(map);
         expect(map.decoration.props.filter((p) => p.kind === 'stone_well')).toHaveLength(1);
-        const placed = placeStoneWell(map.layout, map.seed, new Set());
+        // Recompute the reserve exactly like canonical validation does.
+        const placed = placeStoneWell(
+          map.layout,
+          map.seed,
+          new Set([...courtyardProtectedCells(map.layout), ...fountainReserveOf(map)]),
+        );
         if (!placed) throw new Error('Missing placed well');
         const reserve = placed.reserve;
         for (const prop of map.decoration.props) {
@@ -99,7 +117,12 @@ describe('stone well generation', () => {
   test('a well and a collapsed wagon keep disjoint footprints on shared maps', () => {
     const shared = courtyard({ wagon: true, fountain: true, seed: 'fallen-crown' });
     assertWellSpace(shared);
-    const placed = placeStoneWell(shared.layout, shared.seed, new Set());
+    // Recompute the reserve exactly like canonical validation does.
+    const placed = placeStoneWell(
+      shared.layout,
+      shared.seed,
+      new Set([...courtyardProtectedCells(shared.layout), ...fountainReserveOf(shared)]),
+    );
     if (!placed) throw new Error('Missing placed well');
     const reserve = placed.reserve;
     const blockingCells = shared.decoration.props
@@ -218,7 +241,7 @@ describe('stone well validation', () => {
     const placed = placeStoneWell(
       base.layout,
       base.seed,
-      new Set([...courtyardProtectedCells(base.layout)]),
+      new Set([...courtyardProtectedCells(base.layout), ...fountainReserveOf(base)]),
     );
     if (!placed) throw new Error('Missing placed well');
     const reserve = placed.reserve;

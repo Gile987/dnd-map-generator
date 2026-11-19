@@ -400,11 +400,22 @@ test('fountain placement over any part of a fern preserves it as named ground co
 test('moving the fountain over a fixed vine keeps its position, identity and saved artwork data', () => {
   const base = courtyardEditorFixture(),
     prepared = clearCourtyard(base);
-  const vine = courtyardInstances(prepared).find(
-    (item) => item.prop.kind === 'vine' && item.prop.x === 13 && item.prop.y === 9,
-  );
+  const vine = courtyardInstances(prepared).find((item) => item.prop.kind === 'vine');
   if (!vine) throw Error('Missing vine fixture');
-  const moved = accept(prepared, { kind: 'move-group', id: 'fountain', target: { x: 12, y: 8 } });
+  // Center the 3 × 3 fountain on a position that covers the vine.
+  let moved;
+  for (let dy = -1; dy <= 0 && !moved; dy++)
+    for (let dx = -1; dx <= 0 && !moved; dx++) {
+      const target = { x: vine.prop.x - 1 + dx, y: vine.prop.y - 1 + dy };
+      const attempt = applyCourtyardCommand(prepared, {
+        kind: 'move-group',
+        id: 'fountain',
+        target,
+        rotation: 0,
+      });
+      if (attempt.ok) moved = attempt.document;
+    }
+  if (!moved) throw Error('No fountain move covers a vine');
   expect(courtyardInstances(moved).find((item) => item.id === vine.id)).toEqual(vine);
   expect(parseCourtyardEdits(base, moved.objectEdits)).toEqual(moved);
 });

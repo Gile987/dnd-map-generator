@@ -8,6 +8,12 @@ export const HEIGHT = 30;
 export const ROOM_MIN = 4;
 export const ROOM_MAX = 8;
 export const GENERATOR_VERSION = '4.0.0';
+/**
+ * Courtyard decoration rules changed when the abandoned brazier became an
+ * ordinary spawned object; the Tower keeps its own version for the same
+ * reason. Dungeon and Forest streams continue on GENERATOR_VERSION.
+ */
+export const COURTYARD_GENERATOR_VERSION = '5.0.0';
 
 export type MapType = 'dungeon' | 'forest' | 'courtyard' | 'tower';
 
@@ -128,7 +134,6 @@ export interface ForestSettings {
 }
 
 export interface CourtyardSettings {
-  readonly brazier?: boolean;
   readonly wagon?: boolean;
   readonly well?: boolean;
   readonly seed: string;
@@ -163,6 +168,8 @@ export interface RuinedCourtyard {
     readonly density: Density;
     readonly character: CourtyardCharacter;
     readonly fountain: boolean;
+    /** Historical format-31 marker; braziers are ordinary objects since
+     * courtyard generator 5.0.0 and the marker is no longer emitted. */
     readonly brazier?: true;
     readonly wagon?: true;
     readonly well?: true;

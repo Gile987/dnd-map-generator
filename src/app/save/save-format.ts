@@ -473,7 +473,7 @@ export function mapSummary(map: MapDocument): string {
   if (map.type === 'tower')
     return `${map.objectEdits ? 'Customized · ' : ''}${map.layout.floors.length} floors · ${TOWER_STAIR_LABELS[towerStairStyle(map)]} · Wizard’s tower${map.decoration.laboratoryFloor !== undefined ? ' · Laboratory on floor ' + map.decoration.laboratoryFloor : ''}${map.decoration.observatoryFloor !== undefined ? ' · Observatory on floor ' + map.decoration.observatoryFloor : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'courtyard')
-    return `${map.objectEdits ? 'Customized · ' : ''}${map.decoration.character} ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''}${map.decoration.well ? ' · Stone well' : ''}${map.decoration.brazier ? ' · Abandoned brazier' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
+    return `${map.objectEdits ? 'Customized · ' : ''}${map.decoration.character} ruin${map.decoration.fountain ? ' · Dry fountain' : ''}${map.decoration.wagon ? ' · Collapsed wagon' : ''}${map.decoration.well ? ' · Stone well' : ''} · ${map.decoration.density} r${map.decoration.revision}`;
   if (map.type === 'dungeon') {
     const scene = map.decoration.scene === 'Forgotten study' ? ' · Forgotten study' : '';
     return `${map.objectEdits ? 'Customized · ' : ''}${map.layout.rooms.length} rooms · ${map.decoration.preset}${map.decoration.ritual ? ' · Ritual site' : ''}${map.decoration.furniture === 'dining-table' ? ' · Dining table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? ' · ' + LANDMARK_CATALOG[map.decoration.landmark].label : ''}${scene} · ${map.decoration.density} r${map.decoration.revision}`;
