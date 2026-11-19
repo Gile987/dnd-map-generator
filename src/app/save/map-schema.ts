@@ -203,6 +203,7 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
     for (const prop of decoration['props']) {
       if (
         !isObject(prop) ||
+        'artRotation' in prop ||
         typeof prop['kind'] !== 'string' ||
         !vocabulary.propKinds.includes(prop['kind'])
       )

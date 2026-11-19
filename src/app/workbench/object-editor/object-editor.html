@@ -243,13 +243,18 @@
     </button>
     <span>Steps past overlapping objects. Additions stay together. Save to keep the order.</span>
   </div>
-  } } @if ((selection() && !selection()?.lock) || placement()) { @if (selection()?.rotatable) {
-  <div class="position-controls rotation-controls" role="group" aria-label="Addition rotation">
+  } } @if ((selection() && !selection()?.lock) || placement()) { @if (selection()?.rotatable ||
+  placement()?.command?.kind === 'add') {
+  <div
+    class="position-controls rotation-controls"
+    role="group"
+    [attr.aria-label]="selection()?.groupId ? 'Addition rotation' : 'Object rotation'"
+  >
     <button
       type="button"
       (click)="rotate(-1)"
       [disabled]="disabled()"
-      aria-label="Rotate addition left"
+      [attr.aria-label]="selection()?.groupId ? 'Rotate addition left' : 'Rotate object left'"
     >
       ↶ Rotate left
     </button>
@@ -257,12 +262,17 @@
       type="button"
       (click)="rotate(1)"
       [disabled]="disabled()"
-      aria-label="Rotate addition right"
+      [attr.aria-label]="selection()?.groupId ? 'Rotate addition right' : 'Rotate object right'"
     >
       ↷ Rotate right
     </button>
-    <output aria-label="Addition rotation">{{rotation() * 90}}° from generated</output>
-    <span>Column and Row keep the top-left anchor.</span>
+    <output [attr.aria-label]="selection()?.groupId ? 'Addition rotation' : 'Object rotation'"
+      >{{rotation() * 90}}° from {{selection()?.groupId ? 'generated' : 'original'}}</output
+    >
+    <span
+      >{{selection()?.groupId ? 'Column and Row keep the top-left anchor.' : 'Rotation keeps the
+      object on its current square.'}}</span
+    >
   </div>
   }
   <div class="position-controls">

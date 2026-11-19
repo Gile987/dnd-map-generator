@@ -1,3 +1,5 @@
+import { validStoredRotation } from './object-rotation';
+import type { QuarterTurn } from '../model';
 import { isBlockingProp, isTilePosition } from '../model';
 import type { PropKind } from '../model';
 import { QUARTER_TURNS } from '../prop-footprint';
@@ -72,7 +74,8 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
   for (const move of value['moves']) {
     if (
       !object(move) ||
-      !keys(move, ['id', 'x', 'y']) ||
+      !keys(move, ['id', 'x', 'y', 'artRotation']) ||
+      !validStoredRotation(move) ||
       !position(move, validPosition) ||
       typeof move['id'] !== 'string' ||
       !/^base-(0|[1-9]\d*)$/.test(move['id']) ||
@@ -81,10 +84,19 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
       return undefined;
     const id = move['id'],
       prop = base.decoration.props[Number(id.slice(5))];
-    if (!prop || adapter.lock(base, id, prop) || (move.x === prop.x && move.y === prop.y))
+    if (
+      !prop ||
+      adapter.lock(base, id, prop) ||
+      (move.x === prop.x && move.y === prop.y && !move['artRotation'])
+    )
       return undefined;
     seen.add(id);
-    moves.push({ id, x: move.x, y: move.y });
+    moves.push({
+      id,
+      x: move.x,
+      y: move.y,
+      ...(move['artRotation'] ? { artRotation: move['artRotation'] as QuarterTurn } : {}),
+    });
   }
   for (const entry of value['added']) {
     if (
@@ -99,7 +111,8 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
     const prop = entry['prop'];
     if (
       !object(prop) ||
-      !keys(prop, ['kind', 'x', 'y', 'blocking', 'variation']) ||
+      !keys(prop, ['kind', 'x', 'y', 'blocking', 'variation', 'artRotation']) ||
+      !validStoredRotation(prop) ||
       !position(prop, validPosition) ||
       typeof prop['kind'] !== 'string' ||
       (options.allowedKinds !== undefined && !options.allowedKinds.includes(prop['kind'])) ||
@@ -112,7 +125,14 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
     seen.add(entry['id']);
     added.push({
       id: entry['id'],
-      prop: { kind, x: prop.x, y: prop.y, blocking: isBlockingProp(kind), variation: 0.5 },
+      prop: {
+        kind,
+        x: prop.x,
+        y: prop.y,
+        blocking: isBlockingProp(kind),
+        variation: 0.5,
+        ...(prop['artRotation'] ? { artRotation: prop['artRotation'] as QuarterTurn } : {}),
+      },
     });
   }
   const available = adapter.groups(base),

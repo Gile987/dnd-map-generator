@@ -296,6 +296,8 @@ export interface Prop extends Point {
   readonly variation: number;
   readonly footprint?: { readonly width: number; readonly height: number };
   readonly rotation?: QuarterTurn;
+  /** Authored artwork orientation; movement footprints remain unchanged. */
+  readonly artRotation?: QuarterTurn;
 }
 
 export interface Decoration {

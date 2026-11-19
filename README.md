@@ -67,7 +67,7 @@ Angular 22 requires Node `^22.22.3`, `^24.15.0`, or `>=26.0.0` and TypeScript `>
 - **Tower editing and secrets:** when a tower has a hidden floor, enable **Show secrets** to edit with all connections visible. The disabled **Edit objects** button displays this requirement beside it and includes it in its accessible description. Turning it off cancels placement and removes hidden-floor objects, group choices, layer badges, inspection details and selection messages. Player previews, thumbnails and PNGs omit secret-floor artwork and its annotations; GM exports retain them. Individual-floor export keeps the original grid scale and independently applies the player/GM choice. JSON always retains the complete tower.
 - **Drawing order (all map types):** select an object or complete addition in Edit objects, then use **Bring forward** or **Send backward** to step past an overlapping object. For example, a rug can cover two boxes; each step passes one overlapping object or complete addition. Components of an addition keep their internal drawing order. Changes are accepted immediately and can be undone, saved, pinned and reopened. Drawing order never changes movement blocking: the boxes still occupy their squares. Surfaces and collision rules retain their normal defaults when objects are inserted.
 - **Covered objects:** all four workspaces show **named badges such as “Barrel underneath” or “Crate + Barrel underneath”** for overlapping object areas, in Explore and Edit objects. Nearby badges avoid each other and use a line to identify their objects; **Layers** below the map also lists overlaps when their badges cannot fit or are outside the current view. Select a badge to open and focus a top-to-bottom list below the preview; select an item to show its outline, including when it is hidden by the artwork. Complete-addition components select their owning addition for editing. Repeated kinds combine as “Barrel × 2”; larger or longer stacks show a compact “+ N more” summary, with every name available in the tooltip, accessible label, Layers list and inspection list. Names and counts exclude internal overlaps within the same addition and describe authored object areas, including partial overlaps, rather than pixel opacity or cloth simulation. In **Export options**, **Show layer indicators** includes the same named summaries and outlines of covered areas in the prepared preview and downloaded PNG. It starts off each time the dialog opens. Quick export and library thumbnails contain the artwork with its accepted order and no annotations. JSON always retains the complete arrangement, regardless of this export choice.
-- **Customized maps:** each committed move, insertion, removal, or Reset customizations is one undoable accepted change. Temporary ghosts never enter saves or PNGs; Quick export preparation and map/candidate changes cancel temporary placement. Save explicitly to retain customizations after refresh. Map Undo/Redo change includes both object edits and shuffles, retaining the same session limit; the editor toolbar also provides Undo/Redo in Focus map. Shuffle is unavailable on customized maps. Pending settings remain separate: **Replace customizations and generate** applies them and replaces customizations, with Undo available to restore the customized candidate. Reset customizations restores the original generated objects and artwork, keeps independent door states, and is itself undoable; it differs from Reset pending changes. Pins remain read-only. Attached sconces and vines remain protected. Dungeon, Forest and Tower additions and the Courtyard wagon support translation and quarter-turn rotation; the Courtyard fountain and well support translation. Insertion and removal of complete additions are not available. Cross-floor transfers and independent object rotation remain future work.
+- **Customized maps:** each committed move, rotation, insertion, removal, or Reset customizations is one undoable accepted change. Temporary ghosts never enter saves or PNGs; Quick export preparation and map/candidate changes cancel temporary placement. Save explicitly to retain customizations after refresh. Map Undo/Redo change includes both object edits and shuffles, retaining the same session limit; the editor toolbar also provides Undo/Redo in Focus map. Shuffle is unavailable on customized maps. Pending settings remain separate: **Replace customizations and generate** applies them and replaces customizations, with Undo available to restore the customized candidate. Reset customizations restores the original generated objects and artwork, keeps independent door states, and is itself undoable; it differs from Reset pending changes. Pins remain read-only. Attached sconces and vines remain protected. Dungeon, Forest and Tower additions and the Courtyard wagon support translation and quarter-turn rotation; the Courtyard fountain and well support translation. Insertion and removal of complete additions are not available. Cross-floor transfers remain future work.
 - **Explore:** drag with a pointer, or focus the canvas and use arrow keys to pan. Use the zoom buttons, `+` / `-`, or Ctrl/Command + wheel over the preview to zoom. **Fit** or `Home` recenters the whole map. Ordinary wheel scrolling remains page scrolling. Zoom is relative to fit and ranges from 50% to 400%.
 - **Dungeon doors:** in Explore, click or tap a doorway to open or close it. Hover highlights the opening and shows the action; dragging pans without toggling, and canceled gestures do not change doors. **Doors** below the map expands a keyboard-accessible selector and Open/Close button, with one-based grid coordinates and the current state. Toggles join the accepted-map Undo/Redo history and are retained by Save, backups, thumbnails and PNGs. Door states are independent of object customizations: decoration shuffles and appearance changes keep them, while a new layout starts with the original closed doors. Replacing an open-door map with a new layout remains undoable. Object-editing mode, Pinned and busy states cannot toggle doors. Closed doors remain openable connections, not wall tiles; layout/movement validation is unchanged. A PNG captures their appearance but does not provide interactive doors in another application.
 - **Mobile navigation:** at widths up to 800 pixels, **Settings / Map / Library** shortcuts stay at the top while you scroll through the workbench. Each jumps to and focuses its section heading; Tab continues into that section's controls. A dot beside Settings and its accessible label indicate pending changes for the active map type. Section jumps retain drafts, map zoom/pan, library filters, and unfinished save or rename inputs. The shortcuts remain available during generation and export.
@@ -152,6 +152,36 @@ entrance/objective markers and floor labels are architectural features; painted
 leaves, ash, cracks and similar surface marks are renderer details. Their behavior
 is described in [Using the workbench](#using-the-workbench).
 
+## Rotating individual objects
+
+All independently editable objects in the [object list](#object-list) support
+quarter-turn rotation on every map where they are available. Select an existing
+object in **Edit objects**, or choose a new item through **Add object**, then use
+**Rotate left** or **Rotate right**. The preview shows 0°, 90°, 180° or 270° relative
+to the object's original artwork. Choose **Place object** to commit the position
+and orientation together; Escape cancels the preview. Keyboard users can focus
+either rotation button and activate it with Enter or Space.
+
+Rotation keeps the object's anchor and movement footprint unchanged, including
+the rug's existing 3 × 3 surface area. Placement, collision, access and density
+checks still apply. Invalid placement stays staged so coordinates can be corrected
+without losing the chosen angle. Moving an already rotated object retains its
+orientation. Generated artwork variation stays unchanged; the editor adds the
+chosen turn to that original facing.
+
+A committed rotation is one Undo/Redo step and survives pins, saved reopening,
+backups, thumbnails and PNG exports. Temporary previews do not enter saves or
+exports. Returning to the original position and orientation clears a generated
+object's move record; four turns alone restore its original document and artwork.
+
+Complete additions retain their existing rotation rules. Individual addition
+components, attached sconces/vines, stairs, portals and other architecture cannot
+be rotated independently. Chosen artwork orientations use the optional
+`artRotation` field in authored move records and added props; generated bases,
+generator versions, RNG streams and multi-tile footprint rotations are unchanged.
+Save format **34.0.0** records this authored extension; earlier formats are
+unsupported under the current-only policy.
+
 ## Shared placeable props
 
 Open **Edit objects → Add object** to place these independent objects. Search by
@@ -178,15 +208,15 @@ and density checks still follow each map's rules. Passable does not automaticall
 mean an object may overlap other objects: for example, a Forest bedroll remains
 physical, while Tower bedrolls retain their existing surface behavior. Ferns and
 moss are ground cover; Tower stairs continue to require clearance from ferns.
-Independent object rotation and insertion of complete additions remain future work.
+Insertion of complete additions remains future work.
 
 Shared names, categories, blocking and map availability live in
 `engine/shared-props.ts`; map-specific editor catalogs consume that metadata.
 `rendering/portable-props.ts` draws the three new objects through the existing
 shared prop dispatch, which keeps maps, placement previews, catalog illustrations,
 thumbnails and PNG exports consistent. Editing, undo, saves and backup imports
-use the existing per-map document adapters. Save format **33.0.0** records the
-expanded authored vocabulary; format 32 and earlier are unsupported. Generator
+use the existing per-map document adapters. Save format **34.0.0** records the
+expanded authored vocabulary; format 33 and earlier are unsupported. Generator
 versions and canonical generated model/pixel baselines remain unchanged.
 
 ## Export presets and VTT setup
@@ -241,8 +271,8 @@ The seeded engine uses unsigned 32-bit **FNV-1a over UTF-16 code units** for sta
 Dungeon, Forest, and Courtyard use `gridDistances` in `engine/grid-traversal.ts` for four-neighbor shortest paths, preserving left/right/up/down discovery order. The existing `distances` and `forestDistances` names are aliases to that function. Dungeon thresholds/landmarks and forest route rules remain in their domain modules. `shuffleInPlace` in `engine/random.ts` implements Fisher–Yates for locally owned candidate arrays of non-null values; it consumes one inclusive `int(0, i)` draw per descending index, including self-swaps, and none for empty or singleton arrays. Generated maps and caller-owned layouts remain immutable. Connectivity tests retain separate test-only searches, and shuffled-order/next-draw fixtures pin RNG consumption independently of production constants.
 
 **Supported saves and generator versions.** The app supports only the current
-save format, **33.0.0**, and the current generator for each map type. This is an
-intentional development-time break: formats 1–32, older generator snapshots,
+save format, **34.0.0**, and the current generator for each map type. This is an
+intentional development-time break: formats 1–33, older generator snapshots,
 and Dungeon editing versions 1–3 are unsupported. There are no migrations,
 character defaults for imported maps, or landmark alias conversions. Regenerate
 maps with this build and save them again; changing an old file's version number
@@ -254,7 +284,7 @@ does not convert its contents.
 | Dungeon and Forest generator `4.0.0` | Current layout and decoration rules for these map types. |
 | Courtyard generator `5.0.0`          | Current rules, including spawned ordinary braziers.      |
 | Tower generator `3.0.0`              | Current separate and spiral staircase rules.             |
-| Save format `33.0.0`                 | Current record, backup, and editing vocabulary.          |
+| Save format `34.0.0`                 | Current record, backup, and editing vocabulary.          |
 
 Backup headers and records must contain the exact current save-format string.
 Unsupported headers reject the file; unsupported records inside a current bundle
@@ -464,3 +494,12 @@ single-square drawing bounds and writes `artifacts/shared-props/catalog.png`.
 `tests/shared-props.spec.ts` checks all four catalogs, independent placement and
 movement, undo, save/reopen, fresh-browser backup import, exact PNG parity, and
 search/keyboard placement with invalid-destination recovery at 320 px width.
+
+Individual-rotation checks cover every catalog entry on all four map types,
+generated-object restoration after four turns, strict malformed-angle and
+canonical-base rejection, placement, save/backup round trips and immutable inputs.
+`scripts/object-rotation-review.spec.ts` renders all four orientations into
+`artifacts/object-rotation/` contact sheets. `tests/object-rotation.spec.ts` covers
+staging/cancellation, retaining a staged turn while dragging, keyboard insertion,
+invalid-position recovery, Undo/Redo,
+saved reopening and exact PNG parity, including a 320 px Tower workspace.

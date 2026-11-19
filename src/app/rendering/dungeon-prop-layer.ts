@@ -25,7 +25,7 @@ export function drawDungeonProp(
   const turn = map.artTurns?.get(prop) ?? 0;
   if (
     (map.decoration.studySurface === 1 || prop.kind === 'desk' || prop.kind === 'bookshelf') &&
-    drawFittedStudyProp(ctx, prop, map.layout, turn)
+    drawFittedStudyProp(ctx, prop, map.layout, turn || prop.artRotation || 0)
   )
     return;
   if (turn && prop.kind === 'ritual_candles') {

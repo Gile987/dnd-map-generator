@@ -1,3 +1,4 @@
+import { withObjectRotation } from './object-rotation';
 import { isBlockingProp, isTilePosition } from '../model';
 import { QUARTER_TURNS } from '../prop-footprint';
 import { stepObjectOrder, hasCustomObjectOrder } from './drawing-order';
@@ -15,6 +16,12 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
   command: ObjectCommand,
   adapter: ArrangementAdapter<Base, Id>,
 ): ObjectEditResult<ArrangementDocument<Base, Id>> {
+  if (
+    'rotation' in command &&
+    command.rotation !== undefined &&
+    !QUARTER_TURNS.includes(command.rotation)
+  )
+    return { ok: false, error: 'Choose a quarter-turn rotation.' };
   const base = adapter.base(map);
   if (command.kind === 'reset') return { ok: true, document: map.objectEdits ? base : map };
   if (
@@ -85,6 +92,7 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
             x: command.target.x,
             y: command.target.y,
             variation: 0.5,
+            ...(command.rotation ? { artRotation: command.rotation } : {}),
             blocking: isBlockingProp(command.propKind),
           },
         },
@@ -103,7 +111,11 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
         removed: item.id.startsWith('base-') ? [...edits.removed, item.id].sort() : edits.removed,
       };
     else {
-      if (item.prop.x === command.target.x && item.prop.y === command.target.y)
+      if (
+        item.prop.x === command.target.x &&
+        item.prop.y === command.target.y &&
+        (item.prop.artRotation ?? 0) === (command.rotation ?? item.prop.artRotation ?? 0)
+      )
         return { ok: true, document: map };
       if (item.id.startsWith('base-')) {
         const source = base.decoration.props[Number(item.id.slice(5))];
@@ -112,9 +124,20 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
           ...edits,
           moves: [
             ...edits.moves.filter((move) => move.id !== item.id),
-            ...(source.x === command.target.x && source.y === command.target.y
+            ...(source.x === command.target.x &&
+            source.y === command.target.y &&
+            !(command.rotation ?? item.prop.artRotation ?? 0)
               ? []
-              : [{ id: item.id, x: command.target.x, y: command.target.y }]),
+              : [
+                  {
+                    id: item.id,
+                    x: command.target.x,
+                    y: command.target.y,
+                    ...((command.rotation ?? item.prop.artRotation)
+                      ? { artRotation: command.rotation ?? item.prop.artRotation }
+                      : {}),
+                  },
+                ]),
           ].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
         };
       } else
@@ -122,7 +145,13 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
           ...edits,
           added: edits.added.map((other) =>
             other.id === item.id
-              ? { ...other, prop: { ...other.prop, x: command.target.x, y: command.target.y } }
+              ? {
+                  ...other,
+                  prop: withObjectRotation(
+                    { ...other.prop, x: command.target.x, y: command.target.y },
+                    command.rotation ?? item.prop.artRotation ?? 0,
+                  ),
+                }
               : other,
           ),
         };

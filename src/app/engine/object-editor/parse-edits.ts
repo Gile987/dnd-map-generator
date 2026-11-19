@@ -1,3 +1,5 @@
+import { validStoredRotation } from './object-rotation';
+import type { QuarterTurn } from '../model';
 import { dungeonInstances } from './document';
 import { orderedDungeonObjects } from './dungeon-drawing-order';
 import { individualObjectLock } from './dungeon-authoring-rules';
@@ -84,7 +86,8 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
   for (const move of value['moves']) {
     if (
       !object(move) ||
-      !keys(move, ['id', 'x', 'y']) ||
+      !keys(move, ['id', 'x', 'y', 'artRotation']) ||
+      !validStoredRotation(move) ||
       !position(move) ||
       typeof move['id'] !== 'string' ||
       !/^base-(0|[1-9]\d*)$/.test(move['id']) ||
@@ -95,11 +98,16 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
     if (
       !source ||
       individualObjectLock(base, move['id'], source) ||
-      (source.x === move.x && source.y === move.y)
+      (source.x === move.x && source.y === move.y && !move['artRotation'])
     )
       return undefined;
     ids.add(move['id']);
-    moves.push({ id: move['id'], x: move.x, y: move.y });
+    moves.push({
+      id: move['id'],
+      x: move.x,
+      y: move.y,
+      ...(move['artRotation'] ? { artRotation: move['artRotation'] as QuarterTurn } : {}),
+    });
   }
   for (const item of value['added']) {
     if (
@@ -114,7 +122,8 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
     const prop = item['prop'];
     if (
       !object(prop) ||
-      !keys(prop, ['kind', 'x', 'y', 'variation', 'blocking']) ||
+      !keys(prop, ['kind', 'x', 'y', 'variation', 'blocking', 'artRotation']) ||
+      !validStoredRotation(prop) ||
       !position(prop) ||
       typeof prop['kind'] !== 'string' ||
       !dungeonCapability(prop['kind'] as PropKind)?.editable ||
@@ -131,6 +140,7 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
         y: prop.y,
         blocking: isBlockingProp(prop['kind'] as PropKind),
         variation: 0.5,
+        ...(prop['artRotation'] ? { artRotation: prop['artRotation'] as QuarterTurn } : {}),
       },
     });
   }

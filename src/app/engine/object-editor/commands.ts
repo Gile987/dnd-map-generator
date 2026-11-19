@@ -1,3 +1,4 @@
+import { withObjectRotation } from './object-rotation';
 import { MAX_AUTHORED_OBJECTS } from './object-command';
 import type { ObjectCommand, ObjectEditResult } from './object-command';
 import { isDungeonSurface } from './dungeon-occupancy';
@@ -28,6 +29,12 @@ export function proposeObjectCommand(
   document: DungeonDocument,
   command: ObjectCommand,
 ): EditResult {
+  if (
+    'rotation' in command &&
+    command.rotation !== undefined &&
+    !QUARTER_TURNS.includes(command.rotation)
+  )
+    return { ok: false, error: 'Choose a quarter-turn rotation.' };
   const base = dungeonBase(document);
   const plain = withDoorStates(base, document.doorStates);
   if (command.kind === 'reset')
@@ -38,12 +45,6 @@ export function proposeObjectCommand(
     !isTilePosition(command.target.x, command.target.y)
   )
     return { ok: false, error: 'Place the object inside the map.' };
-  if (
-    command.kind === 'move-group' &&
-    command.rotation !== undefined &&
-    !QUARTER_TURNS.includes(command.rotation)
-  )
-    return { ok: false, error: 'Choose a quarter-turn rotation.' };
   const common: ObjectEditsV4 = document.objectEdits
     ? {
         ...document.objectEdits,
@@ -108,6 +109,7 @@ export function proposeObjectCommand(
       y: command.target.y,
       blocking: isBlockingProp(command.propKind),
       variation: 0.5,
+      ...(command.rotation ? { artRotation: command.rotation } : {}),
     };
     edits = {
       ...edits,
@@ -128,7 +130,11 @@ export function proposeObjectCommand(
           ? [...edits.removed, command.id].sort()
           : edits.removed,
       };
-    } else if (item.prop.x === command.target.x && item.prop.y === command.target.y)
+    } else if (
+      item.prop.x === command.target.x &&
+      item.prop.y === command.target.y &&
+      (item.prop.artRotation ?? 0) === (command.rotation ?? item.prop.artRotation ?? 0)
+    )
       return { ok: true, document };
     else if (command.id.startsWith('base-')) {
       const original = base.decoration.props[Number(command.id.slice(5))];
@@ -137,9 +143,20 @@ export function proposeObjectCommand(
         ...edits,
         moves: [
           ...edits.moves.filter((move) => move.id !== command.id),
-          ...(original.x === command.target.x && original.y === command.target.y
+          ...(original.x === command.target.x &&
+          original.y === command.target.y &&
+          !(command.rotation ?? item.prop.artRotation ?? 0)
             ? []
-            : [{ id: command.id, x: command.target.x, y: command.target.y }]),
+            : [
+                {
+                  id: command.id,
+                  x: command.target.x,
+                  y: command.target.y,
+                  ...((command.rotation ?? item.prop.artRotation)
+                    ? { artRotation: command.rotation ?? item.prop.artRotation }
+                    : {}),
+                },
+              ]),
         ].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
       };
     } else
@@ -147,7 +164,13 @@ export function proposeObjectCommand(
         ...edits,
         added: edits.added.map((item) =>
           item.id === command.id
-            ? { ...item, prop: { ...item.prop, x: command.target.x, y: command.target.y } }
+            ? {
+                ...item,
+                prop: withObjectRotation(
+                  { ...item.prop, x: command.target.x, y: command.target.y },
+                  command.rotation ?? item.prop.artRotation ?? 0,
+                ),
+              }
             : item,
         ),
       };

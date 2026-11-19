@@ -76,7 +76,7 @@ const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
   supply_sacks: (ctx, prop, _forest, _courtyard, portable) => drawSupplySacks(ctx, prop, portable),
   weapon_rack: (ctx, prop, _forest, _courtyard, portable) => drawWeaponRack(ctx, prop, portable),
   ritual_altar: drawRitualAltar,
-  ritual_candles: (ctx, prop) => drawRitualCandles(ctx, prop),
+  ritual_candles: (ctx, prop) => drawRitualCandles(ctx, prop, prop.artRotation),
   ritual_offering: drawRitualOffering,
   crate: drawCrate,
   barrel: drawBarrel,
@@ -139,6 +139,8 @@ export function drawProp(
   } else {
     ctx.translate(prop.x + 0.5, prop.y + (prop.kind === 'sconce' ? 0.18 : 0.5));
   }
+  if (prop.artRotation && prop.kind !== 'ritual_candles')
+    ctx.rotate((prop.artRotation * Math.PI) / 2);
   ctx.lineWidth = 0.025;
   PROP_DRAWERS[prop.kind](ctx, prop, forest, courtyard, portable);
   ctx.restore();
