@@ -104,7 +104,7 @@ test('Forest catalog, independent movement, pending settings, pins and recoverab
   await edit(page);
   await page.getByRole('button', { name: 'Add object', exact: true }).click();
   const catalog = page.getByRole('region', { name: 'Forest object catalog', exact: true });
-  await expect(catalog.locator('.object-cards button')).toHaveCount(7);
+  await expect(catalog.locator('.object-cards button')).toHaveCount(14);
   for (const name of ['Boulder', 'Log', 'Stump', 'Bush', 'Fern', 'Mushrooms', 'Flowers'])
     await expect(catalog.getByRole('button', { name: `Add ${name}`, exact: true })).toBeVisible();
   await catalog.screenshot({ path: 'artifacts/forest-editor/Fey-catalog.png' });

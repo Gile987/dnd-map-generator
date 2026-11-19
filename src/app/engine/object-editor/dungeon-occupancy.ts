@@ -4,7 +4,7 @@ import { authoredObjectArea } from './object-geometry';
 
 /** Explicit surface semantics: passable candles and offerings are still objects. */
 export function isDungeonSurface(kind: PropKind): boolean {
-  return kind === 'rug' || kind === 'moss';
+  return kind === 'rug' || kind === 'moss' || kind === 'fern';
 }
 
 export function dungeonObjectsCollide(a: Prop, b: Prop): boolean {

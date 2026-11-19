@@ -33,7 +33,7 @@ test.each(['separate', 'spiral'] as const)(
     expect(towerPlacementError(base)).toBeUndefined();
     expect(towerBase(base)).toBe(base);
     expect(resolveTower(base)).toBe(base);
-    expect(TOWER_PALETTE).toHaveLength(10);
+    expect(TOWER_PALETTE).toHaveLength(14);
     for (const item of TOWER_PALETTE) {
       const edited = accept(
         prepared,

@@ -1,13 +1,13 @@
+import { sharedObjectCapabilities } from '../shared-props';
 import { isBlockingProp } from '../model';
 import type { PropKind } from '../model';
 import type { ObjectCapability } from './catalog';
 
 /** Frozen first Courtyard editing vocabulary. New kinds require a compatibility decision. */
 const COURTYARD_OBJECTS_V1 = {
+  ...sharedObjectCapabilities('courtyard'),
   broken_column: { label: 'Broken column', category: 'Stonework', editable: true },
   low_rubble: { label: 'Low rubble', category: 'Ground', editable: true },
-  moss: { label: 'Moss', category: 'Ground', editable: true },
-  fern: { label: 'Fern', category: 'Vegetation', editable: true },
   vine: {
     label: 'Vine',
     category: 'Protected',
@@ -33,7 +33,7 @@ export function courtyardCapability(kind: PropKind): ObjectCapability | undefine
     : undefined;
 }
 export const COURTYARD_PALETTE = Object.entries(COURTYARD_OBJECTS_CURRENT)
-  .filter(([, capability]) => capability.editable)
+  .filter((entry): entry is [string, ObjectCapability] => !!entry[1]?.editable)
   .map(([kind, capability]) => ({
     kind: kind as PropKind,
     blocking: isBlockingProp(kind as PropKind),

@@ -4,7 +4,7 @@ import { individualObjectLock } from './dungeon-authoring-rules';
 import { dungeonGroups } from './dungeon-groups';
 import { QUARTER_TURNS } from '../prop-footprint';
 import type { GroupTransform } from './group-rotation';
-import { isBlockingProp, isDungeonPropKind, isTilePosition } from '../model';
+import { isBlockingProp, isTilePosition } from '../model';
 import type { Dungeon, PropKind } from '../model';
 import { dungeonCapability } from './catalog';
 import { authoredPlacementError, MAX_AUTHORED_OBJECTS } from './commands';
@@ -117,7 +117,6 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
       !keys(prop, ['kind', 'x', 'y', 'variation', 'blocking']) ||
       !position(prop) ||
       typeof prop['kind'] !== 'string' ||
-      !isDungeonPropKind(prop['kind'] as PropKind) ||
       !dungeonCapability(prop['kind'] as PropKind)?.editable ||
       prop['blocking'] !== isBlockingProp(prop['kind'] as PropKind) ||
       prop['variation'] !== 0.5

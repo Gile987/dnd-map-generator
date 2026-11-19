@@ -3,7 +3,7 @@ import { editableTowerStairs, towerStairBounds } from '../../engine/object-edito
 import { towerStairStyle } from '../../engine/tower';
 import { towerFloorAt, towerFloorTitle } from '../../engine/tower';
 import { mapDimensions } from '../../engine/model';
-import type { CourtyardCharacter, ForestCharacter } from '../../engine/model';
+import type { CourtyardCharacter, ForestCharacter, DecorationPreset } from '../../engine/model';
 import { describeObjectLayer } from '../../rendering/dungeon-layer-description';
 import { doorIsOpen, dungeonDoorAt, dungeonDoors } from '../../engine/dungeon-doors';
 import type { DoorToggleRequest } from '../../engine/dungeon-doors';
@@ -307,6 +307,10 @@ export class ObjectEditor {
       'Drawing order changed. Movement blocking is unchanged. Undo restores the previous order.',
     );
   }
+  protected readonly dungeonPreset = computed<DecorationPreset | undefined>(() => {
+    const map = this.map();
+    return map.type === 'dungeon' ? map.decoration.preset : undefined;
+  });
   protected readonly forestCharacter = computed<ForestCharacter | undefined>(() => {
     const map = this.map();
     return map.type === 'forest' ? map.decoration.character : undefined;

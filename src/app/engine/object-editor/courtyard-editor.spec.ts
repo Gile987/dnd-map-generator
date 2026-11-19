@@ -275,7 +275,7 @@ test('protected attachments and individual group members cannot move, disappear,
     expect(applyCourtyardCommand(base, { kind: 'order', id, direction: 'forward' }).ok).toBe(false);
   }
   for (const propKind of [
-    'crate',
+    'desk',
     'dry_fountain',
     'collapsed_wagon',
     'spilled_crate',

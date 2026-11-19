@@ -1,4 +1,11 @@
 import {
+  drawTreasureChest,
+  drawSupplySacks,
+  drawWeaponRack,
+  portablePropPalette,
+} from './portable-props';
+import type { PortablePropPalette } from './portable-props';
+import {
   drawFallenTrunk,
   drawFallenRoots,
   drawFallenBranch,
@@ -60,9 +67,14 @@ type PropDrawer = (
   prop: Prop,
   forest: ForestPalette,
   courtyard: CourtyardCharacter,
+  portable: PortablePropPalette,
 ) => void;
 
 const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
+  treasure_chest: (ctx, prop, _forest, _courtyard, portable) =>
+    drawTreasureChest(ctx, prop, portable),
+  supply_sacks: (ctx, prop, _forest, _courtyard, portable) => drawSupplySacks(ctx, prop, portable),
+  weapon_rack: (ctx, prop, _forest, _courtyard, portable) => drawWeaponRack(ctx, prop, portable),
   ritual_altar: drawRitualAltar,
   ritual_candles: (ctx, prop) => drawRitualCandles(ctx, prop),
   ritual_offering: drawRitualOffering,
@@ -117,6 +129,7 @@ export function drawProp(
   prop: Prop,
   forest: ForestPalette = VERDANT_PALETTE,
   courtyard: CourtyardCharacter = 'Overgrown',
+  portable: PortablePropPalette = portablePropPalette(forest, courtyard),
 ): void {
   ctx.save();
   if (prop.footprint) {
@@ -127,6 +140,6 @@ export function drawProp(
     ctx.translate(prop.x + 0.5, prop.y + (prop.kind === 'sconce' ? 0.18 : 0.5));
   }
   ctx.lineWidth = 0.025;
-  PROP_DRAWERS[prop.kind](ctx, prop, forest, courtyard);
+  PROP_DRAWERS[prop.kind](ctx, prop, forest, courtyard, portable);
   ctx.restore();
 }

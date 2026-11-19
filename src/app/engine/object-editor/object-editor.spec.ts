@@ -18,17 +18,26 @@ function accept(document: DungeonDocument, command: ObjectCommand): DungeonDocum
   return result.document;
 }
 
-test('the frozen Dungeon capability catalog accounts for every kind and exposes only audited independent items', () => {
-  expect(Object.keys(DUNGEON_OBJECTS).sort()).toEqual([...DUNGEON_PROP_KINDS].sort());
-  expect(DUNGEON_PALETTE.map((p) => p.kind)).toEqual([
-    'crate',
-    'barrel',
-    'rubble',
-    'sarcophagus',
-    'broken_column',
-    'moss',
-    'rug',
-  ]);
+test('the Dungeon catalog covers canonical kinds and the supported shared objects', () => {
+  for (const kind of DUNGEON_PROP_KINDS) expect(DUNGEON_OBJECTS).toHaveProperty(kind);
+  expect(DUNGEON_PALETTE.map((p) => p.kind).sort()).toEqual(
+    [
+      'crate',
+      'barrel',
+      'rubble',
+      'sarcophagus',
+      'broken_column',
+      'moss',
+      'rug',
+      'treasure_chest',
+      'supply_sacks',
+      'weapon_rack',
+      'bedroll',
+      'fern',
+      'desk',
+      'bookshelf',
+    ].sort(),
+  );
   for (const c of Object.values(DUNGEON_OBJECTS)) if (!c.editable) expect(c.reason).toBeTruthy();
 });
 
