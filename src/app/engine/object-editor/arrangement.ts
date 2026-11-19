@@ -63,7 +63,12 @@ export function arrangementInstances<Id extends string>(
           group && transform
             ? transformedGroupProp(prop, group, transform)
             : move
-              ? { ...prop, x: move.x, y: move.y }
+              ? {
+                  ...prop,
+                  x: move.x,
+                  y: move.y,
+                  ...(move.artRotation ? { artRotation: move.artRotation } : {}),
+                }
               : prop,
       };
     }),

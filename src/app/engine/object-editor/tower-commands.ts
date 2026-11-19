@@ -26,7 +26,7 @@ export function proposeTowerCommand(
   if ('id' in command && command.id.startsWith('stairs-')) {
     const stair = editableTowerStairs(map).find((s) => s.id === command.id);
     if (!stair) return { ok: false, error: 'That staircase is no longer available.' };
-    if (command.kind !== 'move')
+    if (command.kind !== 'move' || (command.rotation !== undefined && command.rotation !== 0))
       return {
         ok: false,
         error: 'Staircases can be moved; their routes and style stay unchanged.',

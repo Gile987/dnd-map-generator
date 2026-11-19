@@ -4,7 +4,7 @@ import type { MapDocument } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '33.0.0';
+export const SAVE_FORMAT_VERSION = '34.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;

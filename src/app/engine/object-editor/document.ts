@@ -11,6 +11,7 @@ import type { Dungeon, GeneratedMap, Point, Prop, QuarterTurn } from '../model';
 
 export interface ObjectMove extends Point {
   readonly id: string;
+  readonly artRotation?: QuarterTurn;
 }
 export interface AddedObject {
   readonly id: string;
@@ -83,7 +84,12 @@ export function dungeonInstances(document: DungeonDocument): readonly AddedObjec
           group && groupMove
             ? transformedGroupProp(prop, group, groupMove)
             : move
-              ? { ...prop, x: move.x, y: move.y }
+              ? {
+                  ...prop,
+                  x: move.x,
+                  y: move.y,
+                  ...(move.artRotation ? { artRotation: move.artRotation } : {}),
+                }
               : prop,
       };
     }),

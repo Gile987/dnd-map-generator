@@ -376,35 +376,45 @@ export class ObjectEditor {
             blocking: isBlockingProp(command.propKind),
           };
     if (!prop) return undefined;
-    const moved = { ...prop, x: command.target.x, y: command.target.y };
+    const moved = {
+      ...prop,
+      x: command.target.x,
+      y: command.target.y,
+      artRotation: command.rotation ?? prop.artRotation,
+    };
     return {
       props: [moved],
       bounds: authoredObjectArea(moved),
+      placementAction:
+        command.rotation !== undefined && !this.grab ? ('place' as const) : ('drop' as const),
       valid: !!verdict?.ok,
       reason: verdict && !verdict.ok ? verdict.error : undefined,
     };
   });
   protected readonly rotation = computed(() => {
     const command = this.placement()?.command;
-    return command?.kind === 'move-group'
+    return command && 'rotation' in command
       ? (command.rotation ?? this.selection()?.rotation ?? 0)
       : (this.selection()?.rotation ?? 0);
   });
   protected rotate(direction: -1 | 1): void {
     const item = this.selection();
-    if (!this.active() || !item?.groupId || !item.rotatable || item.lock) return;
+    const pending = this.placement();
+    if (!this.active() || (pending?.command.kind !== 'add' && (!item?.rotatable || item.lock)))
+      return;
     this.grab = undefined;
     this.placement.set({
       source: this.map(),
       command: {
-        kind: 'move-group',
-        id: item.groupId,
-        target: this.target() ?? item.position,
+        ...(pending?.command ?? this.moveCommand(item, item?.position ?? { x: 0, y: 0 })),
+        target: this.target() ?? item?.position ?? { x: 0, y: 0 },
         rotation: quarterTurn(this.rotation() + direction),
       },
     });
     this.message.set(
-      'Rotation preview. Place object to apply; Escape cancels. Column and Row keep the top-left anchor.',
+      item?.groupId
+        ? 'Rotation preview. Place object to apply; Escape cancels. Column and Row keep the top-left anchor.'
+        : 'Rotation preview. Place object to apply; Escape cancels. The object keeps its current square.',
     );
   }
 
@@ -558,7 +568,7 @@ export class ObjectEditor {
       }
       const pending = this.placement()?.command;
       const rotation =
-        pending?.kind === 'move-group' && pending.id === unit.groupId
+        pending && pending.kind !== 'add' && pending.id === (unit.groupId ?? unit.id)
           ? pending.rotation
           : undefined;
       this.select(unit.id);
@@ -568,7 +578,7 @@ export class ObjectEditor {
         source: this.map(),
         command: {
           ...this.moveCommand(unit, unit.position),
-          ...(unit.groupId && rotation !== undefined ? { rotation } : {}),
+          ...(rotation !== undefined ? { rotation } : {}),
         },
       });
     } else if (this.placement()) {

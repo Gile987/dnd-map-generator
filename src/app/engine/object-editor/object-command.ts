@@ -8,12 +8,18 @@ export type ObjectCommand =
       readonly target: Point;
       readonly rotation?: QuarterTurn;
     }
-  | { readonly kind: 'move'; readonly id: string; readonly target: Point }
+  | {
+      readonly kind: 'move';
+      readonly id: string;
+      readonly target: Point;
+      readonly rotation?: QuarterTurn;
+    }
   | {
       readonly kind: 'add';
       readonly propKind: PropKind;
       readonly target: Point;
       readonly floor?: number;
+      readonly rotation?: QuarterTurn;
     }
   | { readonly kind: 'remove'; readonly id: string }
   | { readonly kind: 'order'; readonly id: string; readonly direction: 'forward' | 'backward' }

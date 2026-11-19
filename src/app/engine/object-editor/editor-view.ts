@@ -53,7 +53,11 @@ export function editorSelections(map: EditableMapDocument): readonly EditorSelec
           : courtyardSelections(map);
   return selections.map((item) => ({
     ...item,
-    rotatable: !!item.groupId && item.groupId !== 'fountain',
+    rotatable:
+      !item.lock &&
+      !item.architecture &&
+      (item.groupId ? item.groupId !== 'fountain' && item.groupId !== 'well' : true),
+    rotation: item.rotation ?? item.props[0]?.artRotation ?? 0,
   }));
 }
 export function editorPalette(map: EditableMapDocument) {
