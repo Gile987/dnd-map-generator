@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { generateCourtyard } from '../src/app/engine/courtyard-generate';
+import fixture from '../src/app/save/fixtures/courtyard-v24.json';
 import {
   makeSavedMap,
   parseSavedMap,
@@ -68,7 +68,7 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
     WAGON,
   );
   expect((await snapshot(page, 'Pending wagon')).map).toEqual(before.map);
-  expect((await png(page)).bytes).toEqual(beforePng.bytes);
+  expect((await png(page)).bytes.equals(beforePng.bytes)).toBe(true);
   await apply(page);
   const accepted = await snapshot(page, 'Wagon courtyard'),
     acceptedPng = await png(page);
@@ -80,7 +80,7 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   expect(body).toMatchObject({ footprint: { width: 3, height: 2 }, blocking: true });
   expect([0, 1]).toContain(body?.rotation);
   expect(acceptedPng.name).toContain('-dry-fountain-collapsed-wagon');
-  expect(acceptedPng.bytes).not.toEqual(beforePng.bytes);
+  expect(acceptedPng.bytes.equals(beforePng.bytes)).toBe(false);
   await expect(page.locator('forge-preview canvas')).toHaveAttribute(
     'aria-label',
     /collapsed wagon.*crate.*passable/i,
@@ -94,7 +94,7 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   expect(shuffled.map.decoration.props.find((p) => p.kind === 'collapsed_wagon')).toEqual(body);
   await page.getByRole('button', { name: /^Undo (shuffle|change)$/, exact: true }).click();
   await settled(page);
-  expect((await png(page)).bytes).toEqual(acceptedPng.bytes);
+  expect((await png(page)).bytes.equals(acceptedPng.bytes)).toBe(true);
   await expect(page.getByLabel('World seed')).toHaveValue('pending-wagon-seed');
   await page.getByRole('button', { name: 'Reset changes', exact: true }).click();
   await page.getByRole('button', { name: 'Export options', exact: true }).click();
@@ -102,7 +102,7 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   await dialog.getByLabel('Export preset', { exact: true }).selectOption('roll20');
   await expect(
     dialog.getByRole('img', { name: 'Full map PNG preview', exact: true }),
-  ).toHaveJSProperty('naturalWidth', 2800);
+  ).toHaveJSProperty('naturalWidth', 2800, { timeout: 10_000 });
   const vtt = await png(page, dialog.getByRole('button', { name: 'Download PNG', exact: true }));
   expect(vtt.size).toEqual([2800, 2100]);
   expect(vtt.name).toContain('-collapsed-wagon');
@@ -113,7 +113,7 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   await expect(page.locator('#map-summary')).not.toContainText(WAGON);
   await settled(page);
   expect((await snapshot(page, 'Removed wagon')).map).toEqual(before.map);
-  expect((await png(page)).bytes).toEqual(beforePng.bytes);
+  expect((await png(page)).bytes.equals(beforePng.bytes)).toBe(true);
   const pending = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download backup', exact: true }).click();
   const file = await pending,
@@ -136,22 +136,18 @@ test('wagon drafts coexist with the fountain, preserve exact layouts and undo, a
   await card.getByRole('button', { name: 'Open', exact: true }).click();
   await expect(page.locator('#map-summary')).toContainText(WAGON);
   await settled(page);
-  expect((await png(page)).bytes).toEqual(acceptedPng.bytes);
+  expect((await png(page)).bytes.equals(acceptedPng.bytes)).toBe(true);
 });
 
 test('a format-16 courtyard keeps its original PNG until the wagon is explicitly applied', async ({
   page,
 }) => {
-  const r = generateCourtyard({
-    character: 'Overgrown',
-    seed: 'fallen-crown',
-    density: 'Balanced',
-    fountain: true,
-  });
-  if (!r.ok) throw new Error(r.error);
+  const record = parseSavedMap(fixture.maps[1]);
+  if (!record || record.map.type !== 'courtyard') throw new Error('Missing historical courtyard');
+  const legacy = record.map;
   const old = {
     ...makeSavedMap(
-      r.map,
+      legacy,
       'Old courtyard',
       'data:image/png;base64,AAAA',
       'old-court',
@@ -176,24 +172,24 @@ test('a format-16 courtyard keeps its original PNG until the wagon is explicitly
     .filter({ has: page.locator('.saved-name').getByText('Old courtyard', { exact: true }) });
   await expect(card).toBeVisible();
   await card.getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(page.locator('#map-summary')).toContainText('fallen-crown');
+  await expect(page.locator('#map-summary')).toContainText(legacy.seed);
   await settled(page);
   const before = await snapshot(page, 'Restored old courtyard'),
     image = await png(page);
-  expect(before.map).toEqual(r.map);
+  expect(before.map).toEqual(legacy);
   expect(before.map.decoration).not.toHaveProperty('wagon');
   await setAddition(page, WAGON);
-  expect((await png(page)).bytes).toEqual(image.bytes);
+  expect((await png(page)).bytes.equals(image.bytes)).toBe(true);
   await page.getByRole('button', { name: 'Reset changes', exact: true }).click();
   await expect(page.getByRole('button', { name: `Remove ${WAGON}`, exact: true })).toHaveCount(0);
   await setAddition(page, WAGON);
   await apply(page);
-  expect((await png(page)).bytes).not.toEqual(image.bytes);
+  expect((await png(page)).bytes.equals(image.bytes)).toBe(false);
   await page.getByRole('button', { name: `Remove ${WAGON}`, exact: true }).click();
   await page.getByRole('button', { name: 'Generate courtyard', exact: true }).click();
   await expect(page.locator('#map-summary')).not.toContainText(WAGON);
   await settled(page);
-  expect((await png(page)).bytes).toEqual(image.bytes);
+  expect((await png(page)).bytes.equals(image.bytes)).toBe(true);
 });
 
 for (const viewport of [

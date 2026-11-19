@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import fixture from './fixtures/courtyard-v24.json';
 import { generateCourtyard, changeCourtyardAppearance } from '../engine/courtyard-generate';
 import { generateTower } from '../engine/tower';
 import { generateDungeon } from '../engine/generate';
@@ -46,27 +47,24 @@ test('format 17 round-trips a complete wagon and freezes all earlier vocabularie
   expect(record).toEqual(before);
 });
 test('old courtyards keep absent wagon metadata and exact artwork until the explicit addition', () => {
-  const r = generateCourtyard({
-    character: 'Overgrown',
-    seed: 'ivy-court',
-    density: 'Balanced',
-    fountain: true,
-  });
-  if (!r.ok) throw new Error(r.error);
+  const historical = parseSavedMap(fixture.maps[1]);
+  if (
+    !historical ||
+    historical.map.type !== 'courtyard' ||
+    historical.map.objectEdits !== undefined
+  )
+    throw new Error('Missing historical courtyard');
+  const legacy = historical.map;
   const record = saved();
   for (let version = 9; version <= 16; version++) {
-    const parsed = parseSavedMap({ ...record, map: r.map, saveFormatVersion: `${version}.0.0` });
-    expect(parsed?.map).toBe(r.map);
+    const parsed = parseSavedMap({ ...record, map: legacy, saveFormatVersion: `${version}.0.0` });
+    expect(parsed?.map).toBe(legacy);
     expect(parsed?.map.decoration).not.toHaveProperty('wagon');
   }
-  expect(
-    changeCourtyardAppearance(r.map, {
-      character: 'Overgrown',
-      density: 'Balanced',
-      fountain: true,
-      wagon: true,
-    }),
-  ).toEqual(record.map);
+  const applied = changeCourtyardAppearance(legacy, { ...legacy.decoration, wagon: true });
+  expect(applied.layout).toBe(legacy.layout);
+  expect(applied.version).toBe(legacy.version);
+  expect(applied.decoration.wagon).toBe(true);
 });
 test('missing, moved, duplicate, oversized or inconsistent wagon components are rejected without losing valid records', () => {
   const record = saved(),

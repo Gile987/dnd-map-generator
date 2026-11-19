@@ -54,7 +54,6 @@ export interface SettingsDrafts {
 }
 
 export interface CourtyardDraft extends CommonDraft {
-  readonly brazier?: boolean;
   readonly wagon?: boolean;
   readonly well?: boolean;
   readonly type: 'courtyard';
@@ -160,7 +159,6 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
   }
   if (draft.type === 'courtyard') {
     const settings: CourtyardSettings = {
-      brazier: draft.brazier,
       wagon: draft.wagon,
       well: draft.well,
       seed: draft.seed,
@@ -204,7 +202,6 @@ export function parseDraft(draft: SettingsDraft): ParsedDraft {
 export function courtyardDraftForMap(map: CourtyardDocument): CourtyardDraft {
   return {
     type: 'courtyard',
-    brazier: Boolean(map.decoration.brazier),
     wagon: Boolean(map.decoration.wagon),
     well: Boolean(map.decoration.well),
     seed: map.seed,

@@ -8,6 +8,7 @@ import {
   clearCourtyard,
   acceptCourtyard,
 } from '../scripts/courtyard-editor-test-support';
+import { applyCourtyardCommand } from '../src/app/engine/object-editor/courtyard-commands';
 import {
   courtyardInstances,
   courtyardBase,
@@ -98,7 +99,30 @@ for (const cover of ['fern', 'vine'] as const) {
       cover === 'fern'
         ? acceptCourtyard(prepared, { kind: 'add', propKind: 'fern', target: { x: 2, y: 2 } })
         : prepared;
-    const target = cover === 'fern' ? { x: 0, y: 0 } : { x: 12, y: 8 };
+    let target = { x: 0, y: 0 };
+    if (cover === 'vine') {
+      // Accent positions re-decorate with courtyard generator 5.0.0, so pick
+      // a vine dynamically and center the 3 × 3 fountain over it.
+      const vine = courtyardInstances(source).find((item) => item.prop.kind === 'vine');
+      if (!vine) throw Error('Missing vine fixture');
+      let placed = false;
+      for (let dy = -1; dy <= 0 && !placed; dy++)
+        for (let dx = -1; dx <= 0 && !placed; dx++) {
+          const candidate = { x: vine.prop.x - 1 + dx, y: vine.prop.y - 1 + dy };
+          if (
+            applyCourtyardCommand(source, {
+              kind: 'move-group',
+              id: 'fountain',
+              target: candidate,
+              rotation: 0,
+            }).ok
+          ) {
+            target = candidate;
+            placed = true;
+          }
+        }
+      if (!placed) throw Error('No fountain move covers a vine');
+    }
     const fountain = courtyardInstances(source).find((item) => item.prop.kind === 'dry_fountain');
     if (!fountain) throw Error('Missing fountain');
     await openMap(page, source);

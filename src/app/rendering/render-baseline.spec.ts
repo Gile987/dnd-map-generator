@@ -239,56 +239,56 @@ describe('current artwork baselines', () => {
     },
   );
 
-  // Committed with the courtyard character release; Overgrown reproduces the
-  // historical renderer byte for byte.
+  // Committed with the courtyard character release; regenerated for courtyard
+  // generator 5.0.0, whose decoration spawns ordinary braziers beside masonry.
   test.each([
     [
       'generated-courtyard',
       'Overgrown',
       true,
-      'ae67666fc92c9cedf30ef334d0a31a9b02a347d4554dba3cd80ec1f00479d8eb',
+      '411364a9a77ebe2f3c4df7efb8c0171f20a099614df7786035362cfb0e4c6f82',
     ],
     [
       'generated-courtyard',
       'Overgrown',
       false,
-      '5e9f2e25449cb0ad1024e3489a19c601b5c08ecd1c5c409817977bd9294fd103',
+      '24c5b0bbb55e0e0d38fa6b50d9cc910e0e9ccac5329e6f02678ce5c2139d0360',
     ],
     [
       'generated-courtyard',
       'Sunbleached',
       true,
-      '0d1a39a8afa89c94a76ded579bc70894813d4a1f195da873524f6b9826db2db0',
+      '1069f875e2532db55c7322589925276c0dfa27e4a93e22f4e216e9a6b59462ae',
     ],
     [
       'generated-courtyard',
       'Sunbleached',
       false,
-      '339ee47586c4c70f28cedba50dd226ce86becbead3108341610357dacb87abea',
+      '2377dd7b90d903ebadf0b935777eaa59964a63b20fe535450fcd8c922b7adfda',
     ],
     [
       'generated-courtyard',
       'Frostbound',
       true,
-      '46b693fa4ac820af93451b8581ebdf1694fce162d4b54058bc167307320da20d',
+      '1f51d8767e60bb8035abe3e9f948d310eb93629fd086f4d56c5ac970fecbf1f1',
     ],
     [
       'generated-courtyard',
       'Frostbound',
       false,
-      'c33e0c15aa7a6bbd7604b0c80715e47deecf16834b2ed2b53c847c789303133a',
+      '671dd5abdc9219e953c3f950847fff9a63108f28cca7108b5f290f7e94c31a6a',
     ],
     [
       'generated-courtyard',
       'Desecrated',
       true,
-      'ce57d658b19b10bf6b1fc8b43879f5c4614c465c863ffa5296b65249ac112da9',
+      'bdfbd10cb20d961c3e9f468bce17a96609d8997063169cbf20fb6abfe35836a5',
     ],
     [
       'generated-courtyard',
       'Desecrated',
       false,
-      '28d2c0adb285accecba392ce0708da4064104077dc7e5872fff1247b04de7392',
+      'a6f076854cc3806dabb9a5577a3adc2ec66dff25b34e9c35550e1e1a63aa6626',
     ],
   ] as const)(
     'courtyard pixels are unchanged for %s (%s) with grid=%s',
@@ -297,56 +297,56 @@ describe('current artwork baselines', () => {
     },
   );
 
-  // Committed with the stone-well release; each hash below pins one
-  // character's well render both with and without the grid overlay.
+  // Committed with the stone-well release; regenerated for courtyard
+  // generator 5.0.0 alongside the plain rows.
   test.each([
     [
       'courtyard-well',
       'Overgrown',
       true,
-      'f203956cfb0e4be13a362bf87e6c21f90f0e60099b90b16f1e86b4b0db00f651',
+      '2e594f037b29d4897b98cfa56ce2da69803eec579cf68d57f02d631bc0288960',
     ],
     [
       'courtyard-well',
       'Overgrown',
       false,
-      'cf49a5c9d7af335eca8f14020efb65f0b544c5a26352ab31411bec68c5b79106',
+      'a8689fa8b06c90b5faea6d007e2cf54d696343d9f4598124b1ab7c45706d6276',
     ],
     [
       'courtyard-well',
       'Sunbleached',
       true,
-      '783f898067849e3853e38cb0a6b4fbb5746e25f0fdfbff8f21dae3ba8d1ec434',
+      'ed51835fcfdfd5ef6a39259a6fbae988d0684c1be7cd9d8782d4d66eb3495250',
     ],
     [
       'courtyard-well',
       'Sunbleached',
       false,
-      '1aa5319c248054e399ada5f2fc07274294ca1e271380f67d4c1b83f4458c9667',
+      '6a1fe4db1ae7d16bd6a1dc5d36599da19b98dde981675603323063180cca36a5',
     ],
     [
       'courtyard-well',
       'Frostbound',
       true,
-      'ed0372827e8521213fd9ad9c734354368299861f1507b095aaa261b3186d0280',
+      '9df2835a07929bece7126544affd78f737b538b605d5bf0083db729cf1c26527',
     ],
     [
       'courtyard-well',
       'Frostbound',
       false,
-      '9fa7aa2aea84e0f3185a0187bc522388e2c1f881cdc9e09f05626e4863ae48e3',
+      'b5585b7777d2d341ac8fcd8133b483a65522dd8cf9a697c640660f9d2367762f',
     ],
     [
       'courtyard-well',
       'Desecrated',
       true,
-      '47b252405e0c46e23082952f6dc9dca914147bce8ce6fbbbf9646d1b01db6bd6',
+      'becf145eb1f6f3f157bb5bb67a6c7fc75673ccf02008a7b62082e5173ba70e2e',
     ],
     [
       'courtyard-well',
       'Desecrated',
       false,
-      'c18e8f2df17cb487a471ff72404a4afc0c5f412a5ebc9d95a03710e4837c2e94',
+      '557165c1862363b6ae326863a84ff5f84bd78ad04bcbf7fdedcad2dd8fb55aa0',
     ],
   ] as const)(
     'courtyard well pixels are unchanged for %s (%s) with grid=%s',

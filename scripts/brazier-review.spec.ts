@@ -6,7 +6,7 @@ import { ALL_COURTYARD_CHARACTERS } from '../src/app/engine/model';
 import { renderMap } from '../src/app/rendering/render-map';
 import { drawProp } from '../src/app/rendering/props';
 
-test('reviews all courtyard braziers and keeps each complete sprite within one square', () => {
+test('reviews spawned courtyard braziers and keeps each complete sprite within one square', () => {
   mkdirSync('artifacts/brazier', { recursive: true });
   const sheet = createCanvas(1280, 1280);
   const sheetContext = sheet.getContext('2d');
@@ -18,7 +18,6 @@ test('reviews all courtyard braziers and keeps each complete sprite within one s
       fountain: true,
       wagon: true,
       well: true,
-      brazier: true,
     });
     if (!generated.ok) throw new Error(generated.error);
     const brazier = generated.map.decoration.props.find(

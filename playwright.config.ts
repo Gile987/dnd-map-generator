@@ -12,7 +12,7 @@ export default defineConfig({
   webServer: {
     command: 'npm start -- --port 4307 --hmr=false',
     url: 'http://127.0.0.1:4307',
-    reuseExistingServer: false,
+    reuseExistingServer: process.env.PLAYWRIGHT_REUSE === 'true',
     timeout: 60000,
   },
 });

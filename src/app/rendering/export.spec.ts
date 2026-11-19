@@ -51,10 +51,10 @@ test('courtyard filenames identify only the accepted wagon addition', () => {
   });
   if (!r.ok) throw new Error(r.error);
   expect(exportFilename(r.map)).toBe(
-    'encounter-ivy-court-courtyard-dry-fountain-collapsed-wagon-balanced-r0-v4.0.0.png',
+    'encounter-ivy-court-courtyard-dry-fountain-collapsed-wagon-balanced-r0-v5.0.0.png',
   );
   expect(configuredExportFilename(r.map, false, 15, EXPORT_PRESETS[1])).toContain(
-    '-collapsed-wagon-balanced-r0-v4.0.0-owlbear-40x30-64px-grid-off.png',
+    '-collapsed-wagon-balanced-r0-v5.0.0-owlbear-40x30-64px-grid-off.png',
   );
   const old = generateCourtyard({
     character: 'Overgrown',
@@ -64,7 +64,7 @@ test('courtyard filenames identify only the accepted wagon addition', () => {
   });
   if (!old.ok) throw new Error(old.error);
   expect(exportFilename(old.map)).toBe(
-    'encounter-ivy-court-courtyard-dry-fountain-balanced-r0-v4.0.0.png',
+    'encounter-ivy-court-courtyard-dry-fountain-balanced-r0-v5.0.0.png',
   );
 });
 
