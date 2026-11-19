@@ -94,19 +94,76 @@ Dungeons use stairs for the entrance and a circular stone dais for the objective
 
 For reproduction, record the **generated seed, map type, room count (dungeon only), density, character (Mosslit/Crypt/Storehouse/Sanctuary for dungeons, Verdant/Autumn/Pines/Fey for forests; Overgrown/Sunbleached/Frostbound/Desecrated for courtyards), selected additions (Forgotten study, Weathered statue, Dining table, and Ritual site for dungeons; Abandoned camp, Standing-stone circle, and Fallen ancient tree for forests; Dry fountain, Collapsed wagon, and Stone well for courtyards), detail revision and generator version (4.0.0 for dungeons and forests; 5.0.0 for courtyards; 3.0.0 for new Towers; older Towers retain 1.0.0 or 2.0.0). For Tower, also record floor count, staircase style, portal source, and laboratory/observatory floors when selected**. For manual reproduction, start from a freshly loaded page, select the map type and recorded settings, and choose Generate if settings are pending. The map starts at revision 0; Shuffle details the recorded number of times. Use the matching generator version. Appearance-only changes to an existing map preserve its current revision. The summary always describes the displayed accepted map, even while draft settings are being edited.
 
+## Object list
+
+Availability below includes both **Add object** choices and objects used in
+generated maps or complete additions. An object being available on a map does
+not mean it spawns automatically. Objects inside an addition stay part of that
+group; sharing their kind does not make those instances independently editable.
+
+### Available on all four map types
+
+All eight objects can be placed individually through **Edit objects → Add object**
+in Dungeon, Forest, Courtyard and Tower maps.
+
+| Objects                                   | Availability                                                                      |
+| ----------------------------------------- | --------------------------------------------------------------------------------- |
+| Treasure chest, Supply sacks, Weapon rack | Manual placement only; do not spawn automatically                                 |
+| Crate, Barrel                             | Manual placement; also used by existing generators and additions where applicable |
+| Bedroll, Moss, Fern                       | Manual placement; also used by existing generators and additions where applicable |
+
+### Shared by some map types
+
+| Objects                               | Maps               | How they are available                                                                                                            |
+| ------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Log, Stump                            | Forest, Courtyard  | Individually placeable on both; also generated in Forest                                                                          |
+| Desk, Bookshelf                       | Dungeon, Tower     | Individually placeable on both; also used in generated additions and Tower furnishings                                            |
+| Broken column                         | Dungeon, Courtyard | Individually placeable and generated on both                                                                                      |
+| Vine                                  | Dungeon, Courtyard | Generated decoration; protected from individual editing                                                                           |
+| Scroll case, Altar, Candles, Offering | Dungeon, Tower     | Dungeon: components of Forgotten study or Ritual site. Tower: independently placeable and used in generated furnishings/additions |
+
+### Specific to one map type
+
+| Map       | Objects                                                       | How they are available                                                       |
+| --------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Dungeon   | Rubble, Sarcophagus, Rug                                      | Individually placeable; also used in generated decoration or Forgotten study |
+| Dungeon   | Wall sconce                                                   | Generated wall attachment; protected from individual editing                 |
+| Dungeon   | Weathered statue                                              | Part of the complete Weathered statue addition                               |
+| Dungeon   | Dining table                                                  | Part of the complete Dining table addition                                   |
+| Forest    | Boulder, Bush, Mushrooms, Flowers                             | Individually placeable and generated                                         |
+| Forest    | Tree                                                          | Generated fixed forest boundary                                              |
+| Forest    | Tent, Fire ring, Supply bundle                                | Components of Abandoned camp                                                 |
+| Forest    | Standing stone                                                | Component of Standing-stone circle                                           |
+| Forest    | Fallen trunk, Exposed roots, Fallen branch, Fallen-tree fungi | Components of Fallen ancient tree                                            |
+| Courtyard | Low rubble, Abandoned brazier                                 | Individually placeable and generated                                         |
+| Courtyard | Dry fountain                                                  | Part of the complete Dry fountain addition                                   |
+| Courtyard | Stone well                                                    | Part of the complete Stone well addition                                     |
+| Courtyard | Collapsed wagon, Detached wheel, Spilled crate, Loose goods   | Components of Collapsed wagon                                                |
+| Tower     | Cauldron                                                      | Component of Alchemist’s laboratory                                          |
+| Tower     | Telescope, Star-chart table, Instrument cabinet, Star charts  | Components of Tower observatory                                              |
+
+Complete additions are selected through **Choose additions** before Generate.
+The editor moves them as groups, with rotation where supported; their components
+cannot be inserted or dismantled individually. A loose crate is distinct from a
+wagon's spilled crate, and a loose log is distinct from a fallen-tree component.
+
+This list covers all current prop kinds. Walls, doors, stairs, portals,
+entrance/objective markers and floor labels are architectural features; painted
+leaves, ash, cracks and similar surface marks are renderer details. Their behavior
+is described in [Using the workbench](#using-the-workbench).
+
 ## Shared placeable props
 
 Open **Edit objects → Add object** to place these independent objects. Search by
 name, drag a card onto the map, or choose it and use the existing pointer, touch,
 coordinate, or keyboard placement controls.
 
-| Objects                                   | Available maps                    | Movement               |
-| ----------------------------------------- | --------------------------------- | ---------------------- |
-| Treasure chest, Supply sacks, Weapon rack | Dungeon, Forest, Courtyard, Tower | Each blocks one square |
-| Crate, Barrel                             | Dungeon, Forest, Courtyard, Tower | Each blocks one square |
-| Bedroll, Moss, Fern                       | Dungeon, Forest, Courtyard, Tower | Passable               |
-| Log, Stump                                | Forest, Courtyard                 | Each blocks one square |
-| Desk, Bookshelf                           | Dungeon, Tower                    | Each blocks one square |
+See the [object list](#object-list) for the full availability of shared and
+map-specific objects, including components of generated additions.
+
+Chests, sacks, racks, crates, barrels, logs, stumps, desks and bookshelves each
+block one square. Bedrolls, moss and ferns are passable; their overlap rules still
+depend on the map type.
 
 The independent catalogs contain **14 Dungeon**, **14 Forest**, **13 Courtyard**,
 and **14 Tower** kinds. Sharing adds manual choices; the generators and **Choose
