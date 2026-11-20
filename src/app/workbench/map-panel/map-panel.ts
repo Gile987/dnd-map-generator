@@ -35,6 +35,19 @@ import type { Candidate } from '../workbench-session';
 })
 export class MapPanel {
   protected readonly editorMode = signal(false);
+  protected readonly pinHovered = signal(false);
+  protected readonly pinFocused = signal(false);
+  protected readonly pinHintDismissed = signal(false);
+  protected readonly pinHintVisible = computed(
+    () => (this.pinHovered() || this.pinFocused()) && !this.pinHintDismissed(),
+  );
+  protected dismissPinHint(event: Event): void {
+    if (!this.pinHintVisible()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.pinHintDismissed.set(true);
+  }
+
   // The parent reads this from a host binding before required inputs are bound.
   // Check the default mode first; map() is safe once editing can be enabled.
   readonly objectEditing = computed(

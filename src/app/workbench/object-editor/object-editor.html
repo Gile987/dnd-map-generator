@@ -1,21 +1,23 @@
 <div class="editor-toolbar" role="group" aria-label="Map interaction">
-  <button
-    type="button"
-    [attr.aria-pressed]="!editing()"
-    (click)="setEditing(false)"
-    [disabled]="disabled() || readOnly()"
-  >
-    Explore
-  </button>
-  <button
-    type="button"
-    [attr.aria-pressed]="editing()"
-    (click)="setEditing(true)"
-    [disabled]="disabled() || readOnly() || towerHiddenConnections()"
-    [attr.aria-describedby]="readOnly() || towerHiddenConnections() ? 'object-editor-state' : null"
-  >
-    Edit objects
-  </button>
+  <div class="mode-switch" role="group" aria-label="Interaction mode">
+    <button
+      type="button"
+      [attr.aria-pressed]="!editing()"
+      (click)="setEditing(false)"
+      [disabled]="disabled() || readOnly()"
+    >
+      Explore
+    </button>
+    <button
+      type="button"
+      [attr.aria-pressed]="editing()"
+      (click)="setEditing(true)"
+      [disabled]="disabled() || readOnly() || towerHiddenConnections()"
+      [attr.aria-describedby]="readOnly() || towerHiddenConnections() ? 'object-editor-state' : null"
+    >
+      Edit objects
+    </button>
+  </div>
   @if (editing() && !readOnly()) {
   <button
     type="button"
@@ -36,8 +38,8 @@
   }
   <span id="object-editor-state" [class.edit-requirement]="towerHiddenConnections() && !readOnly()"
     >{{ readOnly() ? 'Pinned is read-only. Switch to Current to edit.' : towerHiddenConnections() ?
-    'Enable Show secrets above the map to edit objects.' : map().objectEdits ? 'Customized ' +
-    map().type + ' · save to keep your changes' : 'Generate a map, then make it yours.' }}</span
+    'Enable Show secrets above the map to edit objects.' : map().objectEdits ? 'Customized · save to
+    keep changes' : 'Generate a map, then make it yours.' }}</span
   >
 </div>
 @if (editing() && !readOnly() && towerFloor(); as floor) {
@@ -72,7 +74,7 @@
       Add object
     </button>
     <label
-      >Objects on this map
+      ><span class="object-picker-label">Objects on this map</span>
       <select
         [attr.aria-describedby]="selection() ? 'object-selection-description' : null"
         #instancesSelect
@@ -88,8 +90,14 @@
         }
       </select>
     </label>
-    <button type="button" [disabled]="disabled() || !map().objectEdits" (click)="reset()">
-      Reset customizations
+    <button
+      type="button"
+      aria-label="Reset customizations"
+      [disabled]="disabled() || !map().objectEdits"
+      (click)="reset()"
+    >
+      <span class="reset-label">Reset customizations</span
+      ><span class="reset-short" aria-hidden="true">Reset</span>
     </button>
   </div>
   @if (paletteOpen()) {

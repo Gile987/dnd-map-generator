@@ -145,12 +145,14 @@ test('comparison is keyboard accessible in normal and focused layouts, with safe
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Focus map', exact: true }).focus();
+  await page.getByRole('checkbox', { name: 'Grid', exact: true }).focus();
   await page.keyboard.press('Tab');
   await expect(pin(page)).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(pin(page)).toBeFocused();
   await expect(current(page)).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Focus map', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(current(page)).toBeFocused();
   await page.keyboard.press('Tab');
@@ -184,7 +186,7 @@ test('comparison is keyboard accessible in normal and focused layouts, with safe
   await page.getByRole('button', { name: 'Clear pin', exact: true }).focus();
   await page.keyboard.press('Enter');
   await expect(pin(page)).toBeFocused();
-  await expect(pin(page)).toHaveText('Pin this map');
+  await expect(pin(page)).toHaveAccessibleName('Pin this map');
   await expect(pinned(page)).toHaveCount(0);
   await pin(page).click();
   await page.getByRole('button', { name: 'Shuffle details', exact: true }).click();
