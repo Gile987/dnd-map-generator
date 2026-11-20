@@ -243,3 +243,11 @@ canvas.explore-target {
   overflow-wrap: anywhere;
   text-align: left;
 }
+
+@media (max-width: 650px) {
+  :host(.focused) .viewport {
+    // A definite canvas frame avoids resize feedback in the scrollable focus layout.
+    height: clamp(180px, 50dvh, 680px);
+    flex: 0 0 auto;
+  }
+}

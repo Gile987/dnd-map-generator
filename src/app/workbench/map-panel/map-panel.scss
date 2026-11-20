@@ -11,30 +11,33 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 19px 23px;
+  gap: 8px;
+  padding: 8px 12px;
   background: #223733;
-  min-height: 78px;
+  min-height: 60px;
   border-bottom: 1px solid #4e665240;
 }
 .map-actions {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 6px;
+  position: relative;
+  min-width: 0;
 }
-.focus-button {
+.focus-button,
+.pin-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 9px 12px;
+  min-height: 36px;
+  padding: 6px 8px;
   border: 1px solid #789080;
   border-radius: 5px;
   background: #304b40;
   color: #e4e4ca;
   font-size: 12px;
-  &:hover {
+  &:hover:not([aria-disabled='true']) {
     background: #3e5b4b;
   }
   &:focus-visible {
@@ -44,6 +47,13 @@
   .back-arrow {
     transform: rotate(180deg);
   }
+}
+.focus-button {
+  min-height: 44px;
+}
+.pin-button[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: default;
 }
 .map-heading {
   display: flex;
@@ -121,7 +131,7 @@
   .map-toolbar {
     flex-shrink: 0;
     min-height: 64px;
-    padding: 10px 16px;
+    padding: 6px 12px;
   }
   .map-meta {
     // Keep the canvas's accessible description while giving its space to the map.
@@ -205,7 +215,7 @@
     }
   }
   .map-toolbar {
-    padding: 18px 17px;
+    padding: 8px 12px;
   }
   .map-heading {
     gap: 8px;
@@ -247,7 +257,7 @@
     }
   }
   .map-toolbar {
-    padding: 16px 12px;
+    padding: 8px 12px;
   }
   .map-heading {
     h2 {
@@ -269,7 +279,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 4px 12px;
   background: #1c302e;
   border-bottom: 1px solid #4e665240;
   flex-shrink: 0;
@@ -278,8 +288,8 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-height: 44px;
-    padding: 8px 10px;
+    min-height: 36px;
+    padding: 6px 8px;
     border: 1px solid #6e8577;
     border-radius: 5px;
     background: transparent;
@@ -304,7 +314,7 @@
   }
   .candidate-switch {
     display: flex;
-    padding: 3px;
+    padding: 2px;
     border: 1px solid #627969;
     border-radius: 7px;
     button {
@@ -321,7 +331,7 @@
     text-underline-offset: 3px;
   }
   p {
-    flex-basis: 100%;
+    flex: 1 1 180px;
     margin: 0;
     color: #aebfae;
     font-size: 11px;
@@ -370,4 +380,37 @@
 .tower-guide .tower-secret-hint {
   width: 100%;
   margin: 0;
+}
+
+.pin-control {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.pin-button forge-icon {
+  width: 15px;
+  height: 15px;
+}
+.pin-hint {
+  pointer-events: none;
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  right: 0;
+  width: 280px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #8ba18b;
+  border-radius: 5px;
+  background: #152d29;
+  color: #e4e7d6;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px #0004;
+}
+@media (pointer: coarse) {
+  .focus-button,
+  .pin-button,
+  .comparison-bar button {
+    min-height: 44px;
+  }
 }

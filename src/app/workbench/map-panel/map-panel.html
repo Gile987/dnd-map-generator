@@ -22,6 +22,30 @@
         [disabled]="disabled()" /><forge-icon name="grid" /><span>Grid</span
       ><span class="toggle-track" aria-hidden="true"><span></span></span
     ></label>
+    <span
+      class="pin-control"
+      (mouseenter)="pinHovered.set(true); pinHintDismissed.set(false)"
+      (mouseleave)="pinHovered.set(false)"
+      (focusin)="pinFocused.set(true); pinHintDismissed.set(false)"
+      (focusout)="pinFocused.set(false)"
+      (keydown.escape)="dismissPinHint($event)"
+    >
+      <button
+        #pinButton
+        class="pin-button"
+        type="button"
+        [attr.aria-label]="hasPin() ? 'Replace pinned map' : 'Pin this map'"
+        aria-describedby="comparison-hint"
+        [attr.aria-disabled]="disabled() || candidate() === 'pinned'"
+        (click)="!disabled() && candidate() === 'current' && pinRequested.emit()"
+      >
+        <forge-icon name="pin" />{{ hasPin() ? 'Replace pin' : 'Pin' }}
+      </button>
+      <span id="comparison-hint" class="pin-hint" role="tooltip" [hidden]="!pinHintVisible()">
+        Keep a candidate while you explore. Pins last until refresh. Save a map to keep it
+        permanently.
+      </span>
+    </span>
     <button
       #focusButton
       class="focus-button"
@@ -34,22 +58,13 @@
     </button>
   </div>
 </div>
+@if (hasPin()) {
 <div
   class="comparison-bar"
   role="group"
   aria-label="Map comparison"
   aria-describedby="comparison-hint"
 >
-  <button
-    #pinButton
-    class="pin-button"
-    type="button"
-    [attr.aria-disabled]="disabled() || candidate() === 'pinned'"
-    (click)="!disabled() && candidate() === 'current' && pinRequested.emit()"
-  >
-    <forge-icon name="pin" />{{ hasPin() ? 'Replace pinned map' : 'Pin this map' }}
-  </button>
-  @if (hasPin()) {
   <div class="candidate-switch" role="group" aria-label="Displayed candidate">
     <button
       type="button"
@@ -76,14 +91,12 @@
   >
     Clear pin
   </button>
-  }
-  <p id="comparison-hint">
-    {{ hasPin() ? 'Viewing ' + (candidate() === 'pinned' ? 'Pinned' : 'Current') + '. Save and
-    Export use this candidate. Pins last until refresh.' : 'Keep a candidate while you explore. Pins
-    last until refresh.' }}
+  <p>
+    Viewing {{ candidate() === 'pinned' ? 'Pinned' : 'Current' }}. Save and Export use this
+    candidate.
   </p>
 </div>
-@if(tower();as towerMap){
+} @if(tower();as towerMap){
 <div class="tower-guide">
   <div>
     <strong>Floor connections</strong>

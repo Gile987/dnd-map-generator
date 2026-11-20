@@ -524,3 +524,17 @@ footer {
   color: #c9d4c4;
   padding: 1rem;
 }
+
+@media (max-width: 650px) {
+  :host(.map-focused) {
+    // Let stacked controls take their natural height instead of covering zoom or doors.
+    main {
+      height: auto;
+      min-height: 100dvh;
+    }
+    .workbench {
+      flex: 0 0 auto;
+      min-height: auto;
+    }
+  }
+}
