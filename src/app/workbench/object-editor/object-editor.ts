@@ -1,3 +1,4 @@
+import type { ObjectShortcut } from '../../keyboard-shortcuts/shortcuts';
 import { towerStairFootprint } from '../../engine/tower-connection-geometry';
 import { editableTowerStairs, towerStairBounds } from '../../engine/object-editor/tower-stairs';
 import { towerStairStyle } from '../../engine/tower';
@@ -418,6 +419,36 @@ export class ObjectEditor {
     );
   }
 
+  protected shortcut(action: ObjectShortcut): void {
+    if (!this.active() || this.towerHiddenConnections()) return;
+    if (action === 'rotate-left' || action === 'rotate-right') {
+      this.rotate(action === 'rotate-left' ? -1 : 1);
+    } else if (action === 'remove') {
+      this.remove();
+    } else if (action === 'undo' || action === 'redo') {
+      if (this.history()[action] > 0) {
+        this.cancel();
+        this.historyRequested.emit(action);
+      }
+    } else {
+      const items = this.instances().filter((item) => !item.lock);
+      if (!items.length) return;
+      const index = items.findIndex((item) => item.id === this.selected());
+      const next =
+        index < 0
+          ? action === 'next'
+            ? 0
+            : items.length - 1
+          : (index + (action === 'next' ? 1 : -1) + items.length) % items.length;
+      const item = items[next];
+      if (item) this.select(item.id);
+    }
+  }
+  private manipulationHint(): string {
+    const item = this.selection();
+    const canRotate = item?.rotatable || this.placement()?.command.kind === 'add';
+    return `Arrows: move${canRotate ? ' · Q/E: rotate' : ''} · Enter: place · Esc: cancel`;
+  }
   protected readonly target = computed(
     () => this.placement()?.command.target ?? this.selection()?.position,
   );
@@ -426,21 +457,18 @@ export class ObjectEditor {
     const selection = this.selection();
     if (this.towerHiddenConnections())
       return 'Enable Show secrets to edit Tower objects with every connection visible.';
-    if (!verdict && selection)
-      return selection.lock
-        ? 'Choose an independent object from the list, or use Add object.'
-        : 'Drag the selection or set Column and Row. Arrow keys on the map position it; Enter places and Escape cancels.';
+    if (!verdict && selection) return selection.lock ? selection.lock : this.manipulationHint();
     return verdict && !verdict.ok
       ? verdict.error
       : this.placement()
-        ? 'Valid position. Drop or choose Place object. Escape cancels.'
+        ? this.manipulationHint()
         : this.map().type === 'courtyard'
-          ? 'Select an object or a complete addition. Use any open ground; standing walls stay fixed.'
+          ? 'Use [ / ] on the map to select an editable object, or choose one from the list. Use any open ground; standing walls stay fixed.'
           : this.map().type === 'forest'
-            ? 'Select an object or a complete addition. Trees stay fixed; solid objects need walkable ground and connected path entrances.'
+            ? 'Use [ / ] on the map to select an editable object, or choose one from the list. Trees stay fixed; solid objects need walkable ground and connected path entrances.'
             : this.map().type === 'tower'
               ? 'Choose a floor and edit its objects. Select furniture, additions or staircases. Walls, portals and floor headings stay fixed.'
-              : 'Select an object or a complete addition. Walls, doors and architectural markers stay fixed.';
+              : 'Use [ / ] on the map to select an editable object, or choose one from the list. Walls, doors and architectural markers stay fixed.';
   });
   private readonly preview = viewChild.required(Preview);
   private readonly layerDetails = viewChild<ElementRef<HTMLElement>>('layerDetails');

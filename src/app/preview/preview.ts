@@ -1,3 +1,6 @@
+import { KeyboardShortcuts } from '../keyboard-shortcuts/keyboard-shortcuts';
+import { objectShortcut } from '../keyboard-shortcuts/shortcuts';
+import type { ObjectShortcut } from '../keyboard-shortcuts/shortcuts';
 import { drawFootprintOutline } from '../rendering/footprint-outline';
 import { drawTowerStaircase } from '../rendering/tower-renderer';
 import type { StairLanding } from '../engine/tower-landings';
@@ -51,7 +54,7 @@ export interface EditPointer {
 
 @Component({
   selector: 'forge-preview',
-  imports: [Icon],
+  imports: [Icon, KeyboardShortcuts],
   templateUrl: './preview.html',
   styleUrl: './preview.scss',
   host: {
@@ -100,6 +103,8 @@ export class Preview {
   readonly editCancel = output<void>();
   readonly editNudge = output<Point>();
   readonly editCommit = output<void>();
+  readonly editShortcut = output<ObjectShortcut>();
+  private readonly shortcuts = viewChild.required(KeyboardShortcuts);
   readonly grid = input(true);
   readonly showSecrets = input(false);
   readonly focused = input(false);
@@ -343,6 +348,23 @@ export class Preview {
   }
 
   protected keyboard(event: KeyboardEvent): void {
+    if (event.isComposing) return;
+    if (event.key === '?' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.shortcuts().open();
+      return;
+    }
+    if (this.editMode()) {
+      const action = objectShortcut(event);
+      if (action) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!event.repeat) this.editShortcut.emit(action);
+        return;
+      }
+    }
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (this.editMode()) {
       const directions: Record<string, Point> = {
         ArrowLeft: { x: -1, y: 0 },

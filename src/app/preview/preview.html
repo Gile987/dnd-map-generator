@@ -65,13 +65,16 @@
 </details>
 }
 <div class="view-controls">
-  <span class="pan-hint"
-    ><forge-icon name="hand" />{{ editMode() ? 'Drag an object' : 'Drag to explore' }}<span
-      class="wheel-hint"
-    >
-      {{ editMode() ? '· Arrows to position · Enter to place' : '· Ctrl + scroll to zoom' }}</span
-    ></span
+  <button
+    class="shortcuts-button"
+    aria-label="Keyboard shortcuts"
+    type="button"
+    aria-haspopup="dialog"
+    (click)="shortcutsHelp.open()"
   >
+    <span class="shortcuts-long">Keyboard shortcuts</span
+    ><span class="shortcuts-short" aria-hidden="true">Shortcuts</span>
+  </button>
   <div class="zoom-controls" aria-label="Map viewport controls">
     <button type="button" (click)="zoomBy(0.8)" [disabled]="zoom() <= 0.5" aria-label="Zoom out">
       <forge-icon name="minus" />
@@ -84,3 +87,5 @@
     <button type="button" class="fit" (click)="fit()"><forge-icon name="fit" />Fit</button>
   </div>
 </div>
+
+<forge-keyboard-shortcuts #shortcutsHelp [editing]="editMode()" />
