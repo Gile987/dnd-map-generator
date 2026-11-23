@@ -548,7 +548,7 @@ safety and protected/pinned maps. Artifacts are in `artifacts/keyboard-shortcuts
 The optional guided app tutorial remains a future feature; it is not implemented.
 
 Bench verification uses focused placement/save checks on all four map types,
-including the second occupied square, refused turns, malformed footprint/angle
+including the second occupied square, wall-side rendering, refused turns, malformed footprint/angle
 imports, removal/reset and unchanged inputs. `scripts/bench-review.spec.ts`
 checks drawing bounds and renders `artifacts/wooden-bench/rotations.png`.
 `tests/wooden-bench.spec.ts` checks catalog artwork/labels, placement, keyboard

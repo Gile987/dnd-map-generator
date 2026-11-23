@@ -30,7 +30,13 @@ test.each(DUNGEON_PALETTE.map((item) => item.kind))(
       if (!result.ok) throw Error(result.error);
       document = result.document;
     }
-    const target = kind === 'rug' ? { x: 18, y: 25 } : { x: 20, y: 26 };
+    // The bench occupies columns 19 and 20; column 21 is solid wall.
+    const target =
+      kind === 'rug'
+        ? { x: 18, y: 25 }
+        : kind === 'wooden_bench'
+          ? { x: 19, y: 26 }
+          : { x: 20, y: 26 };
     const moved = applyObjectCommand(
       document,
       source ? { kind: 'move', id: source.id, target } : { kind: 'add', propKind: kind, target },
