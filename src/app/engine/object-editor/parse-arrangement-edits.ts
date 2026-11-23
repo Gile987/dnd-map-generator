@@ -1,4 +1,4 @@
-import { validStoredRotation } from './object-rotation';
+import { validStoredRotation, authoredOrientation } from './object-rotation';
 import type { QuarterTurn } from '../model';
 import { isBlockingProp, isTilePosition } from '../model';
 import type { PropKind } from '../model';
@@ -109,10 +109,20 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
     )
       return undefined;
     const prop = entry['prop'];
+    if (!object(prop)) return undefined;
+    const orientation = authoredOrientation(prop);
     if (
-      !object(prop) ||
-      !keys(prop, ['kind', 'x', 'y', 'blocking', 'variation', 'artRotation']) ||
-      !validStoredRotation(prop) ||
+      !keys(prop, [
+        'kind',
+        'x',
+        'y',
+        'blocking',
+        'variation',
+        'artRotation',
+        'footprint',
+        'rotation',
+      ]) ||
+      !orientation ||
       !position(prop, validPosition) ||
       typeof prop['kind'] !== 'string' ||
       (options.allowedKinds !== undefined && !options.allowedKinds.includes(prop['kind'])) ||
@@ -131,7 +141,7 @@ export function parseArrangementEdits<Base extends ArrangementBase, Id extends s
         y: prop.y,
         blocking: isBlockingProp(kind),
         variation: 0.5,
-        ...(prop['artRotation'] ? { artRotation: prop['artRotation'] as QuarterTurn } : {}),
+        ...orientation,
       },
     });
   }

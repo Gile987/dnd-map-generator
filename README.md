@@ -103,12 +103,13 @@ group; sharing their kind does not make those instances independently editable.
 
 ### Available on all four map types
 
-All eight objects can be placed individually through **Edit objects → Add object**
+All nine objects can be placed individually through **Edit objects → Add object**
 in Dungeon, Forest, Courtyard and Tower maps.
 
 | Objects                                   | Availability                                                                      |
 | ----------------------------------------- | --------------------------------------------------------------------------------- |
 | Treasure chest, Supply sacks, Weapon rack | Manual placement only; do not spawn automatically                                 |
+| Wooden bench                              | Manual placement only; blocks 2 × 1 squares, or 1 × 2 when rotated                |
 | Crate, Barrel                             | Manual placement; also used by existing generators and additions where applicable |
 | Bedroll, Moss, Fern                       | Manual placement; also used by existing generators and additions where applicable |
 
@@ -152,6 +153,23 @@ entrance/objective markers and floor labels are architectural features; painted
 leaves, ash, cracks and similar surface marks are renderer details. Their behavior
 is described in [Using the workbench](#using-the-workbench).
 
+## Wooden bench
+
+**Edit objects → Add object → Wooden bench** places a backless wooden bench on
+Dungeon, Forest, Courtyard or Tower maps. It is manual-only and does not appear
+in Choose additions or automatic generation. Its two occupied squares both block
+movement and count toward the map's blocking budget. Rotate left/right or Q/E
+turns the complete footprint between **2 × 1** and **1 × 2**, keeping Column/Row
+at the top-left occupied square. Either square must stay clear of walls, other
+physical objects and protected routes/connections; Tower benches stay on one floor.
+
+The catalog image, placement ghost and accepted bench share the original Canvas
+artwork and accepted character palette. Invalid placements stay staged for
+correction. Movement, removal, Undo/Redo, current-format saves/backups, thumbnails
+and PNG exports preserve its footprint and facing. Save format **35.0.0** records
+the expanded authored vocabulary; earlier formats are unsupported under the
+current-only policy. Generator versions and ordinary generated maps are unchanged.
+
 ## Rotating individual objects
 
 All independently editable objects in the [object list](#object-list) support
@@ -162,8 +180,9 @@ to the object's original artwork. Choose **Place object** to commit the position
 and orientation together; Escape cancels the preview. Keyboard users can focus
 either rotation button and activate it with Enter or Space.
 
-Rotation keeps the object's anchor and movement footprint unchanged, including
-the rug's existing 3 × 3 surface area. Placement, collision, access and density
+Rotation keeps the object's anchor. The wooden bench turns its occupied area
+from 2 × 1 to 1 × 2; other independent objects retain their existing movement
+footprint, including the rug's 3 × 3 surface area. Placement, collision, access and density
 checks still apply. Invalid placement stays staged so coordinates can be corrected
 without losing the chosen angle. Moving an already rotated object retains its
 orientation. Generated artwork variation stays unchanged; the editor adds the
@@ -177,9 +196,10 @@ object's move record; four turns alone restore its original document and artwork
 Complete additions retain their existing rotation rules. Individual addition
 components, attached sconces/vines, stairs, portals and other architecture cannot
 be rotated independently. Chosen artwork orientations use the optional
-`artRotation` field in authored move records and added props; generated bases,
-generator versions, RNG streams and multi-tile footprint rotations are unchanged.
-Save format **34.0.0** records this authored extension; earlier formats are
+`artRotation` field in authored move records and added props; the bench instead
+stores its defined footprint and quarter-turn `rotation`; generated bases,
+generator versions, RNG streams and existing addition footprints are unchanged.
+Save format **35.0.0** records this authored extension; earlier formats are
 unsupported under the current-only policy.
 
 ## Shared placeable props
@@ -195,8 +215,8 @@ Chests, sacks, racks, crates, barrels, logs, stumps, desks and bookshelves each
 block one square. Bedrolls, moss and ferns are passable; their overlap rules still
 depend on the map type.
 
-The independent catalogs contain **14 Dungeon**, **14 Forest**, **13 Courtyard**,
-and **14 Tower** kinds. Sharing adds manual choices; the generators and **Choose
+The independent catalogs contain **15 Dungeon**, **15 Forest**, **14 Courtyard**,
+and **15 Tower** kinds. Sharing adds manual choices; the generators and **Choose
 additions** selections are unchanged. Chests, sacks and weapon racks do not spawn
 automatically. Their drawings fit one square and follow the accepted map's
 character colors; pending character settings do not recolor the catalog or map.
@@ -215,8 +235,8 @@ Shared names, categories, blocking and map availability live in
 `rendering/portable-props.ts` draws the three new objects through the existing
 shared prop dispatch, which keeps maps, placement previews, catalog illustrations,
 thumbnails and PNG exports consistent. Editing, undo, saves and backup imports
-use the existing per-map document adapters. Save format **34.0.0** records the
-expanded authored vocabulary; format 33 and earlier are unsupported. Generator
+use the existing per-map document adapters. Save format **35.0.0** records the
+expanded authored vocabulary; format 34 and earlier are unsupported. Generator
 versions and canonical generated model/pixel baselines remain unchanged.
 
 ## Export presets and VTT setup
@@ -271,8 +291,8 @@ The seeded engine uses unsigned 32-bit **FNV-1a over UTF-16 code units** for sta
 Dungeon, Forest, and Courtyard use `gridDistances` in `engine/grid-traversal.ts` for four-neighbor shortest paths, preserving left/right/up/down discovery order. The existing `distances` and `forestDistances` names are aliases to that function. Dungeon thresholds/landmarks and forest route rules remain in their domain modules. `shuffleInPlace` in `engine/random.ts` implements Fisher–Yates for locally owned candidate arrays of non-null values; it consumes one inclusive `int(0, i)` draw per descending index, including self-swaps, and none for empty or singleton arrays. Generated maps and caller-owned layouts remain immutable. Connectivity tests retain separate test-only searches, and shuffled-order/next-draw fixtures pin RNG consumption independently of production constants.
 
 **Supported saves and generator versions.** The app supports only the current
-save format, **34.0.0**, and the current generator for each map type. This is an
-intentional development-time break: formats 1–33, older generator snapshots,
+save format, **35.0.0**, and the current generator for each map type. This is an
+intentional development-time break: formats 1–34, older generator snapshots,
 and Dungeon editing versions 1–3 are unsupported. There are no migrations,
 character defaults for imported maps, or landmark alias conversions. Regenerate
 maps with this build and save them again; changing an old file's version number
@@ -284,7 +304,7 @@ does not convert its contents.
 | Dungeon and Forest generator `4.0.0` | Current layout and decoration rules for these map types. |
 | Courtyard generator `5.0.0`          | Current rules, including spawned ordinary braziers.      |
 | Tower generator `3.0.0`              | Current separate and spiral staircase rules.             |
-| Save format `34.0.0`                 | Current record, backup, and editing vocabulary.          |
+| Save format `35.0.0`                 | Current record, backup, and editing vocabulary.          |
 
 Backup headers and records must contain the exact current save-format string.
 Unsupported headers reject the file; unsupported records inside a current bundle
@@ -526,3 +546,10 @@ map types, keyboard selection/movement/rotation/removal/history, help and focus
 restoration, scrollable mobile/short-screen content, input/composition/modifier
 safety and protected/pinned maps. Artifacts are in `artifacts/keyboard-shortcuts/`.
 The optional guided app tutorial remains a future feature; it is not implemented.
+
+Bench verification uses focused placement/save checks on all four map types,
+including the second occupied square, refused turns, malformed footprint/angle
+imports, removal/reset and unchanged inputs. `scripts/bench-review.spec.ts`
+checks drawing bounds and renders `artifacts/wooden-bench/rotations.png`.
+`tests/wooden-bench.spec.ts` checks catalog artwork/labels, placement, keyboard
+rotation, Undo/Redo, saved reopen and exact PNG parity on each map type.

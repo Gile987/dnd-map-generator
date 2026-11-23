@@ -1,3 +1,4 @@
+import { objectRotation } from './object-rotation';
 import { expect, test } from 'vitest';
 import { editorFixture } from '../../../../scripts/editor-test-support';
 import { forestEditorFixture } from '../../../../scripts/forest-editor-test-support';
@@ -62,7 +63,7 @@ for (const [type, map] of Object.entries(prepared)) {
       for (const rotation of [1, 2, 3, 0] as const) {
         current = accept(current, { kind: 'move', id: item.id, target: item.prop, rotation });
         const prop = editorInstances(current).find((other) => other.id === item.id)?.prop;
-        expect(prop?.artRotation ?? 0).toBe(rotation);
+        expect(prop ? objectRotation(prop) : 0).toBe(rotation);
         expect(prop).toMatchObject({
           x: item.prop.x,
           y: item.prop.y,
@@ -96,9 +97,8 @@ for (const [type, map] of Object.entries(prepared)) {
       expect(current).toEqual(added);
       const rotated = accept(added, { kind: 'move', id: item.id, target: item.prop, rotation: 1 });
       const moved = place(rotated, (target) => ({ kind: 'move', id: item.id, target }), item.prop);
-      expect(editorInstances(moved).find((other) => other.id === item.id)?.prop.artRotation).toBe(
-        1,
-      );
+      const movedProp = editorInstances(moved).find((other) => other.id === item.id)?.prop;
+      expect(movedProp && objectRotation(movedProp)).toBe(1);
       expect(accept(rotated, { kind: 'remove', id: item.id })).toEqual(
         accept(added, { kind: 'remove', id: item.id }),
       );

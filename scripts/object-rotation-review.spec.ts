@@ -1,3 +1,4 @@
+import { propBounds } from '../src/app/engine/prop-footprint';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createCanvas } from '@napi-rs/canvas';
@@ -77,9 +78,10 @@ for (const source of [
         paint.fillStyle = '#536863';
         paint.fillRect(0, 0, 80, 80);
         paint.translate(40, 40);
-        const scale = entry.kind === 'rug' ? 24 : 64;
+        const scale = entry.kind === 'wooden_bench' ? 34 : entry.kind === 'rug' ? 24 : 64;
         paint.scale(scale, scale);
-        paint.translate(-prop.x - 0.5, -prop.y - 0.5);
+        const bounds = propBounds(prop);
+        paint.translate(-prop.x - bounds.width / 2, -prop.y - bounds.height / 2);
         drawEditorProp(paint, prop, resolveEditorMap(result.document));
         hashes.push(createHash('sha256').update(cell.toBuffer('image/png')).digest('hex'));
         ctx.drawImage(cell, 185 + rotation * 85, 55 + row * 100);

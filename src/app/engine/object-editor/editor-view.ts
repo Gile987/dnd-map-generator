@@ -1,3 +1,4 @@
+import { objectRotation } from './object-rotation';
 import { towerFloorAt } from '../tower';
 import { towerCapability, TOWER_PALETTE } from './tower-catalog';
 import { towerInstances, resolveTower, orderedTowerObjects } from './tower-document';
@@ -57,7 +58,7 @@ export function editorSelections(map: EditableMapDocument): readonly EditorSelec
       !item.lock &&
       !item.architecture &&
       (item.groupId ? item.groupId !== 'fountain' && item.groupId !== 'well' : true),
-    rotation: item.rotation ?? item.props[0]?.artRotation ?? 0,
+    rotation: item.rotation ?? (item.props[0] ? objectRotation(item.props[0]) : 0),
   }));
 }
 export function editorPalette(map: EditableMapDocument) {

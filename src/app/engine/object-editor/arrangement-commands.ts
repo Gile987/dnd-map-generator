@@ -1,4 +1,4 @@
-import { withObjectRotation } from './object-rotation';
+import { withObjectRotation, objectRotation, initialOrientation } from './object-rotation';
 import { isBlockingProp, isTilePosition } from '../model';
 import { QUARTER_TURNS } from '../prop-footprint';
 import { stepObjectOrder, hasCustomObjectOrder } from './drawing-order';
@@ -92,7 +92,7 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
             x: command.target.x,
             y: command.target.y,
             variation: 0.5,
-            ...(command.rotation ? { artRotation: command.rotation } : {}),
+            ...initialOrientation(command.propKind, command.rotation ?? 0),
             blocking: isBlockingProp(command.propKind),
           },
         },
@@ -114,7 +114,7 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
       if (
         item.prop.x === command.target.x &&
         item.prop.y === command.target.y &&
-        (item.prop.artRotation ?? 0) === (command.rotation ?? item.prop.artRotation ?? 0)
+        objectRotation(item.prop) === (command.rotation ?? objectRotation(item.prop))
       )
         return { ok: true, document: map };
       if (item.id.startsWith('base-')) {
@@ -126,7 +126,7 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
             ...edits.moves.filter((move) => move.id !== item.id),
             ...(source.x === command.target.x &&
             source.y === command.target.y &&
-            !(command.rotation ?? item.prop.artRotation ?? 0)
+            !(command.rotation ?? objectRotation(item.prop))
               ? []
               : [
                   {
@@ -149,7 +149,7 @@ export function proposeArrangementCommand<Base extends ArrangementBase, Id exten
                   ...other,
                   prop: withObjectRotation(
                     { ...other.prop, x: command.target.x, y: command.target.y },
-                    command.rotation ?? item.prop.artRotation ?? 0,
+                    command.rotation ?? objectRotation(item.prop),
                   ),
                 }
               : other,
