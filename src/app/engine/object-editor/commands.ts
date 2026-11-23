@@ -1,4 +1,4 @@
-import { withObjectRotation } from './object-rotation';
+import { withObjectRotation, objectRotation, initialOrientation } from './object-rotation';
 import { MAX_AUTHORED_OBJECTS } from './object-command';
 import type { ObjectCommand, ObjectEditResult } from './object-command';
 import { isDungeonSurface } from './dungeon-occupancy';
@@ -109,7 +109,7 @@ export function proposeObjectCommand(
       y: command.target.y,
       blocking: isBlockingProp(command.propKind),
       variation: 0.5,
-      ...(command.rotation ? { artRotation: command.rotation } : {}),
+      ...initialOrientation(command.propKind, command.rotation ?? 0),
     };
     edits = {
       ...edits,
@@ -133,7 +133,7 @@ export function proposeObjectCommand(
     } else if (
       item.prop.x === command.target.x &&
       item.prop.y === command.target.y &&
-      (item.prop.artRotation ?? 0) === (command.rotation ?? item.prop.artRotation ?? 0)
+      objectRotation(item.prop) === (command.rotation ?? objectRotation(item.prop))
     )
       return { ok: true, document };
     else if (command.id.startsWith('base-')) {
@@ -145,7 +145,7 @@ export function proposeObjectCommand(
           ...edits.moves.filter((move) => move.id !== command.id),
           ...(original.x === command.target.x &&
           original.y === command.target.y &&
-          !(command.rotation ?? item.prop.artRotation ?? 0)
+          !(command.rotation ?? objectRotation(item.prop))
             ? []
             : [
                 {
@@ -168,7 +168,7 @@ export function proposeObjectCommand(
                 ...item,
                 prop: withObjectRotation(
                   { ...item.prop, x: command.target.x, y: command.target.y },
-                  command.rotation ?? item.prop.artRotation ?? 0,
+                  command.rotation ?? objectRotation(item.prop),
                 ),
               }
             : item,

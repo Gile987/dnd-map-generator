@@ -2,7 +2,8 @@ import type { MapType } from './model';
 
 export interface ObjectCapability {
   readonly label: string;
-  readonly category: 'Storage' | 'Stonework' | 'Ground' | 'Vegetation' | 'Woodland' | 'Protected';
+  readonly category:
+    'Storage' | 'Furniture' | 'Stonework' | 'Ground' | 'Vegetation' | 'Woodland' | 'Protected';
   readonly editable: boolean;
   readonly reason?: string;
 }
@@ -13,7 +14,7 @@ interface SharedPropDefinition {
   readonly mapTypes: readonly MapType[];
 }
 
-/** Shared single-square props. Availability does not add them to generation. */
+/** Shared placeable props. Availability does not add them to generation. */
 export const SHARED_PROPS = {
   treasure_chest: {
     label: 'Treasure chest',
@@ -76,6 +77,12 @@ export const SHARED_PROPS = {
     category: 'Storage',
     blocking: true,
     mapTypes: ['dungeon', 'tower'],
+  },
+  wooden_bench: {
+    label: 'Wooden bench',
+    category: 'Furniture',
+    blocking: true,
+    mapTypes: ['dungeon', 'forest', 'courtyard', 'tower'],
   },
 } as const satisfies Readonly<Record<string, SharedPropDefinition>>;
 

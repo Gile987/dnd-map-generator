@@ -1,3 +1,8 @@
+import {
+  withObjectRotation,
+  objectRotation,
+  initialOrientation,
+} from '../../engine/object-editor/object-rotation';
 import type { ObjectShortcut } from '../../keyboard-shortcuts/shortcuts';
 import { towerStairFootprint } from '../../engine/tower-connection-geometry';
 import { editableTowerStairs, towerStairBounds } from '../../engine/object-editor/tower-stairs';
@@ -375,14 +380,13 @@ export class ObjectEditor {
             y: 0,
             variation: 0.5,
             blocking: isBlockingProp(command.propKind),
+            ...initialOrientation(command.propKind, command.rotation ?? 0),
           };
     if (!prop) return undefined;
-    const moved = {
-      ...prop,
-      x: command.target.x,
-      y: command.target.y,
-      artRotation: command.rotation ?? prop.artRotation,
-    };
+    const moved = withObjectRotation(
+      { ...prop, x: command.target.x, y: command.target.y },
+      command.rotation ?? objectRotation(prop),
+    );
     return {
       props: [moved],
       bounds: authoredObjectArea(moved),
@@ -415,7 +419,7 @@ export class ObjectEditor {
     this.message.set(
       item?.groupId
         ? 'Rotation preview. Place object to apply; Escape cancels. Column and Row keep the top-left anchor.'
-        : 'Rotation preview. Place object to apply; Escape cancels. The object keeps its current square.',
+        : 'Rotation preview. Place object to apply; Escape cancels. The object keeps its anchor.',
     );
   }
 

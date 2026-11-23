@@ -76,6 +76,7 @@ describe('production option constants', () => {
       'treasure_chest',
       'supply_sacks',
       'weapon_rack',
+      'wooden_bench',
     ]);
   });
 });

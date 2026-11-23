@@ -4,7 +4,7 @@ import type { MapDocument } from '../engine/model';
 import { parseSavedMapBody } from './map-schema';
 import type { SaveVocabulary } from './map-schema';
 
-export const SAVE_FORMAT_VERSION = '34.0.0';
+export const SAVE_FORMAT_VERSION = '35.0.0';
 export const SAVE_STORAGE_KEY = 'encounter-map-forge.saves';
 export const BACKUP_FORMAT = 'encounter-map-forge-saves';
 export const NAME_MAX = 64;
@@ -107,8 +107,10 @@ const CURRENT_VOCABULARY: SaveVocabulary = {
     'treasure_chest',
     'supply_sacks',
     'weapon_rack',
+    'wooden_bench',
   ],
   propFootprints: {
+    wooden_bench: { width: 2, height: 1, rotations: [0, 1, 2, 3] },
     dining_table: { width: 2, height: 1, rotations: [0, 1, 2, 3] },
     dry_fountain: { width: 3, height: 3, rotations: [0] },
     collapsed_wagon: { width: 3, height: 2, rotations: [0, 1] },

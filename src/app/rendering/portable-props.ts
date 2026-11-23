@@ -260,3 +260,34 @@ export function drawWeaponRack(ctx: DrawingContext, prop: Prop, colors: Portable
     ctx.restore();
   }
 }
+
+/** Backless wooden bench, entirely inside its two-square footprint. */
+export function drawWoodenBench(
+  ctx: DrawingContext,
+  prop: Prop,
+  colors: PortablePropPalette,
+): void {
+  ctx.fillStyle = '#15211e70';
+  ctx.fillRect(-0.91, -0.27, 1.86, 0.65);
+  ctx.fillStyle = colors.darkWood;
+  for (const x of [-0.77, 0.67]) ctx.fillRect(x, -0.34, 0.1, 0.7);
+  for (const y of [-0.27, -0.09, 0.09]) {
+    ctx.fillStyle = colors.darkWood;
+    ctx.fillRect(-0.91, y, 1.82, 0.16);
+    ctx.fillStyle = colors.wood;
+    ctx.fillRect(-0.88, y + 0.015, 1.76, 0.125);
+    ctx.strokeStyle = colors.grain;
+    ctx.lineWidth = 0.012;
+    ctx.beginPath();
+    ctx.moveTo(-0.83, y + 0.055);
+    ctx.lineTo(0.82, y + 0.055 + (prop.variation - 0.5) * 0.025);
+    ctx.stroke();
+  }
+  ctx.fillStyle = colors.metal;
+  for (const x of [-0.72, 0.72])
+    for (const y of [-0.2, 0.16]) {
+      ctx.beginPath();
+      ctx.arc(x, y, 0.022, 0, Math.PI * 2);
+      ctx.fill();
+    }
+}

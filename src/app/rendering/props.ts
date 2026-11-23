@@ -1,4 +1,5 @@
 import {
+  drawWoodenBench,
   drawTreasureChest,
   drawSupplySacks,
   drawWeaponRack,
@@ -71,6 +72,7 @@ type PropDrawer = (
 ) => void;
 
 const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
+  wooden_bench: (ctx, prop, _forest, _courtyard, portable) => drawWoodenBench(ctx, prop, portable),
   treasure_chest: (ctx, prop, _forest, _courtyard, portable) =>
     drawTreasureChest(ctx, prop, portable),
   supply_sacks: (ctx, prop, _forest, _courtyard, portable) => drawSupplySacks(ctx, prop, portable),

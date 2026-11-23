@@ -1,4 +1,4 @@
-import { validStoredRotation } from './object-rotation';
+import { validStoredRotation, authoredOrientation } from './object-rotation';
 import type { QuarterTurn } from '../model';
 import { dungeonInstances } from './document';
 import { orderedDungeonObjects } from './dungeon-drawing-order';
@@ -120,10 +120,20 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
     )
       return undefined;
     const prop = item['prop'];
+    if (!object(prop)) return undefined;
+    const orientation = authoredOrientation(prop);
     if (
-      !object(prop) ||
-      !keys(prop, ['kind', 'x', 'y', 'variation', 'blocking', 'artRotation']) ||
-      !validStoredRotation(prop) ||
+      !keys(prop, [
+        'kind',
+        'x',
+        'y',
+        'variation',
+        'blocking',
+        'artRotation',
+        'footprint',
+        'rotation',
+      ]) ||
+      !orientation ||
       !position(prop) ||
       typeof prop['kind'] !== 'string' ||
       !dungeonCapability(prop['kind'] as PropKind)?.editable ||
@@ -140,7 +150,7 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
         y: prop.y,
         blocking: isBlockingProp(prop['kind'] as PropKind),
         variation: 0.5,
-        ...(prop['artRotation'] ? { artRotation: prop['artRotation'] as QuarterTurn } : {}),
+        ...orientation,
       },
     });
   }
