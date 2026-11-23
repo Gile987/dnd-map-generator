@@ -68,17 +68,6 @@ canvas:focus-visible {
   background: #1e2f32;
   border-top: 1px solid #7f9b8626;
 }
-.pan-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: #9aaea9;
-  forge-icon {
-    width: 15px;
-    height: 15px;
-  }
-}
 .zoom-controls {
   display: flex;
   align-items: center;
@@ -117,21 +106,12 @@ canvas:focus-visible {
     font-size: 12px;
   }
 }
-@media (max-width: 1100px) {
-  .wheel-hint {
-    display: none;
-  }
-}
 @media (max-width: 650px) {
   .viewport {
     height: 390px;
   }
   .view-controls {
     padding: 8px;
-  }
-  .pan-hint {
-    font-size: 10px;
-    gap: 5px;
   }
 }
 :host(.focused) {
@@ -169,11 +149,6 @@ canvas.editing {
   .zoom-controls button {
     min-width: 44px;
     min-height: 44px;
-  }
-  @media (max-width: 650px) {
-    .pan-hint {
-      flex-basis: 100%;
-    }
   }
 }
 
@@ -249,5 +224,61 @@ canvas.explore-target {
     // A definite canvas frame avoids resize feedback in the scrollable focus layout.
     height: clamp(180px, 50dvh, 680px);
     flex: 0 0 auto;
+  }
+}
+
+.shortcuts-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid #6d8979;
+  border-radius: 5px;
+  background: #263e3b;
+  color: #e4e7d6;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.shortcuts-button:hover {
+  background: #37554b;
+}
+.shortcuts-button:focus-visible {
+  outline: 2px solid #f1d48b;
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .shortcuts-button {
+    min-height: 44px;
+  }
+}
+
+.shortcuts-short {
+  display: none;
+}
+@media (max-width: 650px) {
+  .shortcuts-long {
+    display: none;
+  }
+  .shortcuts-short {
+    display: inline;
+  }
+  .view-controls {
+    gap: 4px;
+  }
+  .zoom-controls {
+    gap: 2px;
+    output {
+      min-width: 40px;
+    }
+    button {
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .separator,
+    .fit forge-icon {
+      display: none;
+    }
   }
 }

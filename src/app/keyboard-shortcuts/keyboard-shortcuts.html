@@ -1,0 +1,43 @@
+<dialog
+  #dialog
+  aria-labelledby="keyboard-shortcuts-title"
+  aria-describedby="keyboard-shortcuts-scope"
+  (keydown.escape)="$event.stopPropagation()"
+  (cancel)="close($event)"
+  (close)="closed()"
+>
+  <div class="help-shell">
+    <header>
+      <h2 id="keyboard-shortcuts-title" tabindex="-1" autofocus>Keyboard shortcuts</h2>
+    </header>
+    <div class="help-content" tabindex="0" role="region" aria-label="Shortcut list">
+      <p id="keyboard-shortcuts-scope">
+        Focus the map with Tab or a click to use shortcuts. Text fields keep their normal editing
+        keys.
+      </p>
+      <p class="mode-note">
+        {{editing() ? 'Edit objects mode: changes stay staged until you press Enter. Delete and
+        Undo/Redo act immediately.' : 'Explore mode: arrow keys pan the map. Switch to Edit objects
+        to manipulate objects.'}}
+      </p>
+      <p>
+        Selection cycles editable objects on the current floor. Protected objects, additions and
+        staircases keep their existing restrictions.
+      </p>
+      @for(group of groups(); track group.title){
+      <section [attr.aria-label]="group.title">
+        <h3>{{group.title}}</h3>
+        <dl>
+          @for(row of group.rows; track row.label){
+          <dt><kbd>{{row.label}}</kbd></dt>
+          <dd>{{row.description}}</dd>
+          }
+        </dl>
+      </section>
+      }
+    </div>
+    <footer>
+      <button type="button" aria-label="Close keyboard shortcuts" (click)="close()">Close</button>
+    </footer>
+  </div>
+</dialog>
