@@ -1,8 +1,6 @@
 # Encounter Map Forge
 
-A browser-only Angular workbench for making dungeon, forest-clearing, ruined-courtyard, and multi-floor tower battle maps with distinct character. It opens with a complete map. Generate connected dungeon rooms, a woodland clearing with a path between two edges, an open stone ruin with broken walls, or connected tower floors; shuffle decoration while preserving the layout; then export a full-resolution PNG. The implementation follows [the project brief](encounter-map-forge-brief.md).
-
-See the [map feature inventory](MAP_FEATURE_INVENTORY.md) for a comparison of each map type’s current characters, additions, controls, and content gaps.
+A browser-only Angular workbench for making dungeon, forest-clearing, ruined-courtyard, and multi-floor tower battle maps with distinct character. It opens with a complete map. Generate connected dungeon rooms, a woodland clearing with a path between two edges, an open stone ruin with broken walls, or connected tower floors; shuffle decoration while preserving the layout; then export a full-resolution PNG.
 
 ## Run locally
 
@@ -527,5 +525,4 @@ staged movement or rotation. `tests/keyboard-shortcuts.spec.ts` covers all four
 map types, keyboard selection/movement/rotation/removal/history, help and focus
 restoration, scrollable mobile/short-screen content, input/composition/modifier
 safety and protected/pinned maps. Artifacts are in `artifacts/keyboard-shortcuts/`.
-The optional guided app tutorial remains a future feature, recorded as F27 in
-[FEATURE_IDEAS_NEXT.md](FEATURE_IDEAS_NEXT.md); it is not implemented.
+The optional guided app tutorial remains a future feature; it is not implemented.
