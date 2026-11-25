@@ -1,3 +1,4 @@
+import { isIndependentFurniture } from '../src/app/engine/object-editor/object-rotation';
 import { propBounds } from '../src/app/engine/prop-footprint';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -78,7 +79,7 @@ for (const source of [
         paint.fillStyle = '#536863';
         paint.fillRect(0, 0, 80, 80);
         paint.translate(40, 40);
-        const scale = entry.kind === 'wooden_bench' ? 34 : entry.kind === 'rug' ? 24 : 64;
+        const scale = isIndependentFurniture(entry.kind) ? 34 : entry.kind === 'rug' ? 24 : 64;
         paint.scale(scale, scale);
         const bounds = propBounds(prop);
         paint.translate(-prop.x - bounds.width / 2, -prop.y - bounds.height / 2);

@@ -291,3 +291,47 @@ export function drawWoodenBench(
       ctx.fill();
     }
 }
+
+/** A framed bed with pillow and folded blanket, inside a two-square footprint. */
+export function drawWoodenBed(ctx: DrawingContext, prop: Prop, colors: PortablePropPalette): void {
+  ctx.fillStyle = '#15211e70';
+  ctx.fillRect(-0.96, -0.43, 1.92, 0.88);
+  ctx.fillStyle = colors.darkWood;
+  ctx.fillRect(-0.9, -0.4, 1.8, 0.8);
+  ctx.fillStyle = '#c4c0a9';
+  ctx.fillRect(-0.76, -0.32, 1.52, 0.64);
+  ctx.fillStyle = colors.cloth;
+  ctx.fillRect(-0.13, -0.32, 0.9, 0.64);
+  ctx.fillStyle = colors.darkCloth;
+  ctx.fillRect(-0.13, -0.32, 0.12, 0.64);
+  ctx.strokeStyle = '#ffffff35';
+  ctx.lineWidth = 0.015;
+  ctx.strokeRect(0.02, -0.27, 0.69, 0.54);
+  ctx.strokeStyle = colors.darkCloth;
+  ctx.beginPath();
+  ctx.moveTo(0.13, -0.2);
+  ctx.quadraticCurveTo(0.42, 0.02 + (prop.variation - 0.5) * 0.04, 0.68, 0.19);
+  ctx.stroke();
+  ctx.fillStyle = '#8f9487';
+  ctx.fillRect(-0.71, -0.24, 0.48, 0.5);
+  ctx.fillStyle = '#e8e3d0';
+  ctx.beginPath();
+  ctx.moveTo(-0.68, -0.25);
+  ctx.quadraticCurveTo(-0.73, 0, -0.68, 0.24);
+  ctx.lineTo(-0.27, 0.24);
+  ctx.quadraticCurveTo(-0.22, 0, -0.27, -0.25);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#b1b4a3';
+  ctx.lineWidth = 0.012;
+  ctx.stroke();
+  for (const x of [-0.95, 0.82]) {
+    ctx.fillStyle = colors.wood;
+    ctx.fillRect(x, -0.43, 0.12, 0.86);
+    ctx.fillStyle = colors.grain;
+    ctx.fillRect(x + 0.015, -0.41, 0.02, 0.82);
+    ctx.fillStyle = colors.darkWood;
+    ctx.fillRect(x - 0.01, -0.46, 0.14, 0.1);
+    ctx.fillRect(x - 0.01, 0.36, 0.14, 0.1);
+  }
+}

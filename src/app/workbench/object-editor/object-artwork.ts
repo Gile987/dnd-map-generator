@@ -1,4 +1,7 @@
-import { initialOrientation } from '../../engine/object-editor/object-rotation';
+import {
+  initialOrientation,
+  isIndependentFurniture,
+} from '../../engine/object-editor/object-rotation';
 import { DUNGEON_PORTABLE_PALETTES } from '../../rendering/portable-props';
 import { FOREST_PALETTES } from '../../rendering/forest-palette';
 import { Directive, computed, input } from '@angular/core';
@@ -25,11 +28,11 @@ export class ObjectArtwork {
     if (!ctx) return '';
     ctx.fillStyle = '#536863';
     ctx.fillRect(0, 0, 80, 80);
-    const bench = this.kind() === 'wooden_bench';
-    const scale = bench ? 34 : this.kind() === 'rug' ? 25 : 64;
+    const furniture = isIndependentFurniture(this.kind());
+    const scale = furniture ? 34 : this.kind() === 'rug' ? 25 : 64;
     ctx.translate(40, 40);
     ctx.scale(scale, scale);
-    ctx.translate(bench ? -1 : -0.5, -0.5);
+    ctx.translate(furniture ? -1 : -0.5, -0.5);
     const character = this.forestCharacter();
     const preset = this.dungeonPreset();
     drawProp(

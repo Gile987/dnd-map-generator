@@ -119,6 +119,7 @@ in Dungeon, Forest, Courtyard and Tower maps.
 | ------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | Log, Stump                            | Forest, Courtyard  | Individually placeable on both; also generated in Forest                                                                          |
 | Desk, Bookshelf                       | Dungeon, Tower     | Individually placeable on both; also used in generated additions and Tower furnishings                                            |
+| Wooden bed                            | Dungeon, Tower     | Individually placeable; manual-only, blocks 2 × 1 squares (1 × 2 when rotated)                                                    |
 | Broken column                         | Dungeon, Courtyard | Individually placeable and generated on both                                                                                      |
 | Vine                                  | Dungeon, Courtyard | Generated decoration; protected from individual editing                                                                           |
 | Scroll case, Altar, Candles, Offering | Dungeon, Tower     | Dungeon: components of Forgotten study or Ritual site. Tower: independently placeable and used in generated furnishings/additions |
@@ -166,9 +167,23 @@ physical objects and protected routes/connections; Tower benches stay on one flo
 The catalog image, placement ghost and accepted bench share the original Canvas
 artwork and accepted character palette. Invalid placements stay staged for
 correction. Movement, removal, Undo/Redo, current-format saves/backups, thumbnails
-and PNG exports preserve its footprint and facing. Save format **35.0.0** records
+and PNG exports preserve its footprint and facing. Save format **36.0.0** records
 the expanded authored vocabulary; earlier formats are unsupported under the
 current-only policy. Generator versions and ordinary generated maps are unchanged.
+
+## Wooden bed
+
+**Edit objects → Add object → Wooden bed** places a bed in Dungeon or Tower
+maps. The original Canvas artwork has a wooden frame, pillow and blanket, with
+colors following the accepted character. It is manual-only, is separate from the
+one-square bedroll and does not spawn through generation or Choose additions.
+
+Like the bench, it blocks **2 × 1** squares and turns to **1 × 2** through Rotate
+left/right or Q/E. Column/Row anchors the top-left occupied square. Both cells
+must fit on valid floor without covering physical objects or protected
+architecture, and both count toward the blocking budget. Tower beds remain on
+one floor. Invalid placement stays staged for correction; movement, removal,
+Undo/Redo, current saves/backups and PNG exports preserve its footprint and facing.
 
 ## Rotating individual objects
 
@@ -180,7 +195,7 @@ to the object's original artwork. Choose **Place object** to commit the position
 and orientation together; Escape cancels the preview. Keyboard users can focus
 either rotation button and activate it with Enter or Space.
 
-Rotation keeps the object's anchor. The wooden bench turns its occupied area
+Rotation keeps the object's anchor. The wooden bench and bed turn their occupied area
 from 2 × 1 to 1 × 2; other independent objects retain their existing movement
 footprint, including the rug's 3 × 3 surface area. Placement, collision, access and density
 checks still apply. Invalid placement stays staged so coordinates can be corrected
@@ -196,10 +211,10 @@ object's move record; four turns alone restore its original document and artwork
 Complete additions retain their existing rotation rules. Individual addition
 components, attached sconces/vines, stairs, portals and other architecture cannot
 be rotated independently. Chosen artwork orientations use the optional
-`artRotation` field in authored move records and added props; the bench instead
-stores its defined footprint and quarter-turn `rotation`; generated bases,
+`artRotation` field in authored move records and added props; the bench and bed instead
+store their defined footprint and quarter-turn `rotation`; generated bases,
 generator versions, RNG streams and existing addition footprints are unchanged.
-Save format **35.0.0** records this authored extension; earlier formats are
+Save format **36.0.0** records this authored extension; earlier formats are
 unsupported under the current-only policy.
 
 ## Shared placeable props
@@ -215,8 +230,8 @@ Chests, sacks, racks, crates, barrels, logs, stumps, desks and bookshelves each
 block one square. Bedrolls, moss and ferns are passable; their overlap rules still
 depend on the map type.
 
-The independent catalogs contain **15 Dungeon**, **15 Forest**, **14 Courtyard**,
-and **15 Tower** kinds. Sharing adds manual choices; the generators and **Choose
+The independent catalogs contain **16 Dungeon**, **15 Forest**, **14 Courtyard**,
+and **16 Tower** kinds. Sharing adds manual choices; the generators and **Choose
 additions** selections are unchanged. Chests, sacks and weapon racks do not spawn
 automatically. Their drawings fit one square and follow the accepted map's
 character colors; pending character settings do not recolor the catalog or map.
@@ -235,8 +250,8 @@ Shared names, categories, blocking and map availability live in
 `rendering/portable-props.ts` draws the three new objects through the existing
 shared prop dispatch, which keeps maps, placement previews, catalog illustrations,
 thumbnails and PNG exports consistent. Editing, undo, saves and backup imports
-use the existing per-map document adapters. Save format **35.0.0** records the
-expanded authored vocabulary; format 34 and earlier are unsupported. Generator
+use the existing per-map document adapters. Save format **36.0.0** records the
+expanded authored vocabulary; format 35 and earlier are unsupported. Generator
 versions and canonical generated model/pixel baselines remain unchanged.
 
 ## Export presets and VTT setup
@@ -291,8 +306,8 @@ The seeded engine uses unsigned 32-bit **FNV-1a over UTF-16 code units** for sta
 Dungeon, Forest, and Courtyard use `gridDistances` in `engine/grid-traversal.ts` for four-neighbor shortest paths, preserving left/right/up/down discovery order. The existing `distances` and `forestDistances` names are aliases to that function. Dungeon thresholds/landmarks and forest route rules remain in their domain modules. `shuffleInPlace` in `engine/random.ts` implements Fisher–Yates for locally owned candidate arrays of non-null values; it consumes one inclusive `int(0, i)` draw per descending index, including self-swaps, and none for empty or singleton arrays. Generated maps and caller-owned layouts remain immutable. Connectivity tests retain separate test-only searches, and shuffled-order/next-draw fixtures pin RNG consumption independently of production constants.
 
 **Supported saves and generator versions.** The app supports only the current
-save format, **35.0.0**, and the current generator for each map type. This is an
-intentional development-time break: formats 1–34, older generator snapshots,
+save format, **36.0.0**, and the current generator for each map type. This is an
+intentional development-time break: formats 1–35, older generator snapshots,
 and Dungeon editing versions 1–3 are unsupported. There are no migrations,
 character defaults for imported maps, or landmark alias conversions. Regenerate
 maps with this build and save them again; changing an old file's version number
@@ -304,7 +319,7 @@ does not convert its contents.
 | Dungeon and Forest generator `4.0.0` | Current layout and decoration rules for these map types. |
 | Courtyard generator `5.0.0`          | Current rules, including spawned ordinary braziers.      |
 | Tower generator `3.0.0`              | Current separate and spiral staircase rules.             |
-| Save format `35.0.0`                 | Current record, backup, and editing vocabulary.          |
+| Save format `36.0.0`                 | Current record, backup, and editing vocabulary.          |
 
 Backup headers and records must contain the exact current save-format string.
 Unsupported headers reject the file; unsupported records inside a current bundle
@@ -553,3 +568,11 @@ imports, removal/reset and unchanged inputs. `scripts/bench-review.spec.ts`
 checks drawing bounds and renders `artifacts/wooden-bench/rotations.png`.
 `tests/wooden-bench.spec.ts` checks catalog artwork/labels, placement, keyboard
 rotation, Undo/Redo, saved reopen and exact PNG parity on each map type.
+
+Bed checks extend the existing two-square furniture placement/save cases for
+Dungeon and Tower and explicitly reject bed insertion in Forest/Courtyard.
+The wall-side rendering regression derives its target from the full footprint.
+`scripts/bed-review.spec.ts` checks artwork bounds and writes
+`artifacts/wooden-bed/rotations.png`. `tests/wooden-bed.spec.ts` covers insertion,
+keyboard rotation, Undo/Redo, saved reopen and exact PNG parity on both supported
+maps, including a narrow Tower layout.
