@@ -78,6 +78,7 @@ describe('production option constants', () => {
       'weapon_rack',
       'wooden_bench',
       'wooden_bed',
+      'small_table',
     ]);
   });
 });

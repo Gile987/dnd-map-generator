@@ -69,6 +69,7 @@ const common = [
   'bedroll',
   'moss',
   'fern',
+  'small_table',
 ] as const;
 const availability: readonly [MapType, readonly PropKind[]][] = [
   ['dungeon', [...common, 'desk', 'bookshelf']],
@@ -88,6 +89,10 @@ test.each(cases)(
     const added = editorInstances(edited).find((item) => item.id === 'added-1');
     if (!added) throw Error('Missing added object');
     expect(added.prop).toMatchObject({ kind, variation: 0.5, blocking: isBlockingProp(kind) });
+    if (isBlockingProp(kind))
+      expect(
+        applyEditorCommand(edited, { kind: 'add', propKind: 'crate', target: added.prop }).ok,
+      ).toBe(false);
     const moved = place(edited, (target) => ({ kind: 'move', id: added.id, target }), added.prop);
     const current = editorInstances(moved).find((item) => item.id === added.id);
     expect(current?.prop.kind).toBe(kind);
@@ -183,7 +188,7 @@ test.each(Object.values(sources))(
   (map) => {
     expect(
       map.decoration.props.some((prop) =>
-        ['treasure_chest', 'supply_sacks', 'weapon_rack'].includes(prop.kind),
+        ['treasure_chest', 'supply_sacks', 'weapon_rack', 'small_table'].includes(prop.kind),
       ),
     ).toBe(false);
   },

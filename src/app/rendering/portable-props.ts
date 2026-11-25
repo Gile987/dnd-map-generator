@@ -335,3 +335,34 @@ export function drawWoodenBed(ctx: DrawingContext, prop: Prop, colors: PortableP
     ctx.fillRect(x - 0.01, 0.36, 0.14, 0.1);
   }
 }
+
+/** A square plank table with corner legs, entirely inside one occupied square. */
+export function drawSmallTable(ctx: DrawingContext, prop: Prop, colors: PortablePropPalette): void {
+  ctx.fillStyle = '#15211e70';
+  ctx.fillRect(-0.4, -0.37, 0.85, 0.82);
+  ctx.fillStyle = colors.darkWood;
+  for (const x of [-0.41, 0.29]) for (const y of [-0.41, 0.29]) ctx.fillRect(x, y, 0.12, 0.12);
+  ctx.fillRect(-0.4, -0.39, 0.8, 0.79);
+  for (const y of [-0.36, -0.12, 0.12]) {
+    ctx.fillStyle = colors.wood;
+    ctx.fillRect(-0.37, y, 0.74, 0.22);
+    ctx.strokeStyle = colors.grain;
+    ctx.lineWidth = 0.012;
+    ctx.beginPath();
+    ctx.moveTo(-0.33, y + 0.07);
+    ctx.quadraticCurveTo(0, y + 0.1 + (prop.variation - 0.5) * 0.04, 0.32, y + 0.07);
+    ctx.stroke();
+  }
+  ctx.fillStyle = colors.metal;
+  for (const x of [-0.31, 0.31])
+    for (const y of [-0.29, 0.29]) {
+      ctx.beginPath();
+      ctx.arc(x, y, 0.018, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  ctx.strokeStyle = colors.darkWood;
+  ctx.lineWidth = 0.015;
+  ctx.beginPath();
+  ctx.ellipse(0.16, -0.01, 0.05, 0.022, 0.1, 0, Math.PI * 2);
+  ctx.stroke();
+}

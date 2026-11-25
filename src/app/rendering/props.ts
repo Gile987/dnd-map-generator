@@ -1,4 +1,5 @@
 import {
+  drawSmallTable,
   drawWoodenBed,
   drawWoodenBench,
   drawTreasureChest,
@@ -73,6 +74,7 @@ type PropDrawer = (
 ) => void;
 
 const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
+  small_table: (ctx, prop, _forest, _courtyard, portable) => drawSmallTable(ctx, prop, portable),
   wooden_bed: (ctx, prop, _forest, _courtyard, portable) => drawWoodenBed(ctx, prop, portable),
   wooden_bench: (ctx, prop, _forest, _courtyard, portable) => drawWoodenBench(ctx, prop, portable),
   treasure_chest: (ctx, prop, _forest, _courtyard, portable) =>

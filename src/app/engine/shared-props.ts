@@ -90,6 +90,12 @@ export const SHARED_PROPS = {
     blocking: true,
     mapTypes: ['dungeon', 'tower'],
   },
+  small_table: {
+    label: 'Small table',
+    category: 'Furniture',
+    blocking: true,
+    mapTypes: ['dungeon', 'forest', 'courtyard', 'tower'],
+  },
 } as const satisfies Readonly<Record<string, SharedPropDefinition>>;
 
 export type SharedPropKind = keyof typeof SHARED_PROPS;
