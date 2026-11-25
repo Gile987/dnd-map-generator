@@ -110,7 +110,7 @@ test('Tower catalog and last-floor placement retain pending settings, per-floor 
   await floors(page).selectOption('8');
   await page.getByRole('button', { name: 'Add object', exact: true }).click();
   const catalog = page.getByRole('region', { name: 'Tower object catalog', exact: true });
-  await expect(catalog.locator('.object-cards button')).toHaveCount(15);
+  await expect(catalog.locator('.object-cards button')).toHaveCount(16);
   await catalog.getByRole('button', { name: 'Add Crate', exact: true }).click();
   await position(page, command.target);
   await expect(page.getByRole('spinbutton', { name: 'Column', exact: true })).toHaveAttribute(

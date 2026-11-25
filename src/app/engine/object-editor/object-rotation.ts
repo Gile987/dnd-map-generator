@@ -1,6 +1,10 @@
 import type { Prop, PropKind, QuarterTurn } from '../model';
 import { MULTI_TILE_PROPS, QUARTER_TURNS } from '../prop-footprint';
 
+export function isIndependentFurniture(kind: unknown): kind is 'wooden_bench' | 'wooden_bed' {
+  return kind === 'wooden_bench' || kind === 'wooden_bed';
+}
+
 export function objectRotation(prop: Prop): QuarterTurn {
   return prop.footprint ? (prop.rotation ?? 0) : (prop.artRotation ?? 0);
 }
@@ -8,8 +12,8 @@ export function initialOrientation(
   kind: PropKind,
   rotation: QuarterTurn = 0,
 ): Pick<Prop, 'footprint' | 'rotation' | 'artRotation'> {
-  return kind === 'wooden_bench'
-    ? { footprint: { ...MULTI_TILE_PROPS.wooden_bench }, rotation }
+  return isIndependentFurniture(kind)
+    ? { footprint: { ...MULTI_TILE_PROPS[kind] }, rotation }
     : rotation
       ? { artRotation: rotation }
       : {};
@@ -26,11 +30,11 @@ export function withObjectRotation(prop: Prop, rotation: QuarterTurn): Prop {
 export function validStoredRotation(value: Record<string, unknown>): boolean {
   return value['artRotation'] === undefined || [1, 2, 3].includes(value['artRotation'] as number);
 }
-/** Only authored benches accept a multi-square shape; never normalize malformed imports. */
+/** Only authored benches and beds accept a multi-square shape; never normalize malformed imports. */
 export function authoredOrientation(
   value: Record<string, unknown>,
 ): Pick<Prop, 'footprint' | 'rotation' | 'artRotation'> | undefined {
-  if (value['kind'] === 'wooden_bench') {
+  if (isIndependentFurniture(value['kind'])) {
     const shape = value['footprint'];
     if (
       'artRotation' in value ||
@@ -47,7 +51,7 @@ export function authoredOrientation(
       !QUARTER_TURNS.some((turn) => turn === value['rotation'])
     )
       return undefined;
-    return initialOrientation('wooden_bench', value['rotation'] as QuarterTurn);
+    return initialOrientation(value['kind'], value['rotation'] as QuarterTurn);
   }
   if ('footprint' in value || 'rotation' in value || !validStoredRotation(value)) return undefined;
   return value['artRotation'] ? { artRotation: value['artRotation'] as QuarterTurn } : {};

@@ -77,6 +77,7 @@ describe('production option constants', () => {
       'supply_sacks',
       'weapon_rack',
       'wooden_bench',
+      'wooden_bed',
     ]);
   });
 });

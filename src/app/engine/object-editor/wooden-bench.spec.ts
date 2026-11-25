@@ -4,7 +4,7 @@ import { forestEditorFixture } from '../../../../scripts/forest-editor-test-supp
 import { courtyardEditorFixture } from '../../../../scripts/courtyard-editor-test-support';
 import { towerEditorFixture } from '../../../../scripts/tower-editor-test-support';
 import { applyEditorCommand } from './editor-commands';
-import { editorInstances, editorSelections } from './editor-view';
+import { editorInstances, editorSelections, editorPalette } from './editor-view';
 import { propCells } from '../prop-footprint';
 import { mapDimensions } from '../model';
 import type { EditableMapDocument, Point } from '../model';
@@ -31,19 +31,26 @@ function place(
     }
   throw Error('Missing valid bench position');
 }
-for (const base of [
+const sources = [
   editorFixture(),
   forestEditorFixture(),
   courtyardEditorFixture(),
   towerEditorFixture({ floorCount: 3, portalFloor: null }),
-])
-  test(`${base.type}: benches occupy two cells, rotate, collide, and round-trip strictly`, () => {
+];
+const cases = sources.flatMap((base) => [
+  { base, kind: 'wooden_bench' as const },
+  ...(base.type === 'dungeon' || base.type === 'tower'
+    ? [{ base, kind: 'wooden_bed' as const }]
+    : []),
+]);
+for (const { base, kind } of cases)
+  test(`${base.type}: ${kind} occupies two cells, rotates, collides, and round-trips strictly`, () => {
     let source: EditableMapDocument = base;
     for (const item of editorSelections(base))
       if (item.removable) source = accept(source, { kind: 'remove', id: item.id });
     const before = structuredClone(source);
-    expect(base.decoration.props.some((prop) => prop.kind === 'wooden_bench')).toBe(false);
-    const inserted = place(source, (target) => ({ kind: 'add', propKind: 'wooden_bench', target }));
+    expect(base.decoration.props.some((prop) => prop.kind === kind)).toBe(false);
+    const inserted = place(source, (target) => ({ kind: 'add', propKind: kind, target }));
     const item = editorInstances(inserted).find((item) => item.id === 'added-1');
     if (!item) throw Error('Missing bench');
     let map = inserted;
@@ -108,7 +115,7 @@ for (const base of [
         const target = { x: index % width, y: Math.floor(index / width) };
         const horizontal = applyEditorCommand(source, {
           kind: 'add',
-          propKind: 'wooden_bench',
+          propKind: kind,
           target,
           rotation: 0,
         });
@@ -130,3 +137,13 @@ for (const base of [
       }
     expect(refused).toBe(true);
   });
+
+test('wooden beds are excluded from Forest and Courtyard editing', () => {
+  for (const base of [forestEditorFixture(), courtyardEditorFixture()]) {
+    expect(editorPalette(base).some((item) => item.kind === 'wooden_bed')).toBe(false);
+    expect(
+      applyEditorCommand(base, { kind: 'add', propKind: 'wooden_bed', target: { x: 10, y: 10 } })
+        .ok,
+    ).toBe(false);
+  }
+});

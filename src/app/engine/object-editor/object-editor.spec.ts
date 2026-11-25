@@ -33,6 +33,7 @@ test('the Dungeon catalog covers canonical kinds and the supported shared object
       'supply_sacks',
       'weapon_rack',
       'wooden_bench',
+      'wooden_bed',
       'bedroll',
       'fern',
       'desk',

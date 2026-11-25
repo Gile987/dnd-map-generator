@@ -171,7 +171,7 @@ test('catalog insertion, invalid placement and cancellation keep accepted object
     original = await png(page);
   await enter(page);
   await page.getByRole('button', { name: 'Add object', exact: true }).click();
-  await expect(page.locator('.object-cards button')).toHaveCount(15);
+  await expect(page.locator('.object-cards button')).toHaveCount(16);
   await page.getByLabel('Find an object', { exact: true }).fill('moss');
   await expect(page.locator('.object-cards button')).toHaveCount(1);
   await page.getByRole('button', { name: 'Add Moss', exact: true }).click();
