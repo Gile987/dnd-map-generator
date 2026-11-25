@@ -103,12 +103,13 @@ group; sharing their kind does not make those instances independently editable.
 
 ### Available on all four map types
 
-All nine objects can be placed individually through **Edit objects → Add object**
+All ten objects can be placed individually through **Edit objects → Add object**
 in Dungeon, Forest, Courtyard and Tower maps.
 
 | Objects                                   | Availability                                                                      |
 | ----------------------------------------- | --------------------------------------------------------------------------------- |
 | Treasure chest, Supply sacks, Weapon rack | Manual placement only; do not spawn automatically                                 |
+| Small table                               | Manual placement only; blocks one square                                          |
 | Wooden bench                              | Manual placement only; blocks 2 × 1 squares, or 1 × 2 when rotated                |
 | Crate, Barrel                             | Manual placement; also used by existing generators and additions where applicable |
 | Bedroll, Moss, Fern                       | Manual placement; also used by existing generators and additions where applicable |
@@ -167,7 +168,7 @@ physical objects and protected routes/connections; Tower benches stay on one flo
 The catalog image, placement ghost and accepted bench share the original Canvas
 artwork and accepted character palette. Invalid placements stay staged for
 correction. Movement, removal, Undo/Redo, current-format saves/backups, thumbnails
-and PNG exports preserve its footprint and facing. Save format **36.0.0** records
+and PNG exports preserve its footprint and facing. Save format **37.0.0** records
 the expanded authored vocabulary; earlier formats are unsupported under the
 current-only policy. Generator versions and ordinary generated maps are unchanged.
 
@@ -184,6 +185,17 @@ must fit on valid floor without covering physical objects or protected
 architecture, and both count toward the blocking budget. Tower beds remain on
 one floor. Invalid placement stays staged for correction; movement, removal,
 Undo/Redo, current saves/backups and PNG exports preserve its footprint and facing.
+
+## Small table
+
+**Edit objects → Add object → Small table** places a square wooden table on
+Dungeon, Forest, Courtyard or Tower maps. It is manual-only, blocks **one square**
+and follows the accepted map's character palette. Rotate left/right or Q/E turns
+the artwork without changing its one-square footprint. Placement, movement,
+removal, Undo/Redo, current saves/backups, thumbnails and PNG exports use the
+existing shared-object path. Save format **37.0.0** adds its authored vocabulary;
+format 36 and earlier are unsupported under the current-only policy. Generator
+versions and automatic generation are unchanged.
 
 ## Rotating individual objects
 
@@ -214,7 +226,7 @@ be rotated independently. Chosen artwork orientations use the optional
 `artRotation` field in authored move records and added props; the bench and bed instead
 store their defined footprint and quarter-turn `rotation`; generated bases,
 generator versions, RNG streams and existing addition footprints are unchanged.
-Save format **36.0.0** records this authored extension; earlier formats are
+Save format **37.0.0** records this authored extension; earlier formats are
 unsupported under the current-only policy.
 
 ## Shared placeable props
@@ -226,12 +238,12 @@ coordinate, or keyboard placement controls.
 See the [object list](#object-list) for the full availability of shared and
 map-specific objects, including components of generated additions.
 
-Chests, sacks, racks, crates, barrels, logs, stumps, desks and bookshelves each
+Chests, sacks, racks, crates, barrels, logs, stumps, desks, bookshelves and small tables each
 block one square. Bedrolls, moss and ferns are passable; their overlap rules still
 depend on the map type.
 
-The independent catalogs contain **16 Dungeon**, **15 Forest**, **14 Courtyard**,
-and **16 Tower** kinds. Sharing adds manual choices; the generators and **Choose
+The independent catalogs contain **17 Dungeon**, **16 Forest**, **15 Courtyard**,
+and **17 Tower** kinds. Sharing adds manual choices; the generators and **Choose
 additions** selections are unchanged. Chests, sacks and weapon racks do not spawn
 automatically. Their drawings fit one square and follow the accepted map's
 character colors; pending character settings do not recolor the catalog or map.
@@ -247,11 +259,11 @@ Insertion of complete additions remains future work.
 
 Shared names, categories, blocking and map availability live in
 `engine/shared-props.ts`; map-specific editor catalogs consume that metadata.
-`rendering/portable-props.ts` draws the three new objects through the existing
+`rendering/portable-props.ts` draws portable storage and furniture through the existing
 shared prop dispatch, which keeps maps, placement previews, catalog illustrations,
 thumbnails and PNG exports consistent. Editing, undo, saves and backup imports
-use the existing per-map document adapters. Save format **36.0.0** records the
-expanded authored vocabulary; format 35 and earlier are unsupported. Generator
+use the existing per-map document adapters. Save format **37.0.0** records the
+expanded authored vocabulary; format 36 and earlier are unsupported. Generator
 versions and canonical generated model/pixel baselines remain unchanged.
 
 ## Export presets and VTT setup
@@ -306,8 +318,8 @@ The seeded engine uses unsigned 32-bit **FNV-1a over UTF-16 code units** for sta
 Dungeon, Forest, and Courtyard use `gridDistances` in `engine/grid-traversal.ts` for four-neighbor shortest paths, preserving left/right/up/down discovery order. The existing `distances` and `forestDistances` names are aliases to that function. Dungeon thresholds/landmarks and forest route rules remain in their domain modules. `shuffleInPlace` in `engine/random.ts` implements Fisher–Yates for locally owned candidate arrays of non-null values; it consumes one inclusive `int(0, i)` draw per descending index, including self-swaps, and none for empty or singleton arrays. Generated maps and caller-owned layouts remain immutable. Connectivity tests retain separate test-only searches, and shuffled-order/next-draw fixtures pin RNG consumption independently of production constants.
 
 **Supported saves and generator versions.** The app supports only the current
-save format, **36.0.0**, and the current generator for each map type. This is an
-intentional development-time break: formats 1–35, older generator snapshots,
+save format, **37.0.0**, and the current generator for each map type. This is an
+intentional development-time break: formats 1–36, older generator snapshots,
 and Dungeon editing versions 1–3 are unsupported. There are no migrations,
 character defaults for imported maps, or landmark alias conversions. Regenerate
 maps with this build and save them again; changing an old file's version number
@@ -319,7 +331,7 @@ does not convert its contents.
 | Dungeon and Forest generator `4.0.0` | Current layout and decoration rules for these map types. |
 | Courtyard generator `5.0.0`          | Current rules, including spawned ordinary braziers.      |
 | Tower generator `3.0.0`              | Current separate and spiral staircase rules.             |
-| Save format `36.0.0`                 | Current record, backup, and editing vocabulary.          |
+| Save format `37.0.0`                 | Current record, backup, and editing vocabulary.          |
 
 Backup headers and records must contain the exact current save-format string.
 Unsupported headers reject the file; unsupported records inside a current bundle
@@ -576,3 +588,9 @@ The wall-side rendering regression derives its target from the full footprint.
 `artifacts/wooden-bed/rotations.png`. `tests/wooden-bed.spec.ts` covers insertion,
 keyboard rotation, Undo/Redo, saved reopen and exact PNG parity on both supported
 maps, including a narrow Tower layout.
+
+Small-table coverage uses the shared rotation/save cases on all four map types.
+`scripts/small-table-review.spec.ts` checks drawing bounds at every quarter turn
+and writes `artifacts/small-table/rotations.png`. `tests/small-table.spec.ts`
+checks catalog labels, placement, keyboard rotation, Undo/Redo, saved reopen and
+exact PNG parity on all four map types, including a narrow Tower layout.

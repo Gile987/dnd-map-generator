@@ -47,6 +47,7 @@ test.each(ALL_FOREST_CHARACTERS)(
         'supply_sacks',
         'weapon_rack',
         'wooden_bench',
+        'small_table',
       ].sort(),
     );
     expect(forestBase(base)).toBe(base);
