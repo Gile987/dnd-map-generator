@@ -21,6 +21,7 @@ export type SeedStream =
   | 'dungeon-ritual'
   | 'dungeon-landmark'
   | 'dungeon-furniture'
+  | 'room-purpose'
   | 'courtyard-layout'
   | 'courtyard-decoration'
   | 'courtyard-wagon'

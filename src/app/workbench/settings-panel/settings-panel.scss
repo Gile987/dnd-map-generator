@@ -665,7 +665,8 @@ form {
   background: #e4eacb;
 }
 
-.tower-field select {
+.tower-field select,
+.room-theme-field select {
   width: 100%;
   min-height: 44px;
   padding: 0.65rem;
@@ -675,7 +676,8 @@ form {
   color: #284b38;
   font: inherit;
 }
-.tower-field select:focus-visible {
+.tower-field select:focus-visible,
+.room-theme-field select:focus-visible {
   outline: 2px solid var(--focus-ring-color);
   outline-offset: 3px;
 }
@@ -686,4 +688,8 @@ form {
   label {
     min-height: 40px;
   }
+}
+
+.room-theme-field {
+  margin-top: 20px;
 }

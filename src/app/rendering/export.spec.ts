@@ -77,8 +77,8 @@ describe('export filename sanitation', () => {
       const name = configuredExportFilename(base, false, 15, preset);
       expect(name).toBe(
         preset.id === 'standard'
-          ? 'encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0-grid-off.png'
-          : `encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0-${preset.id}-40x30-${preset.pixelsPerTile}px-grid-off.png`,
+          ? 'encounter-mosslit-sanctum-mosslit-balanced-r0-v5.0.0-grid-off.png'
+          : `encounter-mosslit-sanctum-mosslit-balanced-r0-v5.0.0-${preset.id}-40x30-${preset.pixelsPerTile}px-grid-off.png`,
       );
       expect(configuredExportFilename(base, true, 35, preset)).toMatch(/-grid-35pct\.png$/);
     },
@@ -101,20 +101,20 @@ describe('export filename sanitation', () => {
     'distinguishes configured PNGs with grid=%s and opacity=%s',
     (grid, opacity, suffix) => {
       expect(configuredExportFilename(base, grid, opacity)).toBe(
-        `encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0-${suffix}.png`,
+        `encounter-mosslit-sanctum-mosslit-balanced-r0-v5.0.0-${suffix}.png`,
       );
     },
   );
 
   test.each([
-    ['mosslit-sanctum', 'encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0.png'],
-    ['snake_case-2', 'encounter-snake_case-2-mosslit-balanced-r0-v4.0.0.png'],
-    ['sänctum-vault', 'encounter-sa-nctum-vault-mosslit-balanced-r0-v4.0.0.png'],
-    ['../../etc/passwd', 'encounter-etc-passwd-mosslit-balanced-r0-v4.0.0.png'],
-    ['C:\\Users\\gm', 'encounter-C-Users-gm-mosslit-balanced-r0-v4.0.0.png'],
-    ['!!! ???', 'encounter-dungeon-mosslit-balanced-r0-v4.0.0.png'],
-    ['龍宮', 'encounter-dungeon-mosslit-balanced-r0-v4.0.0.png'],
-    [`${'a'.repeat(80)}`, `encounter-${'a'.repeat(64)}-mosslit-balanced-r0-v4.0.0.png`],
+    ['mosslit-sanctum', 'encounter-mosslit-sanctum-mosslit-balanced-r0-v5.0.0.png'],
+    ['snake_case-2', 'encounter-snake_case-2-mosslit-balanced-r0-v5.0.0.png'],
+    ['sänctum-vault', 'encounter-sa-nctum-vault-mosslit-balanced-r0-v5.0.0.png'],
+    ['../../etc/passwd', 'encounter-etc-passwd-mosslit-balanced-r0-v5.0.0.png'],
+    ['C:\\Users\\gm', 'encounter-C-Users-gm-mosslit-balanced-r0-v5.0.0.png'],
+    ['!!! ???', 'encounter-dungeon-mosslit-balanced-r0-v5.0.0.png'],
+    ['龍宮', 'encounter-dungeon-mosslit-balanced-r0-v5.0.0.png'],
+    [`${'a'.repeat(80)}`, `encounter-${'a'.repeat(64)}-mosslit-balanced-r0-v5.0.0.png`],
   ])('sanitizes %j to %s', (seed, expected) => {
     expect(exportFilename(withSeed(seed))).toBe(expected);
   });
@@ -125,7 +125,7 @@ describe('export filename sanitation', () => {
       decoration: { ...base.decoration, density: 'Cluttered', preset: 'Crypt', revision: 3 },
     };
     if (map.type !== 'dungeon') throw new Error('Expected dungeon');
-    expect(exportFilename(map)).toBe('encounter-mosslit-sanctum-crypt-cluttered-r3-v4.0.0.png');
+    expect(exportFilename(map)).toBe('encounter-mosslit-sanctum-crypt-cluttered-r3-v5.0.0.png');
   });
 
   test('keeps the forest character, density and revision in the suffix', () => {

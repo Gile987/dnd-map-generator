@@ -1,3 +1,4 @@
+import { isRoomFurnishing, roomPurposeError } from './dungeon-room-purpose';
 import { propCells, propFootprintError } from './prop-footprint';
 import { ritualError } from './dungeon-ritual';
 import { furnitureArea, furnitureError } from './dungeon-furniture';
@@ -5,6 +6,7 @@ import { DUNGEON_LANDMARK_RULES, statueReservations } from './dungeon-landmark';
 import { studyReservations } from './dungeon-study';
 import {
   ALL_DENSITIES,
+  ALL_ROOM_THEMES,
   ALL_DUNGEON_SCENES,
   ALL_DUNGEON_FURNITURE,
   ALL_DUNGEON_LANDMARKS,
@@ -35,6 +37,8 @@ export function validateSettings(settings: DungeonSettings): string | undefined 
     settings.roomCount > ROOM_MAX
   )
     return `Choose a whole number of rooms from ${ROOM_MIN} to ${ROOM_MAX}.`;
+  if (!ALL_ROOM_THEMES.includes(settings.roomTheme ?? 'General rooms'))
+    return 'Choose a valid room-use theme.';
   if (settings.ritual !== undefined && typeof settings.ritual !== 'boolean')
     return 'Choose a valid ritual site option.';
   if (!ALL_DUNGEON_LANDMARKS.includes(settings.landmark ?? 'None'))
@@ -173,11 +177,16 @@ export function validateDungeon(map: Dungeon): string | undefined {
   } else if (study.length) return 'Study objects require a Forgotten study scene.';
   if (!isDetailRevision(map.decoration.revision))
     return 'The detail revision must be a nonnegative safe integer.';
+  if (!ALL_ROOM_THEMES.includes(map.decoration.roomTheme ?? 'General rooms'))
+    return 'Choose a valid room-use theme.';
+  const purposeError = roomPurposeError(map);
+  if (purposeError) return purposeError;
   const reserved = reservedTiles(map.layout);
   const blocked = new Set<number>();
   for (const prop of map.decoration.props) {
     if (!isTilePosition(prop.x, prop.y)) return 'A prop is outside the tile grid.';
-    if (!isDungeonPropKind(prop.kind)) return 'A prop is not supported by dungeon maps.';
+    if (!isDungeonPropKind(prop.kind) && !isRoomFurnishing(prop.kind))
+      return 'A prop is not supported by dungeon maps.';
     const cells = propCells(prop);
     if (
       cells.some((cell) => !isTilePosition(cell.x, cell.y) || !isFloor(map.layout, cell.x, cell.y))

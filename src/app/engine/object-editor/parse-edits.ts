@@ -86,7 +86,7 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
   for (const move of value['moves']) {
     if (
       !object(move) ||
-      !keys(move, ['id', 'x', 'y', 'artRotation']) ||
+      !keys(move, ['id', 'x', 'y', 'artRotation', 'rotation']) ||
       !validStoredRotation(move) ||
       !position(move) ||
       typeof move['id'] !== 'string' ||
@@ -98,7 +98,13 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
     if (
       !source ||
       individualObjectLock(base, move['id'], source) ||
-      (source.x === move.x && source.y === move.y && !move['artRotation'])
+      (source.footprint
+        ? move['artRotation'] !== undefined ||
+          !QUARTER_TURNS.some((turn) => turn === move['rotation'])
+        : move['rotation'] !== undefined) ||
+      (source.x === move.x &&
+        source.y === move.y &&
+        (source.footprint ? move['rotation'] === source.rotation : !move['artRotation']))
     )
       return undefined;
     ids.add(move['id']);
@@ -106,7 +112,11 @@ export function parseDungeonEdits(base: Dungeon, value: unknown): AuthoredDungeo
       id: move['id'],
       x: move.x,
       y: move.y,
-      ...(move['artRotation'] ? { artRotation: move['artRotation'] as QuarterTurn } : {}),
+      ...(source.footprint
+        ? { rotation: move['rotation'] as QuarterTurn }
+        : move['artRotation']
+          ? { artRotation: move['artRotation'] as QuarterTurn }
+          : {}),
     });
   }
   for (const item of value['added']) {

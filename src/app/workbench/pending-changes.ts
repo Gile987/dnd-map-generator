@@ -104,6 +104,7 @@ export function pendingSettingChanges(
         : JSON.stringify(draft.rooms);
     add('Rooms', accepted.rooms, rooms);
     add('Character', PRESET_LABELS[accepted.preset], PRESET_LABELS[draft.preset]);
+    add('Room use', accepted.roomTheme ?? 'General rooms', draft.roomTheme ?? 'General rooms');
   } else if (accepted.type === 'forest' && draft.type === 'forest') {
     add('Character', CHARACTER_LABELS[accepted.character], CHARACTER_LABELS[draft.character]);
   } else if (accepted.type === 'courtyard' && draft.type === 'courtyard') {

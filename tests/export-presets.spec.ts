@@ -184,7 +184,7 @@ test('saved current Forest artwork exports with the original bytes and generator
   await ready(dialog, 2560, 1920);
   const exported = await download(page, dialog.getByRole('button', { name: 'Download PNG' }));
   expect(exported.bytes).toEqual(original.bytes);
-  expect(exported.name).toContain('-v4.0.0-owlbear-40x30-64px-grid-off.png');
+  expect(exported.name).toContain('-v5.0.0-owlbear-40x30-64px-grid-off.png');
   await dialog.getByRole('combobox').selectOption('foundry');
   await ready(dialog, 4000, 3000);
 });

@@ -35,6 +35,7 @@ Angular 22 requires Node `^22.22.3`, `^24.15.0`, or `>=26.0.0` and TypeScript `>
 - **World seed:** a trimmed string of 1–64 characters. The same generated settings and generator version reproduce the same map. Editing the seed changes only the draft.
 - **Rooms:** (dungeon only) choose an integer from 4–8. The map always contains 40 columns × 30 rows. The stepper normalizes the draft first — blank or non-numeric becomes 6, a fraction rounds down — then clamps to 4–8, so its buttons always agree with the value they set.
 - **Randomize seed:** fills the draft with a new seed using browser cryptographic randomness. Choose Generate to apply it; randomizing alone never changes the map.
+- **Room use** (Dungeon): General rooms, Mixed rooms, Barracks or Storerooms. Choose a use, then Generate to furnish suitable rooms without changing the accepted layout or floor texture. Room use is independent of visual character. Entrance/objective rooms and rooms containing selected additions keep their existing roles. The sidebar reports how many barracks and storerooms were furnished.
 - **Decoration:** Sparse, Balanced and Cluttered apply when you choose Generate, with conservative blocking-prop budgets of 5%, 10% and 15% of room floor area (dungeon) or walkable area (forest and courtyard). The engine may place fewer props to protect access.
 - **Character:** **Choose character** opens an illustrated picker for Dungeon, Forest, or Courtyard. The sidebar shows the selected character’s artwork and name, with a Pending badge when it differs from Current. Cards show fixed examples rendered by the app, with names, descriptions, and native radio buttons. Choose a look, then Done, Close, or Escape to return; all three retain the draft and restore focus to the opener. Arrow keys select within the radio group, and focused cards scroll into view. Generate applies the choice. The catalog scrolls while its heading and Done action remain available on mobile and short screens. Mosslit stone, Ancient crypt, Abandoned storehouse and Overgrown sanctuary give dungeons their identity; Verdant woodland, Autumn grove, Ancient pines and Fey glade do the same for forests. Overgrown ruin, Sunbleached ruin, Frostbound ruin and Desecrated ruin do the same for courtyards. A character change applies when you choose Generate and preserves the layout, carved route, path endpoints, court walls and approaches, surface texture, and detail revision. Each preset uses its own deterministic decoration stream, its own prop mix, and — for forests — its own trees, ground cover, and atmosphere, and — for courtyards — its own ground, masonry, and vegetation palettes.
 - **Add to this map:** **Choose additions** opens a searchable visual catalog for the active map type. Cards show the app’s actual object artwork, a description, and a checkbox. Choose any combination; Done, Close, or Escape keeps the selections pending. Selected additions appear in the settings panel with removal buttons; Generate applies additions and removals together. Search filters names and descriptions without clearing selections, and reopening shows the whole catalog. The catalog scrolls within the picker while its search and Done action stay visible, including on small screens. Each map type retains its own selections and pending edits. Applying or removing additions preserves the layout, surface texture, and detail revision; Shuffle keeps the accepted choices and may move their objects. If a combination cannot fit, the accepted map and pending draft remain available for correction.
@@ -92,7 +93,32 @@ If stored entries cannot be read, IDs repeat, or storage access fails, the libra
 
 Dungeons use stairs for the entrance and a circular stone dais for the objective. These are architectural landmarks, with no encounters, hidden information or game mechanics. Forest paths continue off two map edges; their endpoints are unmarked. A suggested scale is 5 feet per square; the exported image has no VTT metadata.
 
-For reproduction, record the **generated seed, map type, room count (dungeon only), density, character (Mosslit/Crypt/Storehouse/Sanctuary for dungeons, Verdant/Autumn/Pines/Fey for forests; Overgrown/Sunbleached/Frostbound/Desecrated for courtyards), selected additions (Forgotten study, Weathered statue, Dining table, and Ritual site for dungeons; Abandoned camp, Standing-stone circle, and Fallen ancient tree for forests; Dry fountain, Collapsed wagon, and Stone well for courtyards), detail revision and generator version (4.0.0 for dungeons and forests; 5.0.0 for courtyards; 3.0.0 for new Towers; older Towers retain 1.0.0 or 2.0.0). For Tower, also record floor count, staircase style, portal source, and laboratory/observatory floors when selected**. For manual reproduction, start from a freshly loaded page, select the map type and recorded settings, and choose Generate if settings are pending. The map starts at revision 0; Shuffle details the recorded number of times. Use the matching generator version. Appearance-only changes to an existing map preserve its current revision. The summary always describes the displayed accepted map, even while draft settings are being edited.
+For reproduction, record the **generated seed, map type, room count and Room use (dungeon only), density, character (Mosslit/Crypt/Storehouse/Sanctuary for dungeons, Verdant/Autumn/Pines/Fey for forests; Overgrown/Sunbleached/Frostbound/Desecrated for courtyards), selected additions (Forgotten study, Weathered statue, Dining table, and Ritual site for dungeons; Abandoned camp, Standing-stone circle, and Fallen ancient tree for forests; Dry fountain, Collapsed wagon, and Stone well for courtyards), detail revision and generator version (5.0.0 for dungeons; 4.0.0 for forests; 5.0.0 for courtyards; 3.0.0 for new Towers; older Towers retain 1.0.0 or 2.0.0). For Tower, also record floor count, staircase style, portal source, and laboratory/observatory floors when selected**. For manual reproduction, start from a freshly loaded page, select the map type and recorded settings, and choose Generate if settings are pending. The map starts at revision 0; Shuffle details the recorded number of times. Use the matching generator version. Appearance-only changes to an existing map preserve its current revision. The summary always describes the displayed accepted map, even while draft settings are being edited.
+
+## Dungeon room use
+
+**Room use** adds purposeful furnishings to ordinary Dungeon rooms:
+
+- **General rooms:** character-specific general decoration.
+- **Mixed rooms:** a deterministic mix of barracks and storerooms.
+- **Barracks:** wall-aligned beds and a weapon rack where space permits. Sparse
+  or constrained rooms can use a passable bedroll when a two-square bed cannot fit.
+- **Storerooms:** crates, barrels and supply sacks clustered along room edges.
+
+The generator scales each arrangement to the room's dimensions and density budget.
+Both squares of a bed count toward that budget. Door approaches, corridor buffers,
+entrance/objective space, every remaining walkable floor square and a clear 2 × 2
+space in each room remain protected. Displaced wall accents are omitted so they
+do not overlap furniture; storerooms clear decorative rugs. A room that cannot fit its defining object
+keeps its general decoration instead of blocking access. Rooms containing a study,
+statue, dining table or ritual site keep those additions and their complete roles.
+
+Room-use changes stay pending until Generate, which preserves layout, floor texture,
+open doors and detail revision. Shuffle details uses the accepted theme, not pending
+settings. Generated furnishings remain individually editable; manual movement or
+removal does not reassign the generated room's purpose. Saving, reopening, backups,
+Undo/Redo, thumbnails and PNG exports preserve the result. Saved summaries and PNG
+filenames include the accepted room-use theme. Only current-format saves are supported.
 
 ## Object list
 
@@ -106,14 +132,15 @@ group; sharing their kind does not make those instances independently editable.
 All eleven objects can be placed individually through **Edit objects → Add object**
 in Dungeon, Forest, Courtyard and Tower maps.
 
-| Objects                                   | Availability                                                                      |
-| ----------------------------------------- | --------------------------------------------------------------------------------- |
-| Treasure chest, Supply sacks, Weapon rack | Manual placement only; do not spawn automatically                                 |
-| Ruined shrine                             | Manual placement only; blocks one square                                          |
-| Small table                               | Manual placement only; blocks one square                                          |
-| Wooden bench                              | Manual placement only; blocks 2 × 1 squares, or 1 × 2 when rotated                |
-| Crate, Barrel                             | Manual placement; also used by existing generators and additions where applicable |
-| Bedroll, Moss, Fern                       | Manual placement; also used by existing generators and additions where applicable |
+| Objects                   | Availability                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| Treasure chest            | Manual placement only; does not spawn automatically                                          |
+| Supply sacks, Weapon rack | Manual placement on all maps; also generated in Dungeon storerooms and barracks respectively |
+| Ruined shrine             | Manual placement only; blocks one square                                                     |
+| Small table               | Manual placement only; blocks one square                                                     |
+| Wooden bench              | Manual placement only; blocks 2 × 1 squares, or 1 × 2 when rotated                           |
+| Crate, Barrel             | Manual placement; also used by existing generators and additions where applicable            |
+| Bedroll, Moss, Fern       | Manual placement; also used by existing generators and additions where applicable            |
 
 ### Shared by some map types
 
@@ -121,7 +148,7 @@ in Dungeon, Forest, Courtyard and Tower maps.
 | ------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | Log, Stump                            | Forest, Courtyard  | Individually placeable on both; also generated in Forest                                                                          |
 | Desk, Bookshelf                       | Dungeon, Tower     | Individually placeable on both; also used in generated additions and Tower furnishings                                            |
-| Wooden bed                            | Dungeon, Tower     | Individually placeable; manual-only, blocks 2 × 1 squares (1 × 2 when rotated)                                                    |
+| Wooden bed                            | Dungeon, Tower     | Individually placeable; also generated in Dungeon barracks; blocks 2 × 1 squares (1 × 2 when rotated)                             |
 | Broken column                         | Dungeon, Courtyard | Individually placeable and generated on both                                                                                      |
 | Vine                                  | Dungeon, Courtyard | Generated decoration; protected from individual editing                                                                           |
 | Scroll case, Altar, Candles, Offering | Dungeon, Tower     | Dungeon: components of Forgotten study or Ritual site. Tower: independently placeable and used in generated furnishings/additions |
@@ -169,16 +196,17 @@ physical objects and protected routes/connections; Tower benches stay on one flo
 The catalog image, placement ghost and accepted bench share the original Canvas
 artwork and accepted character palette. Invalid placements stay staged for
 correction. Movement, removal, Undo/Redo, current-format saves/backups, thumbnails
-and PNG exports preserve its footprint and facing. Save format **39.0.0** records
+and PNG exports preserve its footprint and facing. Save format **40.0.0** records
 the expanded authored vocabulary; earlier formats are unsupported under the
-current-only policy. Generator versions and ordinary generated maps are unchanged.
+current-only policy. The bench itself remains manual-only; room-purpose generation is described below.
 
 ## Wooden bed
 
 **Edit objects → Add object → Wooden bed** places a bed in Dungeon or Tower
 maps. The original Canvas artwork has a wooden frame, pillow and blanket, with
-colors following the accepted character. It is manual-only, is separate from the
-one-square bedroll and does not spawn through generation or Choose additions.
+colors following the accepted character. Dungeon barracks can generate beds;
+Tower beds are placed manually. Beds are separate from one-square bedrolls and
+do not appear in Choose additions.
 
 Like the bench, it blocks **2 × 1** squares and turns to **1 × 2** through Rotate
 left/right or Q/E. Column/Row anchors the top-left occupied square. Both cells
@@ -194,9 +222,8 @@ Dungeon, Forest, Courtyard or Tower maps. It is manual-only, blocks **one square
 and follows the accepted map's character palette. Rotate left/right or Q/E turns
 the artwork without changing its one-square footprint. Placement, movement,
 removal, Undo/Redo, current saves/backups, thumbnails and PNG exports use the
-existing shared-object path. Save format **39.0.0** adds its authored vocabulary;
-format 38 and earlier are unsupported under the current-only policy. Generator
-versions and automatic generation are unchanged.
+existing shared-object path. Save format **40.0.0** adds its authored vocabulary;
+format 39 and earlier are unsupported under the current-only policy. Small tables remain manual-only.
 
 ## Ruined shrine
 
@@ -209,9 +236,9 @@ Catalog artwork, placement ghosts, thumbnails and exports use the same palette.
 The shrine is manual-only and blocks movement under each map's existing physical
 collision, wall, access and density rules. Rotate left/right or Q/E turns its
 artwork within the same square. Movement, removal, Undo/Redo and current saves
-and backups use the shared-object path. Save format **39.0.0** expands its map
+and backups use the shared-object path. Save format **40.0.0** expands its map
 availability; earlier formats are unsupported under the current-only policy.
-Generator versions and automatic generation are unchanged.
+Shrines remain manual-only.
 
 ## Rotating individual objects
 
@@ -241,8 +268,8 @@ components, attached sconces/vines, stairs, portals and other architecture canno
 be rotated independently. Chosen artwork orientations use the optional
 `artRotation` field in authored move records and added props; the bench and bed instead
 store their defined footprint and quarter-turn `rotation`; generated bases,
-generator versions, RNG streams and existing addition footprints are unchanged.
-Save format **39.0.0** records this authored extension; earlier formats are
+existing addition footprints and rendering anchors are unchanged.
+Save format **40.0.0** records this authored extension; earlier formats are
 unsupported under the current-only policy.
 
 ## Shared placeable props
@@ -260,8 +287,8 @@ depend on the map type.
 
 The independent catalogs contain **18 Dungeon**, **17 Forest**, **16 Courtyard**,
 and **18 Tower** kinds. Sharing adds manual choices; the generators and **Choose
-additions** selections are unchanged. Chests, sacks and weapon racks do not spawn
-automatically. Their drawings fit one square and follow the accepted map's
+additions** selections are unchanged. Chests do not spawn automatically. Sacks and weapon racks can spawn in
+Dungeon rooms when the corresponding Room use is selected. Their drawings fit one square and follow the accepted map's
 character colors; pending character settings do not recolor the catalog or map.
 
 Generated camp, study, laboratory and other addition components retain their
@@ -278,9 +305,9 @@ Shared names, categories, blocking and map availability live in
 `rendering/portable-props.ts` draws portable storage and furniture through the existing
 shared prop dispatch, which keeps maps, placement previews, catalog illustrations,
 thumbnails and PNG exports consistent. Editing, undo, saves and backup imports
-use the existing per-map document adapters. Save format **39.0.0** records the
-expanded authored vocabulary; format 38 and earlier are unsupported. Generator
-versions and canonical generated model/pixel baselines remain unchanged.
+use the existing per-map document adapters. Save format **40.0.0** records the
+expanded authored vocabulary and room-use metadata. Dungeon generator 5 adds room
+furnishings; Forest, Courtyard and Tower generation are unchanged.
 
 ## Export presets and VTT setup
 
@@ -334,20 +361,21 @@ The seeded engine uses unsigned 32-bit **FNV-1a over UTF-16 code units** for sta
 Dungeon, Forest, and Courtyard use `gridDistances` in `engine/grid-traversal.ts` for four-neighbor shortest paths, preserving left/right/up/down discovery order. The existing `distances` and `forestDistances` names are aliases to that function. Dungeon thresholds/landmarks and forest route rules remain in their domain modules. `shuffleInPlace` in `engine/random.ts` implements Fisher–Yates for locally owned candidate arrays of non-null values; it consumes one inclusive `int(0, i)` draw per descending index, including self-swaps, and none for empty or singleton arrays. Generated maps and caller-owned layouts remain immutable. Connectivity tests retain separate test-only searches, and shuffled-order/next-draw fixtures pin RNG consumption independently of production constants.
 
 **Supported saves and generator versions.** The app supports only the current
-save format, **39.0.0**, and the current generator for each map type. This is an
-intentional development-time break: formats 1–38, older generator snapshots,
+save format, **40.0.0**, and the current generator for each map type. This is an
+intentional development-time break: formats 1–39, older generator snapshots,
 and Dungeon editing versions 1–3 are unsupported. There are no migrations,
 character defaults for imported maps, or landmark alias conversions. Regenerate
 maps with this build and save them again; changing an old file's version number
 does not convert its contents.
 
-| Version                              | Purpose                                                  |
-| ------------------------------------ | -------------------------------------------------------- |
-| App/package version                  | Software release, declared in `package.json`.            |
-| Dungeon and Forest generator `4.0.0` | Current layout and decoration rules for these map types. |
-| Courtyard generator `5.0.0`          | Current rules, including spawned ordinary braziers.      |
-| Tower generator `3.0.0`              | Current separate and spiral staircase rules.             |
-| Save format `39.0.0`                 | Current record, backup, and editing vocabulary.          |
+| Version                     | Purpose                                             |
+| --------------------------- | --------------------------------------------------- |
+| App/package version         | Software release, declared in `package.json`.       |
+| Dungeon generator `5.0.0`   | Current layout and room-purpose furnishing rules.   |
+| Forest generator `4.0.0`    | Current Forest layout and decoration rules.         |
+| Courtyard generator `5.0.0` | Current rules, including spawned ordinary braziers. |
+| Tower generator `3.0.0`     | Current separate and spiral staircase rules.        |
+| Save format `40.0.0`        | Current record, backup, and editing vocabulary.     |
 
 Backup headers and records must contain the exact current save-format string.
 Unsupported headers reject the file; unsupported records inside a current bundle
@@ -618,3 +646,11 @@ four turns by `scripts/shrine-review.spec.ts`, which writes
 `artifacts/ruined-shrine/rotations.png`. `tests/ruined-shrine.spec.ts` covers
 catalog labels, placement, keyboard rotation, Undo/Redo, saved reopen and PNG
 parity on all four map types, including a narrow Tower layout.
+
+Room-use verification covers deterministic generation at every density, an independent
+floor-reachability check, selected-addition coexistence, malformed assignments,
+generated bed movement/rotation and save round-trips. Session checks cover pending
+settings, in-place generation and shuffle/undo. `tests/room-purpose.spec.ts` covers
+keyboard selection, generation, editing, saved reopen and PNG parity at desktop and
+320 px widths. `scripts/room-purpose-review.spec.ts` renders all three furnishing
+themes to `artifacts/room-purpose/` for visual review.

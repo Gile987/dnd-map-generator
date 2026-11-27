@@ -1,4 +1,4 @@
-import { GENERATOR_VERSION } from './model';
+import { DUNGEON_GENERATOR_VERSION } from './model';
 import type { Dungeon, Room, Connection } from './model';
 import { hashSeed } from './random';
 import { createLayout } from './topology';
@@ -15,7 +15,7 @@ export function showcaseDungeon(): Dungeon {
   ];
   return {
     type: 'dungeon' as const,
-    version: GENERATOR_VERSION,
+    version: DUNGEON_GENERATOR_VERSION,
     seed: 'showcase',
     surfaceSeed: hashSeed('showcase:surface'),
     layout: createLayout(rooms, connections),

@@ -1,3 +1,5 @@
+import { furnishRooms } from './dungeon-room-purpose';
+import type { DungeonRoomTheme } from './model';
 import { placeRitual } from './dungeon-ritual';
 import { furnitureArea, placeDiningTable } from './dungeon-furniture';
 import { center, DENSITY_BUDGETS, indexOf, isBlockingProp, isFloor } from './model';
@@ -92,6 +94,26 @@ function pickProp(
 }
 
 export function decorate(
+  layout: Layout,
+  seed: string,
+  density: Density,
+  preset: DecorationPreset,
+  revision: number,
+  scene: DungeonScene = 'None',
+  landmark: DungeonLandmark = 'None',
+  furniture: DungeonFurniture = 'None',
+  ritual = false,
+  roomTheme: DungeonRoomTheme = 'General rooms',
+): Decoration {
+  return furnishRooms(
+    layout,
+    seed,
+    decorateFeatures(layout, seed, density, preset, revision, scene, landmark, furniture, ritual),
+    roomTheme,
+  );
+}
+
+function decorateFeatures(
   layout: Layout,
   seed: string,
   density: Density,
@@ -279,6 +301,7 @@ export function shuffleDetails(map: Dungeon, density: Density = map.decoration.d
     map.decoration.landmark,
     map.decoration.furniture,
     map.decoration.ritual,
+    map.decoration.roomTheme,
   );
 }
 
@@ -292,6 +315,7 @@ export function changeDensity(map: Dungeon, density: Density): Dungeon {
     map.decoration.landmark,
     map.decoration.furniture,
     map.decoration.ritual,
+    map.decoration.roomTheme,
   );
 }
 
@@ -305,6 +329,7 @@ export function changePreset(map: Dungeon, preset: DecorationPreset): Dungeon {
     map.decoration.landmark,
     map.decoration.furniture,
     map.decoration.ritual,
+    map.decoration.roomTheme,
   );
 }
 
@@ -312,7 +337,7 @@ export function changeDungeonAppearance(
   map: Dungeon,
   settings: Pick<
     DungeonSettings,
-    'density' | 'preset' | 'scene' | 'landmark' | 'furniture' | 'ritual'
+    'density' | 'preset' | 'scene' | 'landmark' | 'furniture' | 'ritual' | 'roomTheme'
   >,
 ): Dungeon {
   return redecorate(
@@ -324,6 +349,7 @@ export function changeDungeonAppearance(
     settings.landmark,
     settings.furniture,
     settings.ritual,
+    settings.roomTheme,
   );
 }
 
@@ -336,6 +362,7 @@ function redecorate(
   landmark: DungeonLandmark = 'None',
   furniture: DungeonFurniture = 'None',
   ritual = false,
+  roomTheme: DungeonRoomTheme = 'General rooms',
 ): Dungeon {
   const updated: Dungeon = {
     ...map,
@@ -349,10 +376,8 @@ function redecorate(
       landmark,
       furniture,
       ritual,
+      roomTheme,
     ),
   };
-  return (ritual || scene === 'Forgotten study' || landmark !== 'None' || furniture !== 'None') &&
-    validateDungeon(updated)
-    ? map
-    : updated;
+  return validateDungeon(updated) ? map : updated;
 }

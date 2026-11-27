@@ -145,16 +145,18 @@ export function proposeObjectCommand(
           ...edits.moves.filter((move) => move.id !== command.id),
           ...(original.x === command.target.x &&
           original.y === command.target.y &&
-          !(command.rotation ?? objectRotation(item.prop))
+          (command.rotation ?? objectRotation(item.prop)) === objectRotation(original)
             ? []
             : [
                 {
                   id: command.id,
                   x: command.target.x,
                   y: command.target.y,
-                  ...((command.rotation ?? item.prop.artRotation)
-                    ? { artRotation: command.rotation ?? item.prop.artRotation }
-                    : {}),
+                  ...(item.prop.footprint
+                    ? { rotation: command.rotation ?? objectRotation(item.prop) }
+                    : (command.rotation ?? item.prop.artRotation)
+                      ? { artRotation: command.rotation ?? item.prop.artRotation }
+                      : {}),
                 },
               ]),
         ].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),

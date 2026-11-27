@@ -38,7 +38,7 @@ test('initial preview, draft settings, detail revision and full-map PNG', async 
   await page.getByRole('button', { name: 'Quick export PNG' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
-    'encounter-mosslit-sanctum-mosslit-balanced-r1-v4.0.0.png',
+    'encounter-mosslit-sanctum-mosslit-balanced-r1-v5.0.0.png',
   );
   await download.saveAs('artifacts/browser-export.png');
   const png = await PNG.read('artifacts/browser-export.png');
@@ -195,7 +195,7 @@ test('preset and density drafts wait for Generate and exports use the displayed 
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Quick export PNG' }).click();
   expect((await downloadPromise).suggestedFilename()).toBe(
-    'encounter-mosslit-sanctum-mosslit-balanced-r1-v4.0.0.png',
+    'encounter-mosslit-sanctum-mosslit-balanced-r1-v5.0.0.png',
   );
   await page.getByRole('button', { name: 'Generate dungeon' }).click();
   await expect(page.locator('#map-summary')).toContainText('draft-seed');
@@ -245,7 +245,7 @@ test('a PNG object-URL failure preserves the draft and allows export retry', asy
   const pendingDownload = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Quick export PNG', exact: true }).click();
   expect((await pendingDownload).suggestedFilename()).toBe(
-    'encounter-mosslit-sanctum-mosslit-balanced-r0-v4.0.0.png',
+    'encounter-mosslit-sanctum-mosslit-balanced-r0-v5.0.0.png',
   );
   await expect(page.locator('#settings-error')).toBeEmpty();
   await expect(page.getByLabel('World seed')).toHaveValue('pending-download-draft');

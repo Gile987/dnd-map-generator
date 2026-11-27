@@ -42,7 +42,7 @@ export function exportFilename(map: MapDocument, showSecrets = false, towerFloor
   if (type === 'dungeon') {
     const preset = map.decoration.preset.toLowerCase();
     const scene = map.decoration.scene === 'Forgotten study' ? '-forgotten-study' : '';
-    return `encounter-${seed}-${preset}${map.decoration.ritual ? '-ritual-site' : ''}${map.decoration.furniture === 'dining-table' ? '-dining-table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
+    return `encounter-${seed}-${preset}${map.decoration.roomTheme ? '-' + map.decoration.roomTheme.toLowerCase().replaceAll(' ', '-') : ''}${map.decoration.ritual ? '-ritual-site' : ''}${map.decoration.furniture === 'dining-table' ? '-dining-table' : ''}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
   }
   const scene = map.decoration.scene === 'Abandoned camp' ? '-abandoned-camp' : '';
   return `encounter-${seed}-forest-${map.decoration.character.toLowerCase()}${map.decoration.landmark && map.decoration.landmark !== 'None' ? '-' + map.decoration.landmark : ''}${scene}${map.decoration.fallenTree ? '-fallen-ancient-tree' : ''}${map.objectEdits ? '-customized' : ''}-${map.decoration.density.toLowerCase()}-r${map.decoration.revision}-v${map.version}.png`;
