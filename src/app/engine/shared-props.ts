@@ -96,6 +96,12 @@ export const SHARED_PROPS = {
     blocking: true,
     mapTypes: ['dungeon', 'forest', 'courtyard', 'tower'],
   },
+  ruined_shrine: {
+    label: 'Ruined shrine',
+    category: 'Stonework',
+    blocking: true,
+    mapTypes: ['dungeon', 'forest', 'courtyard', 'tower'],
+  },
 } as const satisfies Readonly<Record<string, SharedPropDefinition>>;
 
 export type SharedPropKind = keyof typeof SHARED_PROPS;

@@ -1,3 +1,4 @@
+import { shrinePalette } from './ruined-shrine';
 import { DUNGEON_PORTABLE_PALETTES } from './portable-props';
 import { drawRitualCandles } from './ritual-props';
 import { isDungeonSurface } from '../engine/object-editor/dungeon-occupancy';
@@ -38,13 +39,27 @@ export function drawDungeonProp(
     return;
   }
   if (!turn) {
-    drawProp(ctx, prop, undefined, undefined, DUNGEON_PORTABLE_PALETTES[map.decoration.preset]);
+    drawProp(
+      ctx,
+      prop,
+      undefined,
+      undefined,
+      DUNGEON_PORTABLE_PALETTES[map.decoration.preset],
+      shrinePalette(map.decoration.preset),
+    );
     return;
   }
   ctx.save();
   ctx.translate(prop.x + 0.5, prop.y + 0.5);
   ctx.rotate((turn * Math.PI) / 2);
   ctx.translate(-prop.x - 0.5, -prop.y - 0.5);
-  drawProp(ctx, prop, undefined, undefined, DUNGEON_PORTABLE_PALETTES[map.decoration.preset]);
+  drawProp(
+    ctx,
+    prop,
+    undefined,
+    undefined,
+    DUNGEON_PORTABLE_PALETTES[map.decoration.preset],
+    shrinePalette(map.decoration.preset),
+  );
   ctx.restore();
 }

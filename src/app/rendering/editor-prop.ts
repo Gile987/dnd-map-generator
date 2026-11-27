@@ -1,3 +1,4 @@
+import { shrinePalette } from './ruined-shrine';
 import type { TowerDrawing } from '../engine/object-editor/tower-document';
 import { drawRitualCandles } from './ritual-props';
 import type { ForestDrawing } from '../engine/object-editor/forest-document';
@@ -15,6 +16,11 @@ export function drawEditorProp(ctx: DrawingContext, prop: Prop, map: EditorDrawi
   if (map.type === 'dungeon') return drawDungeonProp(ctx, prop, map);
   const palette = map.type === 'forest' ? FOREST_PALETTES[map.decoration.character] : undefined;
   const courtyard = map.type === 'courtyard' ? map.decoration.character : undefined;
+  const shrine = shrinePalette(
+    undefined,
+    map.type === 'forest' ? map.decoration.character : undefined,
+    courtyard,
+  );
   const turn = map.objectEdits === 'resolved' ? map.artTurns.get(prop) : undefined;
   if (turn && map.type === 'tower' && prop.kind === 'ritual_candles') {
     ctx.save();
@@ -24,11 +30,11 @@ export function drawEditorProp(ctx: DrawingContext, prop: Prop, map: EditorDrawi
     ctx.restore();
     return;
   }
-  if (!turn) return drawProp(ctx, prop, palette, courtyard);
+  if (!turn) return drawProp(ctx, prop, palette, courtyard, undefined, shrine);
   ctx.save();
   ctx.translate(prop.x + 0.5, prop.y + 0.5);
   ctx.rotate((turn * Math.PI) / 2);
   ctx.translate(-prop.x - 0.5, -prop.y - 0.5);
-  drawProp(ctx, prop, palette, courtyard);
+  drawProp(ctx, prop, palette, courtyard, undefined, shrine);
   ctx.restore();
 }

@@ -70,6 +70,7 @@ const common = [
   'moss',
   'fern',
   'small_table',
+  'ruined_shrine',
 ] as const;
 const availability: readonly [MapType, readonly PropKind[]][] = [
   ['dungeon', [...common, 'desk', 'bookshelf']],
@@ -188,7 +189,9 @@ test.each(Object.values(sources))(
   (map) => {
     expect(
       map.decoration.props.some((prop) =>
-        ['treasure_chest', 'supply_sacks', 'weapon_rack', 'small_table'].includes(prop.kind),
+        ['treasure_chest', 'supply_sacks', 'weapon_rack', 'small_table', 'ruined_shrine'].includes(
+          prop.kind,
+        ),
       ),
     ).toBe(false);
   },

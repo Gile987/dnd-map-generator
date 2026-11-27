@@ -4,12 +4,16 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { editorFixture } from '../scripts/editor-test-support';
+import { forestEditorFixture } from '../scripts/forest-editor-test-support';
 import { courtyardEditorFixture } from '../scripts/courtyard-editor-test-support';
+import { towerEditorFixture } from '../scripts/tower-editor-test-support';
 import { applyEditorCommand } from '../src/app/engine/object-editor/editor-commands';
 import { editorSelections, editorInstances } from '../src/app/engine/object-editor/editor-view';
 import { mapDimensions } from '../src/app/engine/model';
 import type { EditableMapDocument, Point } from '../src/app/engine/model';
 import type { ObjectCommand } from '../src/app/engine/object-editor/object-command';
+import { towerFloorAt } from '../src/app/engine/tower';
 import {
   makeSavedMap,
   parseSavedMap,
@@ -34,11 +38,13 @@ function clear(base: EditableMapDocument): EditableMapDocument {
   }
   return map;
 }
-function placement(map: EditableMapDocument, make: (target: Point) => ObjectCommand) {
+function placement(map: EditableMapDocument, make: (target: Point) => ObjectCommand, skip?: Point) {
   const { width } = mapDimensions(map);
   for (const [index, walkable] of map.layout.tiles.entries()) {
     if (!walkable) continue;
     const target = { x: index % width, y: Math.floor(index / width) };
+    if (target.x === skip?.x && target.y === skip.y) continue;
+    if (map.type === 'tower' && towerFloorAt(map, target)?.number !== 1) continue;
     const command = make(target),
       result = applyEditorCommand(map, command);
     if (result.ok && result.document !== map) return { command, map: result.document, target };
@@ -80,11 +86,15 @@ async function pngHash(page: Page) {
     .digest('hex');
 }
 
-const source = courtyardEditorFixture();
-for (const width of [1440, 320])
-  test(`${width}px: place, rotate, undo and reopen a ruined shrine`, async ({ page }) => {
+for (const source of [
+  editorFixture(),
+  forestEditorFixture(),
+  courtyardEditorFixture(),
+  towerEditorFixture({ floorCount: 3, portalFloor: null }),
+])
+  test(`${source.type}: place, rotate, undo and reopen a one-square shrine`, async ({ page }) => {
     test.setTimeout(60000);
-    await page.setViewportSize({ width, height: 900 });
+    if (source.type === 'tower') await page.setViewportSize({ width: 320, height: 700 });
     const map = clear(source),
       next = placement(map, (target) => ({ kind: 'add', propKind: 'ruined_shrine', target }));
     await page.goto('/');
@@ -101,7 +111,7 @@ for (const width of [1440, 320])
     await page.getByRole('searchbox', { name: 'Find an object', exact: true }).fill('shrine');
     const card = page.getByRole('button', { name: 'Add Ruined shrine', exact: true });
     await expect(card).toContainText('Blocks 1 square');
-    await card.screenshot({ path: `artifacts/ruined-shrine/${width}-catalog.png` });
+    await card.screenshot({ path: `artifacts/ruined-shrine/${source.type}-catalog.png` });
     await card.click();
     await position(page, next.target);
     await page.getByRole('button', { name: 'Place object', exact: true }).click();
@@ -152,5 +162,5 @@ for (const width of [1440, 320])
       .selectOption('added-1');
     await page
       .locator('forge-object-editor')
-      .screenshot({ path: `artifacts/ruined-shrine/${width}-editing.png` });
+      .screenshot({ path: `artifacts/ruined-shrine/${source.type}-editing.png` });
   });

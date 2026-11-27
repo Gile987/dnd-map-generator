@@ -24,7 +24,6 @@ const COURTYARD_OBJECTS_V1 = {
 
 const COURTYARD_OBJECTS_CURRENT = {
   ...COURTYARD_OBJECTS_V1,
-  ruined_shrine: { label: 'Ruined shrine', category: 'Stonework', editable: true },
   abandoned_brazier: { label: 'Abandoned brazier', category: 'Stonework', editable: true },
 } as const satisfies Partial<Record<PropKind, ObjectCapability>>;
 

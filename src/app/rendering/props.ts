@@ -1,4 +1,4 @@
-import { drawRuinedShrine } from './ruined-shrine';
+import { drawRuinedShrine, shrinePalette } from './ruined-shrine';
 import {
   drawSmallTable,
   drawWoodenBed,
@@ -72,10 +72,12 @@ type PropDrawer = (
   forest: ForestPalette,
   courtyard: CourtyardCharacter,
   portable: PortablePropPalette,
+  shrine: ReturnType<typeof shrinePalette>,
 ) => void;
 
 const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
-  ruined_shrine: (ctx, prop, _forest, courtyard) => drawRuinedShrine(ctx, prop, courtyard),
+  ruined_shrine: (ctx, prop, _forest, _courtyard, _portable, shrine) =>
+    drawRuinedShrine(ctx, prop, shrine),
   small_table: (ctx, prop, _forest, _courtyard, portable) => drawSmallTable(ctx, prop, portable),
   wooden_bed: (ctx, prop, _forest, _courtyard, portable) => drawWoodenBed(ctx, prop, portable),
   wooden_bench: (ctx, prop, _forest, _courtyard, portable) => drawWoodenBench(ctx, prop, portable),
@@ -138,6 +140,7 @@ export function drawProp(
   forest: ForestPalette = VERDANT_PALETTE,
   courtyard: CourtyardCharacter = 'Overgrown',
   portable: PortablePropPalette = portablePropPalette(forest, courtyard),
+  shrine = shrinePalette(undefined, undefined, courtyard),
 ): void {
   ctx.save();
   if (prop.footprint) {
@@ -150,6 +153,6 @@ export function drawProp(
   if (prop.artRotation && prop.kind !== 'ritual_candles')
     ctx.rotate((prop.artRotation * Math.PI) / 2);
   ctx.lineWidth = 0.025;
-  PROP_DRAWERS[prop.kind](ctx, prop, forest, courtyard, portable);
+  PROP_DRAWERS[prop.kind](ctx, prop, forest, courtyard, portable, shrine);
   ctx.restore();
 }
