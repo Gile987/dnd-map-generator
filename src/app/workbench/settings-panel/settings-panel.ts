@@ -9,7 +9,7 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { ALL_DENSITIES, ROOM_MAX, ROOM_MIN } from '../../engine/model';
+import { ALL_DENSITIES, ALL_ROOM_THEMES, ROOM_MAX, ROOM_MIN } from '../../engine/model';
 import type { MapDocument, MapType } from '../../engine/model';
 import { Icon } from '../../icon';
 import {
@@ -253,6 +253,20 @@ export class SettingsPanel {
         ? 'Replace customizations and generate'
         : `Generate ${this.map().type}`,
   );
+  protected readonly roomThemes = ALL_ROOM_THEMES;
+  protected editRoomTheme(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    const roomTheme = ALL_ROOM_THEMES.find((theme) => theme === value);
+    if (roomTheme) this.draftChanged.emit({ type: 'dungeon', changes: { roomTheme } });
+  }
+  protected readonly furnishedRoomSummary = computed(() => {
+    const map = this.map();
+    if (map.type !== 'dungeon' || !map.decoration.roomPurposes) return '';
+    const rooms = map.decoration.roomPurposes;
+    const barracks = rooms.filter((room) => room.purpose === 'Barracks').length;
+    const stores = rooms.filter((room) => room.purpose === 'Storeroom').length;
+    return `Current: ${barracks} barracks, ${stores} ${stores === 1 ? 'storeroom' : 'storerooms'}. Other rooms keep their existing roles.`;
+  });
   protected readonly roomMin = ROOM_MIN;
   protected readonly roomMax = ROOM_MAX;
   protected readonly invalidSeed = computed(

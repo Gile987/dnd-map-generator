@@ -1,4 +1,4 @@
-import { GENERATOR_VERSION, HEIGHT, WIDTH, center, indexOf } from './model';
+import { DUNGEON_GENERATOR_VERSION, HEIGHT, WIDTH, center, indexOf } from './model';
 import type { Connection, DungeonSettings, GenerationResult, Room } from './model';
 import { Random, streamSeed } from './random';
 import { createLayout, distances } from './topology';
@@ -127,7 +127,7 @@ export function generateDungeon(
     if (validateLayout(layout, settings.roomCount)) continue;
     const map = {
       type: 'dungeon' as const,
-      version: GENERATOR_VERSION,
+      version: DUNGEON_GENERATOR_VERSION,
       seed,
       layout,
       surfaceSeed: streamSeed(seed, 'surface'),
@@ -141,6 +141,7 @@ export function generateDungeon(
         settings.landmark,
         settings.furniture,
         settings.ritual,
+        settings.roomTheme,
       ),
     };
     const error = validateDungeon(map);

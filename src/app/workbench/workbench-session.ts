@@ -288,6 +288,7 @@ export class WorkbenchSession {
       this.layoutPending() ||
       draft.density !== decoration.density ||
       draft.preset !== decoration.preset ||
+      (draft.roomTheme ?? 'General rooms') !== (decoration.roomTheme ?? 'General rooms') ||
       Boolean(draft.ritual) !== Boolean(decoration.ritual) ||
       (draft.furniture ?? 'None') !== (decoration.furniture ?? 'None') ||
       (draft.landmark ?? 'None') !== (decoration.landmark ?? 'None') ||
@@ -542,6 +543,8 @@ export class WorkbenchSession {
         if (!result.ok) return result;
         dungeon = result.map;
       } else if (
+        (settings.roomTheme ?? 'General rooms') !== 'General rooms' ||
+        (dungeon.decoration.roomTheme ?? 'General rooms') !== 'General rooms' ||
         settings.ritual ||
         dungeon.decoration.ritual ||
         (settings.furniture ?? 'None') !== 'None' ||
@@ -586,6 +589,16 @@ export class WorkbenchSession {
       return {
         ok: false,
         error: 'That fallen ancient tree could not fit. Try another seed or remove an addition.',
+      };
+    if (
+      next.type === 'dungeon' &&
+      parsed.type === 'dungeon' &&
+      (next.decoration.roomTheme ?? 'General rooms') !==
+        (parsed.settings.roomTheme ?? 'General rooms')
+    )
+      return {
+        ok: false,
+        error: 'That room-use theme could not be applied. Try another seed or fewer additions.',
       };
     if (next.decoration.density !== parsed.settings.density) {
       return {

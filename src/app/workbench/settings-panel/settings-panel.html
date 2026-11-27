@@ -241,6 +241,25 @@
       </button>
       <p class="field-hint" id="additions-hint">Choose any combination. Generate to apply.</p>
     </fieldset>
+    @if (activeDraft.type === 'dungeon') {
+    <div class="field room-theme-field">
+      <label for="room-theme">Room use</label>
+      <select id="room-theme" (change)="editRoomTheme($event)" aria-describedby="room-theme-hint">
+        @for (theme of roomThemes; track theme) {
+        <option [value]="theme" [selected]="(activeDraft.roomTheme ?? 'General rooms') === theme">
+          {{ theme }}
+        </option>
+        }
+      </select>
+      <p class="field-hint" id="room-theme-hint">
+        Furnish suitable rooms for sleeping or storage. Character controls their look. Generate to
+        apply.
+      </p>
+      @if (furnishedRoomSummary()) {
+      <p class="field-hint" role="status">{{ furnishedRoomSummary() }}</p>
+      }
+    </div>
+    }
     <fieldset class="density-field">
       <legend>Decoration <span>THE FINISHING TOUCHES</span></legend>
       @let selectedDensity = activeDraft.density;

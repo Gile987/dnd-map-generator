@@ -76,15 +76,15 @@ describe('deterministic dungeon generation', () => {
     expect(
       cases.map((entry) => `${entry.seed}:${entry.preset}:${digest(validMap(entry))}`),
     ).toEqual([
-      'mosslit-sanctum:Mosslit:dbf184c1e457504a',
-      'amber-vault:Mosslit:1f00b8ca9a547ed1',
-      'forgotten-library:Mosslit:dfe27cfa97ad790a',
-      'lantern-watch:Mosslit:8d78a463cc22b631',
-      'moss-and-memory:Mosslit:fc313ac04975c2c3',
-      'silver-crypt:Mosslit:427fd3244f76e1c2',
-      'amber-vault:Crypt:c7241eef69cde23f',
-      'forgotten-library:Storehouse:13d98ab5a23c1733',
-      'lantern-watch:Sanctuary:e18fde97d0554200',
+      'mosslit-sanctum:Mosslit:b12b1deded30dea4',
+      'amber-vault:Mosslit:7ae8d2d3b83435b9',
+      'forgotten-library:Mosslit:0b684728e2398972',
+      'lantern-watch:Mosslit:52b9a5e5b7940c33',
+      'moss-and-memory:Mosslit:61468f4df193373f',
+      'silver-crypt:Mosslit:80a58baa83066294',
+      'amber-vault:Crypt:3a99e19cbc921b7a',
+      'forgotten-library:Storehouse:e1a069b1bbb34fd1',
+      'lantern-watch:Sanctuary:9f3630fe5e0fae4c',
     ]);
   });
 

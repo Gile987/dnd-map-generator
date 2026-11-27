@@ -628,3 +628,30 @@ test('a refused furniture change preserves accepted map and draft and can be ret
   expect(session.pending()).toBe(true);
   expect(session.generate().ok).toBe(true);
 });
+
+test('room-use drafts apply in place, survive shuffle/undo and restore on map switching', () => {
+  const session = new WorkbenchSession(),
+    initial = session.map();
+  session.updateDraft({ type: 'dungeon', changes: { roomTheme: 'Mixed rooms' } });
+  expect(session.pending()).toBe(true);
+  expect(session.map()).toBe(initial);
+  session.selectMapType('forest');
+  session.selectMapType('dungeon');
+  expect(session.draft()).toMatchObject({ roomTheme: 'Mixed rooms' });
+  expect(session.generate()).toEqual({ ok: true, layoutChanged: false });
+  const furnished = session.map();
+  expect(furnished.layout).toBe(initial.layout);
+  expect(furnished.decoration).toMatchObject({ roomTheme: 'Mixed rooms', revision: 0 });
+  expect(session.pending()).toBe(false);
+  session.updateDraft({ type: 'dungeon', changes: { roomTheme: 'Storerooms' } });
+  expect(session.shuffle()).toBe(true);
+  expect(session.map().decoration).toMatchObject({ roomTheme: 'Mixed rooms', revision: 1 });
+  expect(session.draft()).toMatchObject({ roomTheme: 'Storerooms' });
+  session.undoShuffle();
+  expect(session.map()).toEqual(furnished);
+  session.resetChanges();
+  expect(session.pending()).toBe(false);
+  session.updateDraft({ type: 'dungeon', changes: { roomTheme: 'General rooms' } });
+  expect(session.generate().ok).toBe(true);
+  expect(session.map()).toEqual(initial);
+});

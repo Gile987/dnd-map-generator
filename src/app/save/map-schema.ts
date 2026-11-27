@@ -8,6 +8,8 @@ import { isUsableTower } from '../engine/tower';
 import {
   ALL_DENSITIES,
   GENERATOR_VERSION,
+  DUNGEON_GENERATOR_VERSION,
+  ALL_ROOM_THEMES,
   COURTYARD_GENERATOR_VERSION,
   ALL_COURTYARD_CHARACTERS,
   ALL_DUNGEON_SCENES,
@@ -47,6 +49,7 @@ export interface SaveVocabulary {
   readonly forestCharacters: readonly string[];
   readonly forestLandmarks?: readonly string[];
   readonly forestScenes?: readonly string[];
+  readonly dungeonRoomThemes?: readonly string[];
   readonly dungeonFurniture?: readonly string[];
   readonly propFootprints?: Readonly<
     Record<
@@ -143,7 +146,18 @@ export function mapUsesVocabulary(map: unknown, vocabulary: SaveVocabulary): boo
     !vocabulary.densities.includes(decoration['density'])
   )
     return false;
+  if (
+    type !== 'dungeon' &&
+    (decoration['roomTheme'] !== undefined || decoration['roomPurposes'] !== undefined)
+  )
+    return false;
   if (type === 'dungeon') {
+    if (
+      decoration['roomTheme'] !== undefined &&
+      (typeof decoration['roomTheme'] !== 'string' ||
+        !vocabulary.dungeonRoomThemes?.includes(decoration['roomTheme']))
+    )
+      return false;
     if (
       decoration['furniture'] !== undefined &&
       (typeof decoration['furniture'] !== 'string' ||
@@ -395,6 +409,17 @@ function isDungeonDecoration(value: unknown): boolean {
   return (
     isDecorationBase(value) &&
     isObject(value) &&
+    (value['roomTheme'] === undefined ||
+      (typeof value['roomTheme'] === 'string' && isIn(value['roomTheme'], ALL_ROOM_THEMES))) &&
+    (value['roomPurposes'] === undefined ||
+      (Array.isArray(value['roomPurposes']) &&
+        value['roomPurposes'].length <= 8 &&
+        value['roomPurposes'].every(
+          (room: unknown) =>
+            isObject(room) &&
+            isNonNegativeInt(room['roomId']) &&
+            (room['purpose'] === 'Barracks' || room['purpose'] === 'Storeroom'),
+        ))) &&
     (value['ritual'] === undefined || typeof value['ritual'] === 'boolean') &&
     typeof value['preset'] === 'string' &&
     isIn(value['preset'], ALL_PRESETS) &&
@@ -429,7 +454,14 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
   if (!isObject(value)) return false;
   const { type, version, seed, surfaceSeed, layout, decoration } = value;
   if (type !== 'dungeon' && type !== 'forest' && type !== 'courtyard') return false;
-  if (version !== (type === 'courtyard' ? COURTYARD_GENERATOR_VERSION : GENERATOR_VERSION))
+  if (
+    version !==
+    (type === 'courtyard'
+      ? COURTYARD_GENERATOR_VERSION
+      : type === 'dungeon'
+        ? DUNGEON_GENERATOR_VERSION
+        : GENERATOR_VERSION)
+  )
     return false;
   if (typeof seed !== 'string' || !seed || seed !== seed.trim() || seed.length > 64) return false;
   if (!isFiniteNumber(surfaceSeed)) return false;
@@ -443,7 +475,10 @@ function isGeneratedMap(value: unknown): value is GeneratedMap {
     return false;
   if (
     type !== 'dungeon' &&
-    (decoration['studySurface'] !== undefined || decoration['ritual'] !== undefined)
+    (decoration['studySurface'] !== undefined ||
+      decoration['ritual'] !== undefined ||
+      decoration['roomTheme'] !== undefined ||
+      decoration['roomPurposes'] !== undefined)
   )
     return false;
   if (type !== 'courtyard' && decoration['wagon'] !== undefined) return false;

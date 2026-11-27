@@ -10,6 +10,8 @@ export const HEIGHT = 30;
 export const ROOM_MIN = 4;
 export const ROOM_MAX = 8;
 export const GENERATOR_VERSION = '4.0.0';
+/** Dungeon furnishing vocabulary; layout/surface streams retain their existing seed salt. */
+export const DUNGEON_GENERATOR_VERSION = '5.0.0';
 /**
  * Courtyard decoration rules changed when the abandoned brazier became an
  * ordinary spawned object; the Tower keeps its own version for the same
@@ -115,7 +117,15 @@ export const ALL_COURTYARD_CHARACTERS: readonly CourtyardCharacter[] = [
   'Desecrated',
 ];
 
+export const ALL_ROOM_THEMES = ['General rooms', 'Mixed rooms', 'Barracks', 'Storerooms'] as const;
+export type DungeonRoomTheme = (typeof ALL_ROOM_THEMES)[number];
+export interface RoomPurpose {
+  readonly roomId: number;
+  readonly purpose: 'Barracks' | 'Storeroom';
+}
+
 export interface DungeonSettings {
+  readonly roomTheme?: DungeonRoomTheme;
   readonly ritual?: boolean;
   readonly seed: string;
   readonly roomCount: number;
@@ -301,6 +311,8 @@ export interface Prop extends Point {
 }
 
 export interface Decoration {
+  readonly roomTheme?: DungeonRoomTheme;
+  readonly roomPurposes?: readonly RoomPurpose[];
   readonly ritual?: boolean;
   readonly props: readonly Prop[];
   readonly density: Density;
