@@ -1,13 +1,13 @@
 {
   "format": "encounter-map-forge-saves",
-  "saveFormatVersion": "38.0.0",
+  "saveFormatVersion": "39.0.0",
   "maps": [
     {
       "id": "courtyard-before-editor-0",
       "name": "Courtyard 0",
       "favorite": false,
       "savedAt": "2026-11-03T12:00:00Z",
-      "saveFormatVersion": "38.0.0",
+      "saveFormatVersion": "39.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "courtyard",
@@ -1666,7 +1666,7 @@
       "name": "Courtyard 1",
       "favorite": false,
       "savedAt": "2026-11-03T12:00:00Z",
-      "saveFormatVersion": "38.0.0",
+      "saveFormatVersion": "39.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "courtyard",

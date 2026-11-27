@@ -1,4 +1,4 @@
-import type { CourtyardCharacter, Prop } from '../engine/model';
+import type { CourtyardCharacter, DecorationPreset, ForestCharacter, Prop } from '../engine/model';
 import type { DrawingContext } from './drawing-context';
 import { path } from './drawing-primitives';
 
@@ -42,13 +42,72 @@ const SHRINE_PALETTES: Readonly<Record<CourtyardCharacter, ShrinePalette>> = {
   },
 };
 
+const DUNGEON_SHRINE_PALETTES: Readonly<Record<DecorationPreset, ShrinePalette>> = {
+  Mosslit: SHRINE_PALETTES.Overgrown,
+  Crypt: {
+    stone: '#96998d',
+    edge: '#424c49',
+    light: '#c8c9b4',
+    carving: '#646e62',
+    weathering: '#6b7863',
+  },
+  Storehouse: {
+    stone: '#b0a17d',
+    edge: '#5e5242',
+    light: '#d8c79e',
+    carving: '#83745b',
+    weathering: '#8c8056',
+  },
+  Sanctuary: {
+    stone: '#aab3a0',
+    edge: '#485b50',
+    light: '#d9dfc5',
+    carving: '#788978',
+    weathering: '#809563',
+  },
+};
+const FOREST_SHRINE_PALETTES: Readonly<Record<ForestCharacter, ShrinePalette>> = {
+  Verdant: SHRINE_PALETTES.Overgrown,
+  Autumn: {
+    stone: '#ac9f85',
+    edge: '#635440',
+    light: '#dac9a7',
+    carving: '#89755a',
+    weathering: '#a8743a',
+  },
+  Pines: {
+    stone: '#939e98',
+    edge: '#465650',
+    light: '#c6d1c5',
+    carving: '#697c70',
+    weathering: '#456b52',
+  },
+  Fey: {
+    stone: '#a6a0b3',
+    edge: '#514b68',
+    light: '#dad1e5',
+    carving: '#817395',
+    weathering: '#81978d',
+  },
+};
+
+/** Accepted map settings choose the same stone colors for catalog, ghost and exports.
+ * Tower has no character setting and retains the original weathered stone.
+ */
+export function shrinePalette(
+  preset?: DecorationPreset,
+  forest?: ForestCharacter,
+  courtyard: CourtyardCharacter = 'Overgrown',
+): ShrinePalette {
+  return preset
+    ? DUNGEON_SHRINE_PALETTES[preset]
+    : forest
+      ? FOREST_SHRINE_PALETTES[forest]
+      : SHRINE_PALETTES[courtyard];
+}
+
 /** Chipped altar, carved slab and broken rear plinth; all artwork fits one square. */
-export function drawRuinedShrine(
-  ctx: DrawingContext,
-  prop: Prop,
-  character: CourtyardCharacter,
-): void {
-  const colors = SHRINE_PALETTES[character];
+export function drawRuinedShrine(ctx: DrawingContext, prop: Prop, colors: ShrinePalette): void {
   ctx.fillStyle = '#17201666';
   ctx.fillRect(-0.4, -0.37, 0.85, 0.82);
   path(

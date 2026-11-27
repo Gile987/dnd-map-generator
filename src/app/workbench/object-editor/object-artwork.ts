@@ -1,3 +1,4 @@
+import { shrinePalette } from '../../rendering/ruined-shrine';
 import {
   initialOrientation,
   isIndependentFurniture,
@@ -48,6 +49,7 @@ export class ObjectArtwork {
       character ? FOREST_PALETTES[character] : undefined,
       this.courtyardCharacter(),
       preset ? DUNGEON_PORTABLE_PALETTES[preset] : undefined,
+      shrinePalette(preset, character, this.courtyardCharacter()),
     );
     return canvas.toDataURL();
   });

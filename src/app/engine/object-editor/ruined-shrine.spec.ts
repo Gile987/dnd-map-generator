@@ -5,11 +5,8 @@ import {
   validCourtyardCommand,
   acceptCourtyard,
 } from '../../../../scripts/courtyard-editor-test-support';
-import { editorFixture } from '../../../../scripts/editor-test-support';
-import { forestEditorFixture } from '../../../../scripts/forest-editor-test-support';
-import { towerEditorFixture } from '../../../../scripts/tower-editor-test-support';
 import { applyEditorCommand } from './editor-commands';
-import { editorPalette, editorInstances } from './editor-view';
+import { editorInstances } from './editor-view';
 import { makeSavedMap, parseSavedMap } from '../../save/save-format';
 import { propCells } from '../prop-footprint';
 
@@ -61,40 +58,3 @@ test('the Courtyard shrine blocks one square and rejects walls, collisions and m
   }
   expect(map).toEqual(before);
 });
-
-for (const map of [
-  editorFixture(),
-  forestEditorFixture(),
-  towerEditorFixture({ floorCount: 3, portalFloor: null }),
-])
-  test(`${map.type} excludes the Courtyard shrine from placement and imports`, () => {
-    expect(editorPalette(map).some((item) => item.kind === 'ruined_shrine')).toBe(false);
-    expect(
-      applyEditorCommand(map, { kind: 'add', propKind: 'ruined_shrine', target: { x: 1, y: 1 } })
-        .ok,
-    ).toBe(false);
-    const bad = makeSavedMap(
-      map,
-      'Invalid shrine',
-      'data:image/png;base64,AAAA',
-      'invalid-shrine',
-      '2026-11-27T12:00:00Z',
-    );
-    Object.assign(bad.map, {
-      objectEdits: {
-        version: 1,
-        nextId: 2,
-        moves: [],
-        removed: [],
-        groups: [],
-        order: [],
-        added: [
-          {
-            id: 'added-1',
-            prop: { kind: 'ruined_shrine', x: 1, y: 1, variation: 0.5, blocking: true },
-          },
-        ],
-      },
-    });
-    expect(parseSavedMap(bad)).toBeUndefined();
-  });
