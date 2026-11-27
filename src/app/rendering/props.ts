@@ -1,3 +1,4 @@
+import { drawRuinedShrine } from './ruined-shrine';
 import {
   drawSmallTable,
   drawWoodenBed,
@@ -74,6 +75,7 @@ type PropDrawer = (
 ) => void;
 
 const PROP_DRAWERS: Readonly<Record<PropKind, PropDrawer>> = {
+  ruined_shrine: (ctx, prop, _forest, courtyard) => drawRuinedShrine(ctx, prop, courtyard),
   small_table: (ctx, prop, _forest, _courtyard, portable) => drawSmallTable(ctx, prop, portable),
   wooden_bed: (ctx, prop, _forest, _courtyard, portable) => drawWoodenBed(ctx, prop, portable),
   wooden_bench: (ctx, prop, _forest, _courtyard, portable) => drawWoodenBench(ctx, prop, portable),
