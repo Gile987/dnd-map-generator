@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import fixture from '../src/app/save/fixtures/forest-current.json';
 import { SAVE_FORMAT_VERSION, SAVE_STORAGE_KEY } from '../src/app/save/save-format';
 
-for (const version of ['1.0.0', '36.0.0']) {
+for (const version of ['1.0.0', '37.0.0']) {
   test(`rejects a format-${version} backup without changing the library or accepted map`, async ({
     page,
   }) => {
@@ -50,7 +50,7 @@ test('a retired record in a current bundle is skipped and counted', async ({ pag
       JSON.stringify({
         ...fixture,
         saveFormatVersion: SAVE_FORMAT_VERSION,
-        maps: [record, { ...record, id: 'retired', saveFormatVersion: '36.0.0' }],
+        maps: [record, { ...record, id: 'retired', saveFormatVersion: '37.0.0' }],
       }),
     ),
   });
@@ -66,7 +66,7 @@ test('stored retired records pause writes and remain recoverable byte for byte',
   const record = fixture.maps[0];
   if (!record) throw Error('Missing fixture');
   const raw = JSON.stringify(
-    [record, { ...record, id: 'retired', saveFormatVersion: '36.0.0' }],
+    [record, { ...record, id: 'retired', saveFormatVersion: '37.0.0' }],
     null,
     2,
   );

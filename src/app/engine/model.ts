@@ -256,6 +256,7 @@ export type PropKind =
   | 'dry_fountain'
   | 'stone_well'
   | 'abandoned_brazier'
+  | 'ruined_shrine'
   | 'cauldron'
   | 'telescope'
   | 'star_chart_table'
@@ -279,6 +280,7 @@ export const ALL_PROP_KINDS: readonly PropKind[] = [
     ...WELL_PROP_KINDS,
     'abandoned_brazier',
     ...SHARED_PROP_KINDS,
+    'ruined_shrine',
   ]),
 ];
 
@@ -398,6 +400,7 @@ export function isBlockingProp(kind: PropKind): boolean {
     kind === 'sarcophagus' ||
     kind === 'broken_column' ||
     kind === 'abandoned_brazier' ||
+    kind === 'ruined_shrine' ||
     kind === 'boulder' ||
     kind === 'tent' ||
     kind === 'supply_bundle' ||

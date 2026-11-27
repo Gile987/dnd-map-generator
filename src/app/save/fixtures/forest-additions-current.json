@@ -1,6 +1,6 @@
 {
   "format": "encounter-map-forge-saves",
-  "saveFormatVersion": "37.0.0",
+  "saveFormatVersion": "38.0.0",
   "exportedAt": "2026-11-05T12:00:00Z",
   "maps": [
     {
@@ -8,7 +8,7 @@
       "name": "Verdant",
       "favorite": false,
       "savedAt": "2026-11-05T12:00:00Z",
-      "saveFormatVersion": "37.0.0",
+      "saveFormatVersion": "38.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "forest",
@@ -2373,7 +2373,7 @@
       "name": "Autumn",
       "favorite": false,
       "savedAt": "2026-11-05T12:00:00Z",
-      "saveFormatVersion": "37.0.0",
+      "saveFormatVersion": "38.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "forest",
@@ -4808,7 +4808,7 @@
       "name": "Pines",
       "favorite": false,
       "savedAt": "2026-11-05T12:00:00Z",
-      "saveFormatVersion": "37.0.0",
+      "saveFormatVersion": "38.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "forest",
@@ -7236,7 +7236,7 @@
       "name": "Fey",
       "favorite": false,
       "savedAt": "2026-11-05T12:00:00Z",
-      "saveFormatVersion": "37.0.0",
+      "saveFormatVersion": "38.0.0",
       "thumbnail": "data:image/png;base64,AAAA",
       "map": {
         "type": "forest",

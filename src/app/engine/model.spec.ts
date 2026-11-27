@@ -79,6 +79,7 @@ describe('production option constants', () => {
       'wooden_bench',
       'wooden_bed',
       'small_table',
+      'ruined_shrine',
     ]);
   });
 });

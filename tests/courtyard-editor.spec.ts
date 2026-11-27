@@ -245,7 +245,7 @@ test('Courtyard catalog, outdoor movement, pending settings, pins, undo and reco
   await edit(page);
   await page.getByRole('button', { name: 'Add object', exact: true }).click();
   const catalog = page.getByRole('region', { name: 'Courtyard object catalog', exact: true });
-  await expect(catalog.locator('.object-cards button')).toHaveCount(15);
+  await expect(catalog.locator('.object-cards button')).toHaveCount(16);
   for (const name of ['Broken column', 'Low rubble', 'Moss', 'Fern', 'Abandoned brazier'])
     await expect(catalog.getByRole('button', { name: `Add ${name}`, exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Add object', exact: true }).click();
